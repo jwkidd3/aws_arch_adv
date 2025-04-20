@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  MyKeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Select the keypair
+
+Mappings:
+  MyRegionMap:
+    ap-southeast-1:
+      HVM64: ami-0e97ea97a2f374e3d
+    ap-southeast-2:
+      HVM64: ami-030a5acd7c996ef60     
+
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap
+        - MyRegionMap
+        - !Ref 'AWS::Region'
+        - HVM64
+      InstanceType: t2.micro
+      KeyName: !Ref MyKeyName
