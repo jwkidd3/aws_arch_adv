@@ -4,7 +4,14 @@ using Amazon.SQS;
 using SendMessages;
 using Newtonsoft.Json;
 
-string queueURL = "https://sqs.ap-south-1.amazonaws.com/213171387512/appqueue";
+string? appqueue = Environment.GetEnvironmentVariable("SQS_Q");
+string? account = Environment.GetEnvironmentVariable("ACCOUNT");
+string? region = Environment.GetEnvironmentVariable("AWS_REGION");
+
+string queueURL = "https://sqs." + region + ".amazonaws.com/" + account+ "/" +appqueue;
+
+Console.WriteLine(queueURL);
+//--env-file ./config.env
 var sqsClient = new AmazonSQSClient();
 
 for (int i=1; i<=5;i++)

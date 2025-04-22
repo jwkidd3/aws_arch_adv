@@ -1,32 +1,32 @@
 {
   "version": 3,
   "targets": {
-    "net6.0": {
-      "AWSSDK.Core/3.7.202.12": {
+    "net8.0": {
+      "AWSSDK.Core/3.7.402.43": {
         "type": "package",
         "compile": {
-          "lib/netcoreapp3.1/AWSSDK.Core.dll": {
+          "lib/net8.0/AWSSDK.Core.dll": {
             "related": ".pdb;.xml"
           }
         },
         "runtime": {
-          "lib/netcoreapp3.1/AWSSDK.Core.dll": {
+          "lib/net8.0/AWSSDK.Core.dll": {
             "related": ".pdb;.xml"
           }
         }
       },
-      "AWSSDK.SQS/3.7.200.44": {
+      "AWSSDK.SQS/3.7.400.137": {
         "type": "package",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.202.12, 4.0.0)"
+          "AWSSDK.Core": "[3.7.402.43, 4.0.0)"
         },
         "compile": {
-          "lib/netcoreapp3.1/AWSSDK.SQS.dll": {
+          "lib/net8.0/AWSSDK.SQS.dll": {
             "related": ".pdb;.xml"
           }
         },
         "runtime": {
-          "lib/netcoreapp3.1/AWSSDK.SQS.dll": {
+          "lib/net8.0/AWSSDK.SQS.dll": {
             "related": ".pdb;.xml"
           }
         }
@@ -47,15 +47,15 @@
     }
   },
   "libraries": {
-    "AWSSDK.Core/3.7.202.12": {
-      "sha512": "q3jQjCx85JmI1JeC5+3jt7/9KN9V2NqoZqYC62nUWLEI0O3ldb58r5JNutZI849cCh3GEWsfAbd0HKv/GSCWzQ==",
+    "AWSSDK.Core/3.7.402.43": {
+      "sha512": "iAo889ehvfXCORxLF+o7BmKnBAtBTWD7aVMTP+P1sPlHlVqvIj4S3MUaDYjR7b1MGUTsE+UBNyj3tu+cj1MBqA==",
       "type": "package",
-      "path": "awssdk.core/3.7.202.12",
+      "path": "awssdk.core/3.7.402.43",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "awssdk.core.3.7.202.12.nupkg.sha512",
+        "awssdk.core.3.7.402.43.nupkg.sha512",
         "awssdk.core.nuspec",
         "images/AWSLogo.png",
         "lib/net35/AWSSDK.Core.dll",
@@ -64,6 +64,9 @@
         "lib/net45/AWSSDK.Core.dll",
         "lib/net45/AWSSDK.Core.pdb",
         "lib/net45/AWSSDK.Core.xml",
+        "lib/net8.0/AWSSDK.Core.dll",
+        "lib/net8.0/AWSSDK.Core.pdb",
+        "lib/net8.0/AWSSDK.Core.xml",
         "lib/netcoreapp3.1/AWSSDK.Core.dll",
         "lib/netcoreapp3.1/AWSSDK.Core.pdb",
         "lib/netcoreapp3.1/AWSSDK.Core.xml",
@@ -73,17 +76,17 @@
         "tools/account-management.ps1"
       ]
     },
-    "AWSSDK.SQS/3.7.200.44": {
-      "sha512": "AKgHD24UZERVCccmctkGsguSEsPWCXsjkijG/Ghc50TyK3itQSB4mVHTiF0mhMzT5eJ4EZDcE/9hZsik5l7Z/Q==",
+    "AWSSDK.SQS/3.7.400.137": {
+      "sha512": "80iDMsY+3yztBzfI5Buxp2URcpCVe6NMvQtAlcRuC02Yb2oQrPQhUvuMpIY6UomhZBGFt4Tr9rauf/EkNTDJKg==",
       "type": "package",
-      "path": "awssdk.sqs/3.7.200.44",
+      "path": "awssdk.sqs/3.7.400.137",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "analyzers/dotnet/cs/AWSSDK.SQS.CodeAnalysis.dll",
         "analyzers/dotnet/cs/SharedAnalysisCode.dll",
-        "awssdk.sqs.3.7.200.44.nupkg.sha512",
+        "awssdk.sqs.3.7.400.137.nupkg.sha512",
         "awssdk.sqs.nuspec",
         "images/AWSLogo.png",
         "lib/net35/AWSSDK.SQS.dll",
@@ -92,6 +95,9 @@
         "lib/net45/AWSSDK.SQS.dll",
         "lib/net45/AWSSDK.SQS.pdb",
         "lib/net45/AWSSDK.SQS.xml",
+        "lib/net8.0/AWSSDK.SQS.dll",
+        "lib/net8.0/AWSSDK.SQS.pdb",
+        "lib/net8.0/AWSSDK.SQS.xml",
         "lib/netcoreapp3.1/AWSSDK.SQS.dll",
         "lib/netcoreapp3.1/AWSSDK.SQS.pdb",
         "lib/netcoreapp3.1/AWSSDK.SQS.xml",
@@ -134,8 +140,8 @@
     }
   },
   "projectFileDependencyGroups": {
-    "net6.0": [
-      "AWSSDK.SQS >= 3.7.200.44",
+    "net8.0": [
+      "AWSSDK.SQS >= 3.7.400.137",
       "Newtonsoft.Json >= 13.0.3"
     ]
   },
@@ -155,14 +161,14 @@
         "/Users/jwkidd3/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "net6.0"
+        "net8.0"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "projectReferences": {}
         }
       },
@@ -178,12 +184,12 @@
       }
     },
     "frameworks": {
-      "net6.0": {
-        "targetAlias": "net6.0",
+      "net8.0": {
+        "targetAlias": "net8.0",
         "dependencies": {
           "AWSSDK.SQS": {
             "target": "Package",
-            "version": "[3.7.200.44, )"
+            "version": "[3.7.400.137, )"
           },
           "Newtonsoft.Json": {
             "target": "Package",
@@ -201,26 +207,12 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[6.0.28, 6.0.28]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.osx-arm64",
-            "version": "[6.0.28, 6.0.28]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[6.0.28, 6.0.28]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.203/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.203/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
