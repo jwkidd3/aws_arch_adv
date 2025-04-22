@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "OHTxwdaaLvG5Ed08aTlwCciE13ShPApNRm4g+ts0yontBNMOi211yeei0t54XpUW1UBe66ciCjTbVSby5c4mEw==",
+  "success": true,
+  "projectFilePath": "/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/SendMessages.csproj",
+  "expectedPackageFiles": [
+    "/Users/jwkidd3/.nuget/packages/awssdk.core/3.7.202.12/awssdk.core.3.7.202.12.nupkg.sha512",
+    "/Users/jwkidd3/.nuget/packages/awssdk.sqs/3.7.200.44/awssdk.sqs.3.7.200.44.nupkg.sha512",
+    "/Users/jwkidd3/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
+    "/Users/jwkidd3/.nuget/packages/microsoft.netcore.app.ref/6.0.28/microsoft.netcore.app.ref.6.0.28.nupkg.sha512",
+    "/Users/jwkidd3/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.28/microsoft.aspnetcore.app.ref.6.0.28.nupkg.sha512",
+    "/Users/jwkidd3/.nuget/packages/microsoft.netcore.app.host.osx-arm64/6.0.28/microsoft.netcore.app.host.osx-arm64.6.0.28.nupkg.sha512"
+  ],
+  "logs": []
+}

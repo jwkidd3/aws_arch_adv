@@ -1,0 +1,39 @@
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.exe
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.deps.json
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.runtimeconfig.json
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.dll
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.pdb
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/AWSSDK.Core.dll
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/AWSSDK.SQS.dll
+C:/tmp2/SendMessages/SendMessages/bin/Debug/net6.0/Newtonsoft.Json.dll
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.csproj.AssemblyReference.cache
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.GeneratedMSBuildEditorConfig.editorconfig
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.AssemblyInfoInputs.cache
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.AssemblyInfo.cs
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.csproj.CoreCompileInputs.cache
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.csproj.CopyComplete
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.dll
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/refint/SendMessages.dll
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.pdb
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.genruntimeconfig.cache
+C:/tmp2/SendMessages/SendMessages/obj/Debug/net6.0/ref/SendMessages.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.deps.json
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.runtimeconfig.json
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/SendMessages.pdb
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/AWSSDK.Core.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/AWSSDK.SQS.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/bin/Debug/net6.0/Newtonsoft.Json.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.csproj.AssemblyReference.cache
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.GeneratedMSBuildEditorConfig.editorconfig
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.AssemblyInfoInputs.cache
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.AssemblyInfo.cs
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.csproj.CoreCompileInputs.cache
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.sourcelink.json
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMess.37CF7B9E.Up2Date
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/refint/SendMessages.dll
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.pdb
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/SendMessages.genruntimeconfig.cache
+/Users/jwkidd3/aws/AWS-Advanced-Architecting/Module 6/Container/SendMessages/SendMessages/obj/Debug/net6.0/ref/SendMessages.dll
