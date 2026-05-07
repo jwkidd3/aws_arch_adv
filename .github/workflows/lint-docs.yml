@@ -1,0 +1,63 @@
+name: Lint course docs
+
+# Runs on PRs that touch lab guides or framing docs.
+# Catches: dead AWS doc links, deprecated AMI references, markdown issues.
+
+on:
+  pull_request:
+    paths:
+      - 'Module_*/labs/**'
+      - 'INSTRUCTOR.md'
+      - 'README.md'
+      - 'automation/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  doc-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Doc link check
+        run: |
+          chmod +x automation/tools/doc-link-check.sh
+          automation/tools/doc-link-check.sh
+
+  ami-resolver:
+    runs-on: ubuntu-latest
+    # Needs AWS to query AMIs — uses a read-only role
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_HARNESS_ROLE_ARN }}
+          aws-region: us-east-1
+        # If the secret isn't set (e.g., on a fork), skip rather than fail
+        continue-on-error: true
+
+      - name: Resolve AMI/policy references
+        run: |
+          chmod +x automation/tools/ami-resolver.sh
+          automation/tools/ami-resolver.sh
+        continue-on-error: true
+
+  markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v17
+        with:
+          globs: |
+            Module_*/labs/*.md
+            INSTRUCTOR.md
+            README.md
+            automation/**/*.md
+        # Configurable — relax some default rules for prose-heavy docs
+        continue-on-error: true

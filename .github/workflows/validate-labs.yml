@@ -1,0 +1,90 @@
+name: Validate labs (proof harness)
+
+# Runs the proof-harness against a CI Sandbox account weekly + on demand.
+# Each lab harness applies, asserts the lab's validation checklist, and destroys.
+# Uses GitHub OIDC to assume an IAM role in the CI Sandbox account.
+#
+# Setup:
+# 1. Create IAM role 'archadv-ci-harness' in CI Sandbox with PowerUserAccess
+# 2. Trust policy: GitHub OIDC for this repo
+# 3. Add secrets:
+#    - AWS_HARNESS_ROLE_ARN
+
+on:
+  schedule:
+    # Sundays at 06:00 UTC — pre-Monday classroom delivery
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      lab:
+        description: 'Single lab to run (e.g. lab-01-vpc); empty = all'
+        required: false
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      # Serialize so we don't blow Sandbox quota and can read logs in order.
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        lab:
+          - lab-01-vpc
+          - lab-05-tgw
+          - lab-09-kms-secrets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Filter manual run to one lab
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.lab != '' && matrix.lab != inputs.lab }}
+        run: |
+          echo "Skipping ${{ matrix.lab }} — manual run targeted ${{ inputs.lab }}"
+          echo "SKIP=true" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials via OIDC
+        if: env.SKIP != 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_HARNESS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Install Terraform
+        if: env.SKIP != 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Run harness for ${{ matrix.lab }}
+        if: env.SKIP != 'true'
+        run: |
+          chmod +x automation/tools/run-harness.sh
+          chmod +x automation/proof-harness/${{ matrix.lab }}/validate.sh
+          chmod +x automation/tools/cleanup.sh
+          automation/tools/run-harness.sh ${{ matrix.lab }}
+
+      - name: Cleanup safety net (always runs)
+        if: env.SKIP != 'true' && always()
+        run: |
+          chmod +x automation/tools/cleanup.sh
+          automation/tools/cleanup.sh --owner ci --yes || true
+
+  summary:
+    needs: validate
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Roll up
+        run: |
+          echo "## Lab harness summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Lab | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          # Each matrix job result is in needs.validate.result; for per-lab status
+          # we'd need to write results to artifacts — left as TODO.
+          echo "| (overall) | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
