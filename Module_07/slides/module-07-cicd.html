@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD on AWS | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#128260; CI/CD on AWS</h1>
+                <h2>CodePipeline, CodeBuild, CodeDeploy, CloudFormation</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 7 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">Day 2 afternoon. The longest teach slot of the module pair (45 min) &mdash; the AWS code-suite has four services that all need a clear role. Don't shortchange the deployment-strategies slide; it's the bridge from Module 6.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Map the four AWS code services to the build &rarr; test &rarr; deploy lifecycle</li>
+                    <li class="fragment fade-up">Author a <code>buildspec.yml</code> and an <code>appspec.yml</code></li>
+                    <li class="fragment fade-up">Choose between in-place, blue/green, and canary deployments</li>
+                    <li class="fragment fade-up">Wire OIDC for GitHub Actions instead of long-lived access keys</li>
+                    <li class="fragment fade-up">Manage secrets and cross-account artifacts in pipelines</li>
+                </ul>
+                <aside class="notes">45-minute teach &mdash; the deepest theory slot in the day. Lab 7 lets learners build the pipeline end-to-end; the slide's job is to give names to the moving parts.</aside>
+            </section>
+
+            <!-- Core CI/CD concepts -->
+            <section>
+                <h2>&#128218; Core CI/CD concepts</h2>
+                <div class="concept-box">
+                    <h3>Two ideas, one workflow</h3>
+                    <p><strong>Continuous Integration</strong> &mdash; every commit triggers automated build + test. <strong>Continuous Delivery / Deployment</strong> &mdash; every passing build is releasable; deployment to production is one button (delivery) or zero buttons (deployment).</p>
+                </div>
+                <div class="key-point"><strong>Why architects care:</strong> deploy frequency is the single best leading indicator of operational health. Teams that deploy daily recover from incidents faster &mdash; the DORA finding.</div>
+                <div class="highlight-box"><strong>Through-line:</strong> Operational Excellence pillar (Module 1) "perform operations as code" lands here. The pipeline <em>is</em> the operations as code.</div>
+                <aside class="notes">If the room hasn't read the Accelerate / DORA work, plant the seed &mdash; it reframes CI/CD as a business outcome, not a developer-tools concern.</aside>
+            </section>
+
+            <!-- The four services -->
+            <section>
+                <h2>&#129520; The AWS code suite</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>CodeCommit</h4>
+                        <p>Managed Git. IAM-controlled. Replaces self-hosted Git for AWS-only shops.</p>
+                    </div>
+                    <div class="card">
+                        <h4>CodeBuild</h4>
+                        <p>Managed build runners. <code>buildspec.yml</code> drives compile / test / package steps.</p>
+                    </div>
+                    <div class="card">
+                        <h4>CodeDeploy</h4>
+                        <p>Pushes artifacts onto EC2, ECS, or Lambda. <code>appspec.yml</code> defines lifecycle hooks.</p>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>And the conductor:</strong> <code>CodePipeline</code> stitches a Source &rarr; Build &rarr; Test &rarr; Deploy graph and runs it on every source-stage change.</div>
+                <div class="highlight-box warning"><strong>Service status note:</strong> AWS is sunsetting CodeCommit for new customers. The patterns still apply &mdash; substitute GitHub or GitLab as the source stage.</div>
+                <aside class="notes">Learners may already use GitHub. Show CodePipeline can take GitHub via CodeStar Connections &mdash; the rest of the pipeline (Build/Deploy) doesn't change.</aside>
+            </section>
+
+            <!-- buildspec / appspec -->
+            <section>
+                <h2>&#128221; <code>buildspec.yml</code> and <code>appspec.yml</code></h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>buildspec.yml (CodeBuild)</h4>
+                        <pre><code class="yaml">version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+  pre_build:
+    commands:
+      - npm ci
+  build:
+    commands:
+      - npm test
+      - npm run build
+artifacts:
+  files:
+    - 'dist/**/*'
+    - 'appspec.yml'</code></pre>
+                    </div>
+                    <div class="card">
+                        <h4>appspec.yml (CodeDeploy, ECS)</h4>
+                        <pre><code class="yaml">version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: &lt;TASK_DEF_ARN&gt;
+        LoadBalancerInfo:
+          ContainerName: web
+          ContainerPort: 8080</code></pre>
+                    </div>
+                </div>
+                <aside class="notes">These two files are the contract between humans and the pipeline. Pipeline JSON / Terraform is the plumbing &mdash; these files are what developers actually edit.</aside>
+            </section>
+
+            <!-- Deployment strategies -->
+            <section>
+                <h2>&#128640; Deployment strategies on AWS</h2>
+                <table>
+                    <tr><th>Strategy</th><th>EC2 (CodeDeploy)</th><th>ECS (CodeDeploy)</th><th>Lambda (CodeDeploy)</th></tr>
+                    <tr><td>In-place all-at-once</td><td>Yes</td><td>n/a</td><td>n/a</td></tr>
+                    <tr><td>In-place rolling</td><td>Yes (half-at-a-time, one-at-a-time)</td><td>Native via ECS rolling</td><td>n/a</td></tr>
+                    <tr><td>Blue/green</td><td>Yes (with ASG swap)</td><td>Yes (target-group flip)</td><td>Yes (alias shift)</td></tr>
+                    <tr><td>Canary / linear</td><td>via blue/green hooks</td><td>via blue/green hooks</td><td>Native (10-percent-5-minutes, etc.)</td></tr>
+                </table>
+                <div class="key-point"><strong>Rule of thumb:</strong> rolling for low-risk, blue/green for atomic rollback, canary when you have the metrics to prove "new version is healthy" automatically.</div>
+                <aside class="notes">This is the slide that ties Module 6 to Module 7. Module 6 named the strategies; this slide names the AWS service that drives each one.</aside>
+            </section>
+
+            <!-- CloudFormation in pipelines -->
+            <section>
+                <h2>&#9729;&#65039; CloudFormation as a pipeline action</h2>
+                <div class="concept-box">
+                    <h3>Infrastructure changes are deployments too</h3>
+                    <p>CodePipeline has a first-class <strong>CloudFormation</strong> deploy action. Source repo holds the template; pipeline creates a change-set, optionally requires manual approval, then executes the change-set. Failures roll back automatically.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Why use it</h4>
+                        <ul>
+                            <li>Drift-free infrastructure</li>
+                            <li>Change-set preview = peer review</li>
+                            <li>Same auditability as application deploys</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Terraform equivalent</h4>
+                        <ul>
+                            <li>CodeBuild stage runs <code>terraform plan</code></li>
+                            <li>Manual approval action</li>
+                            <li>Second CodeBuild runs <code>terraform apply</code></li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Most rooms split &mdash; some teams CFN, some Terraform. The pipeline shape is identical; only the tool changes. Lean to whichever tool the learners use day-to-day.</aside>
+            </section>
+
+            <!-- Cross-account & OIDC -->
+            <section>
+                <h2>&#128274; Cross-account pipelines and OIDC</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Cross-account deploys</h4>
+                        <ul>
+                            <li>Pipeline lives in a <em>tooling</em> account</li>
+                            <li>Artifact bucket has a bucket policy granting target accounts read</li>
+                            <li>Deploy actions assume a role in the target account (dev / stage / prod)</li>
+                            <li>KMS key on the artifact bucket must be shared too</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>OIDC for GitHub Actions</h4>
+                        <ul>
+                            <li>GitHub issues a short-lived JWT per workflow run</li>
+                            <li>Configure GitHub as an IAM identity provider</li>
+                            <li>An IAM role trusts that JWT (scoped by repo / branch)</li>
+                            <li>No long-lived access keys in GitHub secrets</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box success"><strong>Default to OIDC</strong> for any third-party CI hitting AWS. Static keys are an audit finding waiting to happen.</div>
+                <aside class="notes">The OIDC pattern took years to standardize and is now the AWS-recommended way to integrate any third-party CI. Pin this slide for any learner currently using long-lived GitHub keys.</aside>
+            </section>
+
+            <!-- Secrets in pipelines -->
+            <section>
+                <h2>&#129683; Secrets in pipelines</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Where secrets belong</h4>
+                        <ul>
+                            <li><strong>Secrets Manager</strong> &mdash; rotating creds, DB passwords</li>
+                            <li><strong>Parameter Store SecureString</strong> &mdash; cheap config + secrets</li>
+                            <li>Both are referenced from <code>buildspec.yml</code>; values never hit logs</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Where they don't belong</h4>
+                        <ul>
+                            <li>Plain CodeBuild environment variables (visible in logs)</li>
+                            <li>Hardcoded in the source repo</li>
+                            <li>Hardcoded in CloudFormation templates / Terraform vars files</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box warning"><strong>Pipeline IAM hygiene:</strong> the build role only needs <code>secretsmanager:GetSecretValue</code> on specific secrets &mdash; not <code>*</code>.</div>
+                <aside class="notes">Module 9 goes deep on KMS / Secrets Manager. Today, the takeaway is "<code>buildspec.yml</code> can reference Secrets Manager directly &mdash; use that, not env vars."</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>The four services map to lifecycle stages:</strong> CodeCommit (source) &rarr; CodeBuild (compile/test) &rarr; CodeDeploy (release) &rarr; CodePipeline (the orchestrator across them).</div>
+                <div class="key-point"><strong>Pick the deployment strategy by risk:</strong> rolling for routine, blue/green for atomic rollback, canary when alarms can vote on health.</div>
+                <div class="key-point"><strong>Identity hygiene:</strong> OIDC for any third-party CI; cross-account pipelines via assumed roles; Secrets Manager for everything secret.</div>
+                <aside class="notes">Hand off into Lab 7. Remind learners they're wiring four services live &mdash; the win is seeing the pipeline turn green end-to-end on a git push.</aside>
+            </section>
+
+            <!-- Lab 7 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 7: CodeCommit &rarr; CodeBuild &rarr; CodeDeploy</h2>
+                <h3>A working pipeline triggered by a single git push</h3>
+                <ul>
+                    <li>Run <code>terraform apply</code> to create the CodeCommit repo, CodeBuild project, CodeDeploy app/group, and CodePipeline</li>
+                    <li>Clone the repo, edit <code>index.html</code>, commit and push &mdash; observe the pipeline auto-trigger</li>
+                    <li>Watch the Build stage compile, then the Deploy stage push the new artifact to the EC2 deployment group</li>
+                    <li>Hit the ALB; confirm the change is live; deliberately break the build and verify pipeline failure messaging</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~65 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> <code>terraform destroy</code> + delete pipeline artifact bucket
+                </div>
+                <aside class="notes">Common stalls: missing <code>iam:PassRole</code> on the pipeline role; artifact-bucket KMS permissions; CodeDeploy agent not installed on the EC2 target. Have the agent install one-liner ready.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>Where in your current pipeline would you fight hardest to add a manual approval &mdash; and where would you remove one?</p>
+                <aside class="notes">Use this slide while learners finish Lab 7. Defer "how do I migrate from Jenkins?" to a side conversation; the architecture is the same, the executor swaps.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

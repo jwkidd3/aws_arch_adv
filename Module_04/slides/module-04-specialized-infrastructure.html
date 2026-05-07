@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specialized Infrastructure | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#129520; Specialized Infrastructure</h1>
+                <h2>Edge, on-prem, bulk-data, and high-performance compute</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 4 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">This is the "edge cases" module &mdash; literally and figuratively. Most learners won't deploy Outposts, but they should know when to recommend one. Move quickly through any topic the room shrugs at.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Recognize when AWS Outposts, Local Zones, and Wavelength fit a workload</li>
+                    <li class="fragment fade-up">Choose between Snowball, Snowmobile, and online transfer for bulk data movement</li>
+                    <li class="fragment fade-up">Differentiate Storage Gateway modes (File, Volume, Tape) from DataSync</li>
+                    <li class="fragment fade-up">Identify GPU and HPC instance families for accelerated workloads</li>
+                    <li class="fragment fade-up">Wire a Storage Gateway + DataSync flow in the lab</li>
+                </ul>
+                <aside class="notes">~45 minutes of teaching, then a 30-minute lab. End-of-Day-1 energy is low &mdash; keep slides moving and lean on the lab for engagement.</aside>
+            </section>
+
+            <!-- Why specialized -->
+            <section>
+                <h2>&#129513; When the standard region isn't enough</h2>
+                <div class="concept-box">
+                    <h3>Three reasons to leave the region behind</h3>
+                    <p><strong>Latency</strong> &mdash; the speed of light is real. <strong>Sovereignty</strong> &mdash; data must stay on premises. <strong>Bulk movement</strong> &mdash; petabytes don't fit through a 1 Gbps pipe in a reasonable time.</p>
+                </div>
+                <div class="three-columns">
+                    <div class="card"><h4>Push compute out</h4><p>Outposts, Local Zones, Wavelength &mdash; AWS hardware closer to your users or your factory floor.</p></div>
+                    <div class="card"><h4>Pull data in</h4><p>Snow Family, Storage Gateway, DataSync &mdash; staged or streamed bulk transfer.</p></div>
+                    <div class="card"><h4>Pick the right silicon</h4><p>GPU, HPC, FPGA, Inferentia / Trainium &mdash; specialized instance families that earn their cost.</p></div>
+                </div>
+                <aside class="notes">Frame the choice as "buy the right tool, not the closest tool." A standard <code>m</code>-family in <code>us-east-1</code> is the default; everything in this module is what you reach for when the default fails the workload.</aside>
+            </section>
+
+            <!-- Outposts -->
+            <section>
+                <h2>&#127968; AWS Outposts</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>What it is</h4>
+                        <ul>
+                            <li>AWS-managed racks (or 1U/2U servers) installed in your data center</li>
+                            <li>Same APIs and services as the parent region (EC2, EBS, S3 on Outposts, RDS, ECS/EKS)</li>
+                            <li>Connected back to the parent region for control plane &amp; updates</li>
+                            <li>Dedicated capacity &mdash; you size and order it</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>When to choose it</h4>
+                        <ul>
+                            <li>Single-digit-millisecond latency to on-prem systems</li>
+                            <li>Data residency that forbids the cloud</li>
+                            <li>Manufacturing / healthcare / banking with specific compliance constraints</li>
+                            <li>Need for AWS-consistent tooling, on-prem</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box warning"><strong>Reality check:</strong> Outposts is a multi-year financial commitment and a physical install. Recommend it only when the alternative is "we can't move at all."</div>
+                <aside class="notes">Most learners will never deploy Outposts. They should still recognize it as the answer when latency or sovereignty rules out a region. Mention 1U/2U Outposts servers for smaller-footprint use cases.</aside>
+            </section>
+
+            <!-- Local Zones & Wavelength -->
+            <section>
+                <h2>&#128241; Local Zones &amp; Wavelength</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Local Zones</h4>
+                        <ul>
+                            <li>AWS infrastructure in metro areas without a full region</li>
+                            <li>Subset of services (EC2, EBS, ELB, RDS, others)</li>
+                            <li>Single-digit-millisecond latency to nearby end users</li>
+                            <li>Use for media, gaming, real-time rendering, virtual desktops</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Wavelength</h4>
+                        <ul>
+                            <li>AWS compute embedded in <strong>5G carrier networks</strong></li>
+                            <li>Single-digit-millisecond latency from mobile devices</li>
+                            <li>Use for vehicle telemetry, AR/VR, live broadcasting</li>
+                            <li>Reach via the carrier's 5G network, not the public internet</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="key-point"><strong>Mental model:</strong> Local Zone = "AWS in your city". Wavelength = "AWS inside the cell tower". Both extend a parent region's VPC.</div>
+                <aside class="notes">Both are subset-of-services edges. If a workload needs DynamoDB or Lambda specifically, those usually live in the parent region &mdash; design accordingly. Latency benefit is real but you trade service breadth.</aside>
+            </section>
+
+            <!-- Snow Family -->
+            <section>
+                <h2>&#10052;&#65039; AWS Snow Family</h2>
+                <div class="three-columns">
+                    <div class="card"><h4>Snowcone</h4><p>~8 lbs, 8 TB usable, edge compute + DataSync agent built in. Field-deployable.</p></div>
+                    <div class="card"><h4>Snowball Edge</h4><p>~50 lbs, up to ~80 TB (Storage Optimized) or compute-heavy variants with GPUs.</p></div>
+                    <div class="card"><h4>Snowmobile</h4><p>A 45-foot shipping container holding up to 100 PB. Yes, really. Niche but real.</p></div>
+                </div>
+                <div class="highlight-box"><strong>Decision rule:</strong> if your transfer would take longer than ~1 week over your available bandwidth, ship a Snow device instead. Calculate against egress cost too.</div>
+                <aside class="notes">Snow devices arrive encrypted with KMS keys you control. Tracking is via the Snow console &mdash; learners are surprised by how operationally similar it feels to ordering an EBS volume.</aside>
+            </section>
+
+            <!-- Storage Gateway -->
+            <section>
+                <h2>&#128190; AWS Storage Gateway</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Three modes</h4>
+                        <ul>
+                            <li><strong>File Gateway</strong> &mdash; NFS / SMB on-prem, S3 in the back</li>
+                            <li><strong>Volume Gateway</strong> &mdash; iSCSI block, cached or stored modes; snapshots to EBS</li>
+                            <li><strong>Tape Gateway</strong> &mdash; VTL interface for legacy backup software, S3 / Glacier in the back</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>How to deploy</h4>
+                        <ul>
+                            <li>VM appliance (VMware / Hyper-V / KVM) or hardware appliance</li>
+                            <li>Local cache for hot data, async upload to AWS</li>
+                            <li>Encryption in transit and at rest by default</li>
+                            <li>CloudWatch metrics for cache utilization &amp; throughput</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Tape Gateway is the surprise win &mdash; it lets backup admins keep their existing software (NetBackup, Veeam) and quietly retire physical tape. File Gateway is the most common in fresh deployments.</aside>
+            </section>
+
+            <!-- DataSync -->
+            <section>
+                <h2>&#128229; AWS DataSync</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>What it does</h4>
+                        <ul>
+                            <li>High-throughput managed transfer for files &amp; objects</li>
+                            <li>On-prem agent (NFS/SMB/HDFS) <em>or</em> AWS-to-AWS (S3/EFS/FSx)</li>
+                            <li>Incremental, parallelized, with integrity verification</li>
+                            <li>Scheduled or one-shot tasks; CloudWatch metrics &amp; logs</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>vs. Storage Gateway</h4>
+                        <ul>
+                            <li>DataSync is <em>movement</em>: copy / sync / migrate</li>
+                            <li>Storage Gateway is <em>continuous access</em>: a hybrid filesystem</li>
+                            <li>DataSync over DX or VPN; can also use VPC endpoint</li>
+                            <li>Pair them: gateway for steady-state, DataSync for the bulk seed</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box success"><strong>Combo move:</strong> DataSync seeds the initial petabyte; Storage Gateway handles the ongoing read/write traffic from existing on-prem applications.</div>
+                <aside class="notes">DataSync's bandwidth throttling and scheduling are under-appreciated &mdash; you can run nightly transfers without saturating the corporate uplink. Module 13 revisits DataSync for migration workloads.</aside>
+            </section>
+
+            <!-- HPC & GPU -->
+            <section>
+                <h2>&#128640; HPC and GPU instances</h2>
+                <div class="three-columns">
+                    <div class="card"><h4>HPC families</h4><p><code>Hpc6id</code>, <code>Hpc7g</code>: tightly-coupled MPI workloads. Pair with cluster placement groups + Elastic Fabric Adapter (EFA) + FSx for Lustre.</p></div>
+                    <div class="card"><h4>GPU families</h4><p><code>G4</code>, <code>G5</code>, <code>P4</code>, <code>P5</code>: ML training &amp; inference, gaming, rendering. Inferentia / Trainium for cost-optimized ML.</p></div>
+                    <div class="card"><h4>Where they shine</h4><p>Genomics, CFD, seismic, ML training, graphics rendering, video encoding &mdash; workloads where the right silicon eclipses any architectural cleverness.</p></div>
+                </div>
+                <div class="key-point"><strong>EFA</strong> bypasses the OS kernel for MPI traffic &mdash; sub-microsecond latency between cluster nodes. Without it, HPC instances are just expensive general-purpose compute.</div>
+                <aside class="notes">Mention SageMaker briefly &mdash; for ML, learners often reach for SageMaker before hand-rolling on EC2. Module 11 covers application-tier scale; this slide is purely "right silicon for the workload."</aside>
+            </section>
+
+            <!-- Decision matrix -->
+            <section>
+                <h2>&#128202; Decision matrix</h2>
+                <table>
+                    <tr><th>Constraint</th><th>Reach for</th></tr>
+                    <tr><td>Sub-ms latency to on-prem systems, full AWS API surface</td><td>Outposts</td></tr>
+                    <tr><td>Low latency to a metro area's end users</td><td>Local Zones</td></tr>
+                    <tr><td>Single-digit-ms latency from 5G mobile devices</td><td>Wavelength</td></tr>
+                    <tr><td>Move 50 TB &ndash; 100 PB of data once</td><td>Snowball / Snowmobile</td></tr>
+                    <tr><td>Hybrid file share or VTL on-prem, S3 in the back</td><td>Storage Gateway</td></tr>
+                    <tr><td>Bulk file/object copy or recurring sync</td><td>DataSync</td></tr>
+                    <tr><td>Tightly-coupled MPI or large-scale ML training</td><td>HPC / GPU instances + EFA + FSx Lustre</td></tr>
+                </table>
+                <aside class="notes">Save this slide for Q&amp;A. Most learners will pattern-match a current problem to one of these rows &mdash; that's the goal.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Edge family:</strong> Outposts (full region in your DC), Local Zones (metro), Wavelength (carrier 5G). All extend a parent region's VPC.</div>
+                <div class="key-point"><strong>Bulk data:</strong> Snow for offline ship-it transfer; DataSync for managed online sync; Storage Gateway for continuous hybrid access. Combine seeds and steady-state.</div>
+                <div class="key-point"><strong>Right silicon wins:</strong> EFA + FSx Lustre + cluster placement groups for HPC; G/P families for GPU; Inferentia / Trainium for cost-optimized ML.</div>
+                <aside class="notes">Hand off to Lab 4. End-of-Day-1 &mdash; keep cleanup tight so learners can leave on time. The lab is intentionally lighter than Lab 3.</aside>
+            </section>
+
+            <!-- Lab 4 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 4: Storage Gateway + DataSync</h2>
+                <h3>Move bulk data in once, then keep it flowing</h3>
+                <ul>
+                    <li>Deploy a File Gateway VM (or use the provided pre-staged appliance) and create an SMB/NFS file share backed by an S3 bucket in your prefix</li>
+                    <li>Mount the share from a learner EC2 instance; write a few files; verify they appear in S3</li>
+                    <li>Configure a DataSync task from a source location (provided EFS or NFS dataset) to a destination S3 bucket; run the task and inspect transfer metrics in CloudWatch</li>
+                    <li>Compare the two: gateway = continuous access; DataSync = one-shot or scheduled bulk move; <code>terraform destroy</code> when done</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pre-req:</strong> instructor-staged File Gateway appliance &middot; <strong>End of Day 1</strong>
+                </div>
+                <aside class="notes">If the appliance pre-stage failed, fall back to DataSync-only and walk Storage Gateway via the console screenshots. Cleanup is critical &mdash; gateway resources can linger and incur charges.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>Which workload in your portfolio is fighting the wrong instance family &mdash; or living in the wrong place entirely?</p>
+                <aside class="notes">Use this slide while learners finish Lab 4 and pack up for the day. Quick close: thank the room, preview Day 2 (Networks, Containers, CI/CD, HA + DDoS).</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

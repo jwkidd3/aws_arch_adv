@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single to Multiple Accounts | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#127970; Single to Multiple Accounts</h1>
+                <h2>Organizations, OUs, SCPs, and IAM Identity Center at scale</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 2 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">Pivot from Module 1's single-VPC mindset. Most enterprises outgrow a single account by year two. Frame the module as "what changes when one account isn't enough" &mdash; identity, billing, blast radius, and audit boundaries all shift.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Describe AWS Organizations, OUs, and the management account model</li>
+                    <li class="fragment fade-up">Author Service Control Policies (SCPs) and reason about inheritance</li>
+                    <li class="fragment fade-up">Federate workforce access using IAM Identity Center</li>
+                    <li class="fragment fade-up">Compare Control Tower account vending to hand-rolled Organizations</li>
+                    <li class="fragment fade-up">Apply the multi-account pattern in a sandbox OU exercise</li>
+                </ul>
+                <aside class="notes">~45 minutes of teaching, then a 30-minute lab inside a pre-created sandbox OU. Set expectation up front: the shared training account does not let learners create top-level org structures &mdash; the instructor pre-stages the OU.</aside>
+            </section>
+
+            <!-- Why multiple accounts -->
+            <section>
+                <h2>&#129513; Why multiple accounts?</h2>
+                <div class="concept-box">
+                    <h3>The account is the strongest isolation boundary in AWS</h3>
+                    <p>Stronger than VPCs, stronger than IAM roles. Use it on purpose &mdash; for blast-radius, billing, compliance, and team autonomy.</p>
+                </div>
+                <div class="three-columns">
+                    <div class="card"><h4>Security isolation</h4><p>Prod cannot reach into dev. A compromised role in one account can't pivot to another.</p></div>
+                    <div class="card"><h4>Billing &amp; chargeback</h4><p>Per-account cost is the cleanest attribution unit. Tags help, accounts are definitive.</p></div>
+                    <div class="card"><h4>Service limits</h4><p>Quotas are per-account-per-region. Splitting workloads side-steps the noisy-neighbor quota fight.</p></div>
+                </div>
+                <aside class="notes">Push back on "one account per environment". Most mature orgs end up at 1 per workload-per-stage &mdash; dozens to hundreds of accounts. Account creation is free; it's IAM and SCPs that need design.</aside>
+            </section>
+
+            <!-- Organizations -->
+            <section>
+                <h2>&#127970; AWS Organizations</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Core building blocks</h4>
+                        <ul>
+                            <li><strong>Management account</strong> &mdash; payer, root of the org</li>
+                            <li><strong>Organizational Units (OUs)</strong> &mdash; hierarchical grouping</li>
+                            <li><strong>Member accounts</strong> &mdash; the workload accounts</li>
+                            <li><strong>Consolidated billing</strong> &mdash; one invoice, shared discounts</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Common OU shapes</h4>
+                        <ul>
+                            <li>Security OU (log archive, audit)</li>
+                            <li>Infrastructure OU (network, shared services)</li>
+                            <li>Workloads OU &mdash; Prod / Non-Prod sub-OUs</li>
+                            <li>Sandbox OU (this lab lives here)</li>
+                            <li>Suspended OU (deprovision-on-the-way-out)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>Rule of thumb:</strong> design OUs around <em>policy needs</em>, not around teams. Teams change; policy boundaries are durable.</div>
+                <aside class="notes">The management account should run nothing &mdash; it's purely the org root. Resist the temptation to "just put one ALB in there." Once compromised, the management account compromises every member.</aside>
+            </section>
+
+            <!-- SCPs -->
+            <section>
+                <h2>&#128274; Service Control Policies</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>What SCPs are</h4>
+                        <ul>
+                            <li>Guardrails attached to OUs or accounts</li>
+                            <li>Define the <em>maximum</em> permissions in an account</li>
+                            <li><strong>Deny-by-default</strong>: an SCP grants nothing &mdash; IAM still does the granting</li>
+                            <li>Inherited down the OU tree (intersection)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Common patterns</h4>
+                        <ul>
+                            <li>Deny outside approved regions</li>
+                            <li>Deny disabling CloudTrail / Config / GuardDuty</li>
+                            <li>Deny root-user actions in member accounts</li>
+                            <li>Restrict S3 buckets to encryption-required</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box warning"><strong>Watch out:</strong> SCPs do not apply to the management account. Test with full ARN paths; never block AWS Support.</div>
+                <aside class="notes">SCPs are an admission test, not an authorization. They restrict what IAM can authorize. If a developer says "IAM allows it but I get denied," 9 times out of 10 it's an SCP. Demonstrate the policy simulator if time permits.</aside>
+            </section>
+
+            <!-- IAM Identity Center -->
+            <section>
+                <h2>&#128100; IAM Identity Center</h2>
+                <div class="concept-box">
+                    <h3>One sign-in, every account</h3>
+                    <p>The successor to AWS SSO. A workforce identity store that federates into every account in the organization, with permission sets mapped to OU/account assignments.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Identity sources</h4>
+                        <ul>
+                            <li>Built-in directory</li>
+                            <li>Active Directory (AD Connector or Managed AD)</li>
+                            <li>External IdP via SAML 2.0 (Azure AD / Entra ID, Okta)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Permission sets</h4>
+                        <ul>
+                            <li>Reusable IAM policy bundles</li>
+                            <li>Assigned per (group, account)</li>
+                            <li>Provision IAM roles into target accounts on-demand</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">If learners still issue long-lived IAM users with access keys, this is the slide where you confront that. Identity Center plus short-lived role chaining is the right answer for human access. CLI v2 supports it natively (aws sso login).</aside>
+            </section>
+
+            <!-- Control Tower -->
+            <section>
+                <h2>&#127914; AWS Control Tower</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>What it gives you</h4>
+                        <ul>
+                            <li>Opinionated landing zone (Security + Log Archive accounts)</li>
+                            <li>Account Factory for vended accounts</li>
+                            <li>Mandatory + optional <strong>guardrails</strong> (preventive SCPs and detective Config rules)</li>
+                            <li>Drift detection</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Trade-offs</h4>
+                        <ul>
+                            <li>Faster zero-to-multi-account than DIY</li>
+                            <li>Less flexible &mdash; expects its own OU layout</li>
+                            <li>Harder to retrofit onto an existing complex org</li>
+                            <li>Customizations via CfCT or Account Factory for Terraform (AFT)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box success"><strong>Greenfield?</strong> Start with Control Tower. <strong>Mature org?</strong> Layer Identity Center + SCPs onto your existing Organizations and skip the lift.</div>
+                <aside class="notes">Today's lab demonstrates Control Tower flow in slides only &mdash; the shared account can't deploy a fresh landing zone. Walk the screenshots, then drop into the scoped sandbox exercise.</aside>
+            </section>
+
+            <!-- Cross-account access -->
+            <section>
+                <h2>&#128279; Cross-account access patterns</h2>
+                <table>
+                    <tr><th>Pattern</th><th>Mechanism</th><th>Use when</th></tr>
+                    <tr><td>Human read across accounts</td><td>Identity Center permission set</td><td>Operators investigating an incident</td></tr>
+                    <tr><td>CI/CD deploys into target</td><td>IAM role + <code>sts:AssumeRole</code> from build account</td><td>Pipelines spanning dev/prod</td></tr>
+                    <tr><td>Centralized logs</td><td>S3 bucket policy in Log Archive, write from members</td><td>CloudTrail / VPC Flow Logs aggregation</td></tr>
+                    <tr><td>Shared services consumed</td><td>RAM share or VPC endpoint service (PrivateLink)</td><td>One team owns a platform other teams consume</td></tr>
+                </table>
+                <div class="key-point"><strong>Trust policy</strong> on the target role + <strong>permissions policy</strong> on the caller's identity = the two-key pattern that runs every cross-account flow.</div>
+                <aside class="notes">External ID and condition keys (aws:PrincipalOrgID) are the safety net for cross-account roles. Demonstrate a tiny trust policy with both. Module 9 reuses this pattern for KMS key policies.</aside>
+            </section>
+
+            <!-- Terraform multi-account -->
+            <section>
+                <h2>&#129520; Terraform across accounts</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Provider aliasing</h4>
+                        <ul>
+                            <li>One <code>aws</code> provider per target account, distinguished by <code>alias =</code></li>
+                            <li>Each provider uses <code>assume_role { role_arn = ... }</code></li>
+                            <li>Resources select a provider with <code>provider = aws.prod</code></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Account vending in code</h4>
+                        <ul>
+                            <li><code>aws_organizations_account</code> resource creates members</li>
+                            <li>Bootstrap role (<code>OrganizationAccountAccessRole</code>) runs from the management account</li>
+                            <li>Wire SCP attachments via <code>aws_organizations_policy_attachment</code></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box danger"><strong>Blast-radius warning:</strong> a single <code>terraform destroy</code> with the wrong provider alias can wipe the wrong account. Use separate state files per account.</div>
+                <aside class="notes">Show a 10-line provider block with two aliases live, if possible. State separation is the durable habit; aliases alone aren't enough &mdash; use one workspace or one state file per account.</aside>
+            </section>
+
+            <!-- Logging & monitoring -->
+            <section>
+                <h2>&#128203; Centralized logging &amp; monitoring</h2>
+                <div class="three-columns">
+                    <div class="card"><h4>Log Archive account</h4><p>Receives org-wide CloudTrail, Config snapshots, S3 access logs. Read-mostly.</p></div>
+                    <div class="card"><h4>Audit / Security account</h4><p>Runs GuardDuty delegated admin, Security Hub aggregator, IAM Access Analyzer.</p></div>
+                    <div class="card"><h4>Member accounts</h4><p>Forward logs out, run workloads, can't disable trail or stream.</p></div>
+                </div>
+                <div class="highlight-box"><strong>Pro tip:</strong> enable an org-level CloudTrail from the management account so members literally cannot turn it off &mdash; pair with an SCP that denies <code>cloudtrail:StopLogging</code>.</div>
+                <aside class="notes">This is the shape Control Tower bakes in by default. Even DIY orgs should adopt it &mdash; centralized logging is the single highest-leverage governance control.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Account = blast radius.</strong> Use OUs to group by policy need, not by team org chart.</div>
+                <div class="key-point"><strong>SCPs guard, IAM grants.</strong> An SCP is a ceiling, not a permission. Consolidated billing comes free with Organizations.</div>
+                <div class="key-point"><strong>Identity Center + permission sets</strong> replace long-lived IAM users for humans. Control Tower automates account vending if you're starting fresh.</div>
+                <aside class="notes">Hand off to Lab 2. Remind learners that the sandbox OU is shared &mdash; their resource prefix prevents collisions. Cleanup script keys off Owner tag.</aside>
+            </section>
+
+            <!-- Lab 2 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 2: Organizations / SCP / IAM Identity Center</h2>
+                <h3>Operate inside the pre-created sandbox OU</h3>
+                <ul>
+                    <li>Inspect the sandbox OU layout and the pre-vended target sub-account in the management console</li>
+                    <li>Author and attach a deny-region SCP scoped to your learner prefix; verify it blocks an attempt outside the approved region</li>
+                    <li>Create an IAM Identity Center permission set, assign it to your group, and assume into the target account via the SSO portal</li>
+                    <li>Apply the provided Terraform that uses provider aliasing + <code>assume_role</code> to deploy a tagged S3 bucket cross-account; <code>destroy</code> when done</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Constraint:</strong> shared account &mdash; do not create top-level OUs &middot; <strong>Sandbox OU is pre-created by the instructor</strong>
+                </div>
+                <aside class="notes">Reinforce: full Control Tower deployment is shown via screenshots only. The lab uses the pre-staged sandbox OU. Anyone who tries to create a top-level org structure will hit the SCP &mdash; that's expected.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>How many accounts does your org run today &mdash; and which boundary do you wish you'd drawn earlier?</p>
+                <aside class="notes">Use this slide while learners work the lab. Good open: ask whether anyone has hit the "we put a workload in the management account" anti-pattern and what it took to extract.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

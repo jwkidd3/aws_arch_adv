@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Large-Scale Applications | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#127760; Large-Scale Applications</h1>
+                <h2>Multi-tier, autoscaling, geo-routing &mdash; design at scale</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 11 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">30-minute discussion-led slot. No console lab &mdash; close with a paired design exercise. The room is hot from Module 10; build on the data-store choices they just made.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Design stateless compute tiers that scale on the right signal</li>
+                    <li class="fragment fade-up">Pick the autoscaling trigger that actually maps to user pain</li>
+                    <li class="fragment fade-up">Decouple services with SNS, SQS, and EventBridge</li>
+                    <li class="fragment fade-up">Layer caching at edge, app, and database tiers</li>
+                    <li class="fragment fade-up">Choose Route 53 latency vs. geolocation routing for global users</li>
+                </ul>
+                <aside class="notes">Frame this as design literacy. They won't build today &mdash; they'll choose. The paired exercise at the end is where the learning lands.</aside>
+            </section>
+
+            <!-- Stateless compute -->
+            <section>
+                <h2>&#9889; Stateless compute is the foundation</h2>
+                <div class="concept-box">
+                    <h3>Why stateless wins at scale</h3>
+                    <p>Any instance can serve any request. Failures are recoverable by replacement. Autoscaling is just a count change &mdash; no state migration, no warm-up choreography.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Where state goes</h4>
+                        <ul>
+                            <li>Sessions &rarr; ElastiCache (Redis) or DynamoDB</li>
+                            <li>User uploads &rarr; S3 (presigned URLs)</li>
+                            <li>Long-running work &rarr; SQS + Step Functions</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Patterns to avoid</h4>
+                        <ul>
+                            <li>Sticky sessions on the load balancer</li>
+                            <li>Local disk caches that diverge per node</li>
+                            <li>Singletons that block horizontal scale</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Where state goes" is the slide that unlocks the rest. If a team can't answer this question, autoscaling triggers don't matter yet.</aside>
+            </section>
+
+            <!-- Autoscaling triggers -->
+            <section>
+                <h2>&#128202; Autoscaling triggers &mdash; pick the right signal</h2>
+                <table>
+                    <tr><th>Trigger</th><th>Best for</th><th>Watch out</th></tr>
+                    <tr><td>CPU utilization</td><td>Compute-bound workloads</td><td>Misleading on I/O-bound apps</td></tr>
+                    <tr><td>Memory (CloudWatch agent)</td><td>JVM, Node, Python apps</td><td>Not a default metric &mdash; agent required</td></tr>
+                    <tr><td>Custom CloudWatch metric</td><td>Queue depth, business KPI</td><td>Lag if metric publish is sparse</td></tr>
+                    <tr><td><strong>Requests-per-target (ALB)</strong></td><td>Web tiers behind ALB</td><td>Most-used in practice &mdash; tracks user pain directly</td></tr>
+                </table>
+                <div class="key-point"><strong>Default to requests-per-target</strong> for web tiers. CPU and memory are secondary signals; they tell you <em>why</em> scaling fired, not <em>whether</em> it should.</div>
+                <aside class="notes">This is the slide most teams need. CPU is the trigger people reach for because it's the default &mdash; and it's wrong for most web workloads. Make them say "requests-per-target" out loud.</aside>
+            </section>
+
+            <!-- Event-driven -->
+            <section>
+                <h2>&#128260; Event-driven design</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>SNS</h4>
+                        <p>Pub/sub fan-out. One publisher, many subscribers. Use when downstreams are independent.</p>
+                    </div>
+                    <div class="card">
+                        <h4>SQS</h4>
+                        <p>Durable queue. Producer-consumer decoupling, retries, DLQs. Use when downstream may lag.</p>
+                    </div>
+                    <div class="card">
+                        <h4>EventBridge</h4>
+                        <p>Schema-aware event bus. Rule-based routing, SaaS integrations. Use for workflow orchestration.</p>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>Decoupling buys you:</strong> independent scaling per service, retries without caller awareness, easier blue/green per consumer, and a clean failure boundary.</div>
+                <aside class="notes">Most teams over-pick SNS. EventBridge replaces a lot of glue code. SQS is the boring durable choice and usually correct.</aside>
+            </section>
+
+            <!-- Serverless and microservices -->
+            <section>
+                <h2>&#128640; Serverless &amp; microservices</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Serverless building blocks</h4>
+                        <ul>
+                            <li>Lambda &mdash; per-request compute, no server fleet</li>
+                            <li>Step Functions &mdash; orchestrate multi-step async flows</li>
+                            <li>API Gateway &mdash; front door + throttling + auth</li>
+                            <li>Aurora Serverless v2 &mdash; pay for capacity used</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Microservices on containers</h4>
+                        <ul>
+                            <li>ECS / EKS for long-running services</li>
+                            <li>Service discovery via Cloud Map or service mesh</li>
+                            <li>API Gateway or ALB as ingress</li>
+                            <li>Per-service deploy pipeline (Module 7)</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Don't religious-war serverless vs. containers. Real systems mix. Ask the room how their teams split &mdash; usually edge APIs are Lambda, core services are containers.</aside>
+            </section>
+
+            <!-- Caching -->
+            <section>
+                <h2>&#128190; Caching at every tier</h2>
+                <table>
+                    <tr><th>Layer</th><th>Service</th><th>What it caches</th></tr>
+                    <tr><td>Edge</td><td>CloudFront</td><td>Static assets, cacheable HTML, signed URLs</td></tr>
+                    <tr><td>Application</td><td>ElastiCache (Redis / Memcached)</td><td>Session state, computed results, hot keys</td></tr>
+                    <tr><td>Database</td><td>DAX (DynamoDB)</td><td>In-memory acceleration for DDB reads</td></tr>
+                </table>
+                <div class="highlight-box warning"><strong>Cache stampede:</strong> when a popular key expires and 10,000 clients miss simultaneously. Mitigate with jittered TTLs, request coalescing, or pre-warming.</div>
+                <aside class="notes">Caching is a reliability lever as much as a performance one &mdash; until it isn't. Stampedes can take a database down faster than the un-cached load did.</aside>
+            </section>
+
+            <!-- Route 53 routing -->
+            <section>
+                <h2>&#127758; Route 53 &mdash; latency vs. geolocation</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Latency-based routing</h4>
+                        <ul>
+                            <li>Routes to the lowest-latency Region for the resolver</li>
+                            <li>Optimizes for <strong>user experience</strong></li>
+                            <li>Default for global web apps</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Geolocation routing</h4>
+                        <ul>
+                            <li>Routes by the resolver's country / continent</li>
+                            <li>Optimizes for <strong>data residency / compliance</strong></li>
+                            <li>Use when EU users <em>must</em> hit eu-* Regions</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="key-point"><strong>Pick latency unless you have a reason to pick geo.</strong> Geo wins when regulation or licensing forces hard borders &mdash; otherwise latency gives better UX.</div>
+                <aside class="notes">The room conflates these constantly. Geolocation is a compliance tool; latency is a performance tool. Pair with health checks for failover either way.</aside>
+            </section>
+
+            <!-- Observability -->
+            <section>
+                <h2>&#128270; Observability at scale</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>Metrics</h4>
+                        <p>CloudWatch &mdash; system + custom metrics, alarms, composite alarms.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Tracing</h4>
+                        <p>X-Ray + OpenTelemetry &mdash; request flow across services, latency hotspots.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Logs</h4>
+                        <p>CloudWatch Logs Insights, structured logging, log-to-metric filters.</p>
+                    </div>
+                </div>
+                <div class="highlight-box success"><strong>Cost lever:</strong> Graviton2 across the fleet (~20% cheaper, comparable perf), Fargate Spot for batch and dev, S3 Intelligent-Tiering for asset stores.</div>
+                <aside class="notes">Observability is the price of admission for microservices &mdash; if you can't trace a request, you can't debug it. OpenTelemetry is the durable bet across vendors.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Stateless first:</strong> push state to ElastiCache, DynamoDB, or S3 &mdash; then autoscaling becomes a count change.</div>
+                <div class="key-point"><strong>Requests-per-target</strong> is the trigger most web tiers should reach for &mdash; CPU is a backup signal, not the primary.</div>
+                <div class="key-point"><strong>Design for failure:</strong> queues between services, jittered cache TTLs, multi-AZ everywhere &mdash; assume every dependency will misbehave.</div>
+                <aside class="notes">Hand off into the design exercise. Don't over-build the recap &mdash; the exercise is the assessment.</aside>
+            </section>
+
+            <!-- Design exercise callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128161; Design exercise</h2>
+                <h3>Pair up &mdash; design a multi-tier autoscaling architecture</h3>
+                <ul>
+                    <li>Scenario: a global e-commerce site, ~5M MAU, traffic spiky around launches, EU + US user base</li>
+                    <li>Decide: autoscaling triggers per tier (CPU / memory / custom metric / requests-per-target)</li>
+                    <li>Decide: Route 53 latency vs. geolocation &mdash; justify the choice</li>
+                    <li>Sketch: web tier, app tier, data tier, caching layer, queues between async paths</li>
+                    <li>Share-back: 90 seconds per pair, room asks one challenge question</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~12 min pair work + ~8 min share-back (~20 min activity) &middot; <strong>No console</strong> &middot; <strong>Whiteboard or shared doc</strong>
+                </div>
+                <aside class="notes">Push pairs to commit to one trigger per tier. No "it depends." If they pick CPU for the web tier, ask why &mdash; the answer is usually because it was the default. Pull them back to requests-per-target.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>Which scaling trigger does your team default to today &mdash; and would you change it?</p>
+                <aside class="notes">Quick floor questions, then break for lunch. Module 12 (cost) picks up after lunch with a real Cost Explorer walkthrough.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

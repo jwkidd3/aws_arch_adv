@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Securing Data | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#128272; Securing Data</h1>
+                <h2>Encryption, keys, and secrets &mdash; the durable controls</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 9 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">Day 3 opener &mdash; the room is fresh. Lead with the key-policy-vs-IAM-policy point; it's the punchline that lands all the other KMS material.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Classify data and map classes to encryption requirements</li>
+                    <li class="fragment fade-up">Use KMS customer-managed keys with the right policy model</li>
+                    <li class="fragment fade-up">Manage secrets with Secrets Manager (and know when Parameter Store is enough)</li>
+                    <li class="fragment fade-up">Recognize when CloudHSM is required and when it isn't</li>
+                    <li class="fragment fade-up">Audit key usage with CloudTrail and detect anomalies with GuardDuty</li>
+                </ul>
+                <aside class="notes">~45 minutes of teaching, then a 30-minute lab where learners create a CMK, encrypt an S3 object with aws:kms, and rotate a Secrets Manager secret.</aside>
+            </section>
+
+            <!-- Data classification -->
+            <section>
+                <h2>&#128218; Data classification &mdash; map class to control</h2>
+                <table>
+                    <tr><th>Class</th><th>Examples</th><th>Encryption requirement</th></tr>
+                    <tr><td>Public</td><td>Marketing site, public docs</td><td>TLS in transit; rest at-rest is optional</td></tr>
+                    <tr><td>Internal</td><td>Employee directory, build artifacts</td><td>TLS + AWS-managed encryption at rest</td></tr>
+                    <tr><td>Confidential</td><td>Customer PII, source code</td><td>TLS + customer-managed KMS keys; key policies; audit</td></tr>
+                    <tr><td>Restricted</td><td>PHI, PCI, secrets, credentials</td><td>CMK + Secrets Manager / CloudHSM; access logged &amp; reviewed</td></tr>
+                </table>
+                <div class="key-point"><strong>Without classification you over- or under-protect every dataset.</strong> Get the four-tier table written down before you pick services.</div>
+                <aside class="notes">Most orgs have an existing data classification scheme. Use theirs. The goal is mapping &mdash; not invention.</aside>
+            </section>
+
+            <!-- KMS basics -->
+            <section>
+                <h2>&#128273; AWS KMS &mdash; the key concepts</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Key types</h4>
+                        <ul>
+                            <li><strong>AWS-owned</strong> &mdash; transparent, free, no visibility</li>
+                            <li><strong>AWS-managed</strong> &mdash; <code>aws/&lt;service&gt;</code>, free, auto-rotated</li>
+                            <li><strong>Customer-managed</strong> &mdash; your CMK, your policy, $1/mo</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Patterns</h4>
+                        <ul>
+                            <li>Envelope encryption &mdash; KMS encrypts a data key; data key encrypts the data</li>
+                            <li>Automatic annual rotation (CMKs)</li>
+                            <li>Aliases &mdash; <code>alias/orders-prod</code> &mdash; outlive key IDs</li>
+                            <li>Multi-region keys &mdash; same key material across regions</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Envelope encryption is the model that makes KMS scale &mdash; KMS never sees your bulk data. Mention it explicitly; learners who skip the concept get confused later.</aside>
+            </section>
+
+            <!-- Key policies -->
+            <section>
+                <h2>&#128221; Key policies vs IAM policies</h2>
+                <div class="concept-box">
+                    <h3>The key policy is the source of truth</h3>
+                    <p>Unlike S3 buckets or other resources, a KMS key's <strong>key policy</strong> is the primary access control. IAM policies do not grant access to a key unless the key policy permits IAM to do so.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Key policy</h4>
+                        <ul>
+                            <li>Attached to the key itself</li>
+                            <li>Required &mdash; every CMK has one</li>
+                            <li>Must explicitly delegate to IAM if you want IAM principals to use the key</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>IAM policy</h4>
+                        <ul>
+                            <li>Attached to a user / role</li>
+                            <li>Only effective when key policy allows IAM</li>
+                            <li>Useful for cross-team grants once the key policy opens the door</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box danger"><strong>Failure mode:</strong> remove the root principal from a key policy and you can lock yourself out of the key permanently. AWS will not bail you out.</div>
+                <aside class="notes">This is the single highest-value slide in the module. Repeat the rule out loud: "key policy is the source of truth." Most learners come in thinking IAM is enough.</aside>
+            </section>
+
+            <!-- Secrets Manager -->
+            <section>
+                <h2>&#128274; Secrets Manager &mdash; rotation as a feature</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>What it stores</h4>
+                        <ul>
+                            <li>DB credentials (RDS, Aurora, Redshift, DocumentDB)</li>
+                            <li>API keys, OAuth tokens</li>
+                            <li>Arbitrary key/value JSON</li>
+                            <li>Encrypted with KMS &mdash; bring your own CMK</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Rotation model</h4>
+                        <ul>
+                            <li>Lambda function rotates the secret on a schedule</li>
+                            <li>AWS-provided templates for RDS / Aurora</li>
+                            <li>Custom Lambda for anything else</li>
+                            <li>Versioning &mdash; <code>AWSCURRENT</code> / <code>AWSPENDING</code> / <code>AWSPREVIOUS</code></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box success">Apps fetch the secret at runtime via the SDK &mdash; no secret in env vars, no secret in source code, rotation is invisible to the app.</div>
+                <aside class="notes">The four-stage version model (current/pending/previous) is what makes rotation safe &mdash; old connections finish on the previous version while new connections use the current.</aside>
+            </section>
+
+            <!-- Parameter Store comparison -->
+            <section>
+                <h2>&#9878;&#65039; Secrets Manager vs Parameter Store</h2>
+                <table>
+                    <tr><th>Dimension</th><th>Secrets Manager</th><th>Parameter Store (SecureString)</th></tr>
+                    <tr><td>Cost</td><td>$0.40 / secret / month + API calls</td><td>Free tier (Standard); paid Advanced</td></tr>
+                    <tr><td>Rotation</td><td>Built-in, Lambda-driven</td><td>None (roll your own)</td></tr>
+                    <tr><td>Cross-account sharing</td><td>Resource policies, KMS grants</td><td>Limited &mdash; via KMS sharing</td></tr>
+                    <tr><td>Size limit</td><td>64 KB</td><td>4 KB Standard / 8 KB Advanced</td></tr>
+                    <tr><td>Best for</td><td>DB creds, rotated secrets, prod</td><td>Config values, non-rotating tokens</td></tr>
+                </table>
+                <div class="key-point"><strong>Rule of thumb:</strong> if it rotates, Secrets Manager. If it doesn't, Parameter Store SecureString. Don't pay $0.40/mo for static config.</div>
+                <aside class="notes">Many orgs use both &mdash; Secrets Manager for credentials, Parameter Store for everything else. That's the right pattern.</aside>
+            </section>
+
+            <!-- CloudHSM -->
+            <section>
+                <h2>&#128737;&#65039; CloudHSM &mdash; when KMS isn't enough</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Why CloudHSM exists</h4>
+                        <ul>
+                            <li>FIPS 140-2 Level 3 &mdash; tamper-evident hardware</li>
+                            <li>Single-tenant HSM appliance in your VPC</li>
+                            <li>You hold the master keys &mdash; AWS cannot</li>
+                            <li>PKCS#11, JCE, OpenSSL engine support</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>When to reach for it</h4>
+                        <ul>
+                            <li>Regulated workloads requiring FIPS 140-2 L3</li>
+                            <li>Custom key store &mdash; KMS keys backed by your HSM</li>
+                            <li>SSL/TLS offload, code signing, document signing CAs</li>
+                            <li>Cross-cloud / on-prem key custody</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box warning"><strong>Cost reminder:</strong> CloudHSM bills per-hour per HSM, in cluster, ~$1,800/month for a redundant pair. Default to KMS unless a control says you can't.</div>
+                <aside class="notes">Almost everyone defaults to KMS and that's the right answer. CloudHSM is for the small set of regulated cases &mdash; payments, healthcare crypto, gov workloads.</aside>
+            </section>
+
+            <!-- Encryption at rest / in transit -->
+            <section>
+                <h2>&#128272; Encryption at rest &amp; in transit</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>At rest &mdash; KMS-integrated</h4>
+                        <ul>
+                            <li>S3 &mdash; SSE-S3, SSE-KMS, dual-layer (DSSE-KMS)</li>
+                            <li>RDS / Aurora &mdash; encrypted at create time</li>
+                            <li>EBS &mdash; default-encrypt at the account level</li>
+                            <li>DynamoDB, EFS, FSx, Redshift &mdash; all KMS-aware</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>In transit &mdash; TLS via ACM</h4>
+                        <ul>
+                            <li>ACM provisions and renews public certs free</li>
+                            <li>Attach to ALB, NLB, CloudFront, API Gateway</li>
+                            <li>Private CA (ACM PCA) for internal mTLS</li>
+                            <li>RDS / Aurora support TLS to the engine</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">Turn on <strong>EBS default encryption</strong> per region as a one-line account policy. There is no good reason to leave it off.</div>
+                <aside class="notes">EBS default encryption is the easy win that surprisingly many accounts miss. Mention it as a "fix this on Monday" item.</aside>
+            </section>
+
+            <!-- Audit + detection -->
+            <section>
+                <h2>&#128269; Audit and detection</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>CloudTrail</h4>
+                        <p>Every KMS API call is logged &mdash; <code>Encrypt</code>, <code>Decrypt</code>, <code>GenerateDataKey</code>. Required for forensic answers like "who decrypted that file?"</p>
+                    </div>
+                    <div class="card">
+                        <h4>GuardDuty</h4>
+                        <p>ML-based detection of unusual API patterns &mdash; credential exfil, anomalous decrypt volume, port-scanning. Always-on, low-friction.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Macie</h4>
+                        <p>Discovers and classifies sensitive data in S3 &mdash; PII, credentials, financial. Use to validate the classification table is reality.</p>
+                    </div>
+                </div>
+                <div class="key-point"><strong>The triad:</strong> CloudTrail tells you what happened, GuardDuty tells you it was unusual, Macie tells you what was at stake.</div>
+                <aside class="notes">All three are easy to enable and cheap relative to a single incident. The combination is the audit story you'll need when compliance asks.</aside>
+            </section>
+
+            <!-- Recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Classify first.</strong> Public / Internal / Confidential / Restricted maps cleanly to AWS-owned, AWS-managed, customer-managed, and CloudHSM-backed keys.</div>
+                <div class="key-point"><strong>Key policy is the source of truth.</strong> IAM does not grant access to a CMK unless the key policy permits IAM to do so. Don't lock yourself out.</div>
+                <div class="key-point"><strong>Rotate by default.</strong> Secrets Manager for credentials with rotation Lambdas; Parameter Store for static config; CloudTrail + GuardDuty for the audit trail.</div>
+                <aside class="notes">Hand off into Lab 9. Learners create a CMK, encrypt an S3 object with aws:kms, store a DB password in Secrets Manager, and run the rotation Lambda manually.</aside>
+            </section>
+
+            <!-- Lab 9 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 9: KMS + Secrets Manager</h2>
+                <h3>Build a CMK, encrypt an object, rotate a secret</h3>
+                <ul>
+                    <li>Terraform a customer-managed KMS key with a key policy that delegates to your IAM role</li>
+                    <li>Upload an object to S3 with <code>--sse aws:kms --sse-kms-key-id alias/&lt;your-cmk&gt;</code></li>
+                    <li>Store a placeholder DB password in Secrets Manager, encrypted with the same CMK</li>
+                    <li>Trigger the provided rotation Lambda manually; observe <code>AWSCURRENT</code> / <code>AWSPREVIOUS</code> labels swap</li>
+                    <li>Open CloudTrail and find the <code>kms:Decrypt</code> events from the rotation</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Cleanup:</strong> schedule key deletion (7-day window) before <code>terraform destroy</code>
+                </div>
+                <aside class="notes">Schedule key deletion not immediate delete &mdash; learners should see the 7-day pending-deletion window. The rotation Lambda is provided in the terraform/ directory.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>What's the riskiest unrotated secret in your environment right now?</p>
+                <aside class="notes">Use this slide while learners finish the lab. The honest answer is usually a CI/CD service account key &mdash; tee that up for tomorrow's pipeline conversation if the room is willing.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

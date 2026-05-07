@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Availability and DDoS Protection | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#128737;&#65039; High Availability and DDoS Protection</h1>
+                <h2>Designing for survival at the edge</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 8 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">Closing slot of Day 2. Energy is mixed at this hour &mdash; lead with the threat-model story, not the service catalog. Ask the room: who has been on the receiving end of an L7 flood?</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Design multi-AZ and multi-region topologies for HA</li>
+                    <li class="fragment fade-up">Compose ALB / NLB, Auto Scaling Groups, and Route 53 health checks</li>
+                    <li class="fragment fade-up">Pick a disaster recovery model that matches RPO/RTO and budget</li>
+                    <li class="fragment fade-up">Defend public workloads with WAF, Shield, Network Firewall, and Firewall Manager</li>
+                    <li class="fragment fade-up">Build a working WAF + ALB + ASG stack and watch a rule fire</li>
+                </ul>
+                <aside class="notes">~45 minutes of teaching, then a 30-minute lab. The lab is the pay-off &mdash; learners trigger a SQLi-shape request and watch the WAF block in CloudWatch logs.</aside>
+            </section>
+
+            <!-- HA fundamentals -->
+            <section>
+                <h2>&#127970; HA fundamentals on AWS</h2>
+                <div class="concept-box">
+                    <h3>Two axes of redundancy</h3>
+                    <p>HA on AWS is the product of <strong>multi-AZ</strong> (within a region) and <strong>multi-region</strong> (across regions). Most workloads need the first; a small set need both.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Multi-AZ &mdash; the floor</h4>
+                        <ul>
+                            <li>RDS Multi-AZ, ElastiCache, EFS</li>
+                            <li>ASG across &ge; 2 AZs</li>
+                            <li>ALB cross-zone load balancing</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Multi-region &mdash; the ceiling</h4>
+                        <ul>
+                            <li>Route 53 latency or failover routing</li>
+                            <li>S3 cross-region replication</li>
+                            <li>Aurora Global Database, DynamoDB Global Tables</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Multi-AZ is free architecture; multi-region is paid architecture." Don't go multi-region without an RPO/RTO requirement and a budget owner.</aside>
+            </section>
+
+            <!-- Load balancing -->
+            <section>
+                <h2>&#9878;&#65039; ALB vs NLB &mdash; pick the right tool</h2>
+                <table>
+                    <tr><th>Dimension</th><th>ALB</th><th>NLB</th></tr>
+                    <tr><td>Layer</td><td>L7 (HTTP/HTTPS)</td><td>L4 (TCP/UDP/TLS)</td></tr>
+                    <tr><td>Routing</td><td>Path / host / header / method</td><td>By target group only</td></tr>
+                    <tr><td>WAF integration</td><td>Yes (direct association)</td><td>No (front with CloudFront + WAF)</td></tr>
+                    <tr><td>Throughput</td><td>High (scales transparently)</td><td>Very high &mdash; millions of rps</td></tr>
+                    <tr><td>Static IPs</td><td>No</td><td>Yes (one per AZ)</td></tr>
+                </table>
+                <div class="key-point"><strong>Default:</strong> ALB for HTTP workloads. Reach for NLB when you need TCP, static IPs for partner allow-lists, or extreme throughput.</div>
+                <aside class="notes">Most learners reach for ALB by default and that's right. Mention Gateway Load Balancer briefly if asked &mdash; it's for inline appliance insertion, not application traffic.</aside>
+            </section>
+
+            <!-- Auto Scaling Groups -->
+            <section>
+                <h2>&#128200; Auto Scaling Groups</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Building blocks</h4>
+                        <ul>
+                            <li>Launch template &mdash; AMI, instance type, user data</li>
+                            <li>Min / desired / max capacity</li>
+                            <li>Subnets across &ge; 2 AZs</li>
+                            <li>Target group attachment</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Scaling policies</h4>
+                        <ul>
+                            <li><strong>Target tracking</strong> &mdash; the default; pick a metric &amp; target</li>
+                            <li>Step scaling &mdash; for asymmetric scale-up vs scale-down</li>
+                            <li>Scheduled &mdash; known traffic shape (business hours)</li>
+                            <li>Predictive &mdash; ML-driven, forward-looking</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">Use <strong>warm pools</strong> when boot time is the bottleneck &mdash; pre-initialized instances, stopped, ready to start in seconds.</div>
+                <aside class="notes">Target tracking on CPU at 50% is the right default for most apps. Step scaling matters when scale-up needs to be aggressive but scale-down should be slow.</aside>
+            </section>
+
+            <!-- Route 53 -->
+            <section>
+                <h2>&#127760; Route 53 health checks &amp; routing</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>Failover</h4>
+                        <p>Primary + secondary; secondary takes over when health check fails. RTO = TTL + detection time.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Latency-based</h4>
+                        <p>Send each user to the lowest-latency healthy region. Useful for global apps with regional stacks.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Weighted</h4>
+                        <p>Split traffic by percentage &mdash; canary deployments, gradual region cutover.</p>
+                    </div>
+                </div>
+                <div class="key-point"><strong>Health checks</strong> probe an endpoint (HTTP / HTTPS / TCP) every 10 or 30 seconds. Pair with CloudWatch alarms for paging.</div>
+                <aside class="notes">Lower TTLs make failover faster but cost more in DNS queries. 60s is a reasonable production default.</aside>
+            </section>
+
+            <!-- DR models -->
+            <section>
+                <h2>&#128683; Disaster recovery models</h2>
+                <table>
+                    <tr><th>Model</th><th>RPO / RTO</th><th>Cost</th><th>What runs in the DR region</th></tr>
+                    <tr><td>Backup &amp; restore</td><td>Hours / hours</td><td>Lowest</td><td>Snapshots + AMIs only</td></tr>
+                    <tr><td>Pilot light</td><td>Minutes / tens of minutes</td><td>Low</td><td>DB replicating; app servers off</td></tr>
+                    <tr><td>Warm standby</td><td>Seconds / minutes</td><td>Medium</td><td>Full stack, scaled-down</td></tr>
+                    <tr><td>Multi-site active-active</td><td>Near-zero / near-zero</td><td>Highest</td><td>Full stack, taking traffic</td></tr>
+                </table>
+                <div class="highlight-box warning"><strong>The hard part:</strong> models work only if you actually test them. Test failover quarterly &mdash; or you don't have a DR plan, you have a DR theory.</div>
+                <aside class="notes">Most workloads land at pilot light or warm standby. Active-active is appropriate for revenue-critical user-facing systems where every minute of outage is a board-level event.</aside>
+            </section>
+
+            <!-- DDoS overview -->
+            <section>
+                <h2>&#128165; DDoS &mdash; the threat surface</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Layer 3 / 4 attacks</h4>
+                        <ul>
+                            <li>SYN floods, UDP reflection, NTP / DNS amplification</li>
+                            <li>Goal: saturate bandwidth or connection table</li>
+                            <li>Defense: CloudFront / Global Accelerator + Shield</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Layer 7 attacks</h4>
+                        <ul>
+                            <li>HTTP floods, slow-loris, application abuse</li>
+                            <li>Goal: exhaust application or DB</li>
+                            <li>Defense: WAF rate-based rules, bot control</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="key-point"><strong>The architecture rule:</strong> push the front door to the edge. CloudFront + Route 53 absorb floods that would otherwise hit your ALB and origin.</div>
+                <aside class="notes">Most "DDoS" incidents teams see are L7 application abuse, not volumetric floods. WAF rate-based rules are usually the right first lever.</aside>
+            </section>
+
+            <!-- Shield -->
+            <section>
+                <h2>&#128737;&#65039; AWS Shield &mdash; Standard vs Advanced</h2>
+                <table>
+                    <tr><th>&nbsp;</th><th>Shield Standard</th><th>Shield Advanced</th></tr>
+                    <tr><td>Cost</td><td>Free, automatic</td><td><strong>$3,000 / month</strong> commitment, 1-year minimum</td></tr>
+                    <tr><td>Protection</td><td>L3/L4 common attacks</td><td>L3/L4/L7, larger attacks, near-real-time visibility</td></tr>
+                    <tr><td>WAF included</td><td>No</td><td>Yes &mdash; WAF charges absorbed</td></tr>
+                    <tr><td>SRT access</td><td>No</td><td>24/7 Shield Response Team</td></tr>
+                    <tr><td>Cost protection</td><td>No</td><td>DDoS-driven scaling charges refunded</td></tr>
+                </table>
+                <div class="highlight-box danger"><strong>The price discussion:</strong> Advanced is real money. Justify with a revenue-impact threshold &mdash; above $X/hour of downtime cost, Advanced pays for itself on one event.</div>
+                <aside class="notes">Have the price ready. Most learners assume Shield Advanced is the default; it isn't &mdash; it's a budget conversation with the business.</aside>
+            </section>
+
+            <!-- WAF -->
+            <section>
+                <h2>&#128274; AWS WAF &mdash; managed rule groups</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Where WAF attaches</h4>
+                        <ul>
+                            <li>CloudFront distributions (global)</li>
+                            <li>Application Load Balancers (regional)</li>
+                            <li>API Gateway, AppSync, Cognito User Pools</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Rule sources</h4>
+                        <ul>
+                            <li><strong>AWS-managed rule groups</strong> &mdash; Core, Known Bad Inputs, SQLi, XSS, Linux, IP reputation</li>
+                            <li>AWS Marketplace rule groups (3rd-party)</li>
+                            <li>Custom rules &mdash; rate-based, regex, geo-match</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="key-point"><strong>Start with managed:</strong> Core + Known Bad Inputs + SQLi. Run them in <em>count mode</em> first to see false positives before switching to <em>block</em>.</div>
+                <aside class="notes">The "count first" discipline is what separates working WAF deployments from outage-causing WAF deployments. Always count, then block.</aside>
+            </section>
+
+            <!-- Network Firewall + Firewall Manager + Lambda@Edge -->
+            <section>
+                <h2>&#128737;&#65039; Network Firewall, Firewall Manager, Lambda@Edge</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>AWS Network Firewall</h4>
+                        <p>VPC-level stateful firewall. Suricata-compatible rules, deep packet inspection, domain allow/block. Sits between subnets and the internet gateway.</p>
+                    </div>
+                    <div class="card">
+                        <h4>AWS Firewall Manager</h4>
+                        <p>Cross-account, org-wide policy for WAF, Shield Advanced, Network Firewall, security groups. Auto-applies as new accounts onboard.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Lambda@Edge / CloudFront Functions</h4>
+                        <p>Run code at edge locations. Header rewrites, A/B routing, light auth checks. CloudFront Functions for ultra-cheap; Lambda@Edge for fuller runtime.</p>
+                    </div>
+                </div>
+                <div class="highlight-box">Multi-account orgs should run a Firewall Manager policy that pins a baseline WAF web ACL on every public ALB &mdash; new accounts inherit it automatically.</div>
+                <aside class="notes">Firewall Manager is the under-used piece. Without it, security teams chase WAF compliance per account; with it, one policy enforces it.</aside>
+            </section>
+
+            <!-- Recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>HA shape:</strong> multi-AZ is the floor, multi-region is the ceiling. Pick a DR model that matches RPO/RTO &mdash; and test it.</div>
+                <div class="key-point"><strong>DDoS shape:</strong> push the front door to the edge. CloudFront + WAF + Shield handle the bulk; Network Firewall covers east-west and egress.</div>
+                <div class="key-point"><strong>Org shape:</strong> use Firewall Manager so new accounts inherit a baseline web ACL automatically &mdash; security at scale, not per-account whack-a-mole.</div>
+                <aside class="notes">Hand off into Lab 8. Learners build the ALB + ASG + WAF stack, then trigger a SQLi-shape request and watch the WAF block fire in CloudWatch.</aside>
+            </section>
+
+            <!-- Lab 8 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 8: WAF + ALB + Auto Scaling Group</h2>
+                <h3>Build it, attack it, watch the block</h3>
+                <ul>
+                    <li>Terraform an ALB + ASG (2 AZs, t3.micro web servers running a tiny Flask echo app)</li>
+                    <li>Create a WAF web ACL with AWS-managed rule groups: Core, Known Bad Inputs, SQLi</li>
+                    <li>Associate the web ACL to the ALB; enable WAF logging to CloudWatch Logs</li>
+                    <li>Send a normal <code>curl</code> &mdash; observe a 200; send <code>?id=1' OR '1'='1</code> &mdash; observe a 403 from WAF</li>
+                    <li>Open CloudWatch Logs Insights, filter for <code>action = "BLOCK"</code>, identify which managed rule fired</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Cleanup:</strong> <code>terraform destroy</code> when the block is verified
+                </div>
+                <aside class="notes">Keep the ASG at min=desired=2 to avoid scaling churn during the lab. The "BLOCK" log entry is the moment of payoff &mdash; make sure every learner sees it before destroying.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>Where does your org sit on the Shield Standard vs Advanced decision &mdash; and why?</p>
+                <aside class="notes">Use this slide while learners finish the lab. Steer the room toward business-impact framing, not feature-comparison framing.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

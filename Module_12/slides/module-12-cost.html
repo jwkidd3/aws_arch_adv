@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing Cost | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#128176; Optimizing Cost</h1>
+                <h2>Pricing models, right-sizing, FinOps in practice</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 12 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">30-min teach + 15-min Cost Explorer walkthrough. Cost is where the room finally gets to argue about real numbers. Lean into specifics.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Match pricing model (On-Demand, Savings Plans, RI, Spot) to workload shape</li>
+                    <li class="fragment fade-up">Use Compute Optimizer and Graviton2 to right-size compute</li>
+                    <li class="fragment fade-up">Cut storage and egress with S3 Lifecycle, Intelligent-Tiering, gp3, VPC endpoints</li>
+                    <li class="fragment fade-up">Operate Cost Explorer, Budgets, and Cost Anomaly Detection</li>
+                    <li class="fragment fade-up">Apply FinOps habits &mdash; tagging, ownership, weekly review</li>
+                </ul>
+                <aside class="notes">Cost is the most actionable module of the course &mdash; learners can usually take one slide back to work and save real money on Monday.</aside>
+            </section>
+
+            <!-- Pricing models -->
+            <section>
+                <h2>&#128181; AWS pricing models &mdash; pick the shape</h2>
+                <table>
+                    <tr><th>Model</th><th>Best for</th><th>Trade-off</th></tr>
+                    <tr><td>On-Demand</td><td>Spiky, unpredictable, short-lived</td><td>Highest unit cost</td></tr>
+                    <tr><td>Savings Plans (Compute)</td><td>Steady baseline across EC2/Fargate/Lambda</td><td>1- or 3-year commit</td></tr>
+                    <tr><td>Reserved Instances</td><td>RDS, Redshift, ElastiCache (instance-class lock)</td><td>Less flexible than SP</td></tr>
+                    <tr><td>Spot</td><td>Batch, dev, fault-tolerant fleets, Fargate Spot</td><td>Can be interrupted with 2 min notice</td></tr>
+                </table>
+                <div class="key-point"><strong>Default playbook:</strong> Compute Savings Plan for steady baseline + On-Demand for headroom + Spot for everything that can tolerate interruption. Three knobs cover most fleets.</div>
+                <aside class="notes">Compute Savings Plans replaced most use cases for Convertible RIs &mdash; they cover EC2, Fargate, Lambda. RIs are still right for managed databases.</aside>
+            </section>
+
+            <!-- Compute optimization -->
+            <section>
+                <h2>&#9881;&#65039; Compute right-sizing</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Compute Optimizer</h4>
+                        <ul>
+                            <li>Free service, opt-in per account</li>
+                            <li>Recommends EC2, ASG, Lambda, EBS sizes</li>
+                            <li>Reads 14 days of CloudWatch data</li>
+                            <li>Tells you "you're paying for x, you need y"</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Graviton2 / Graviton3</h4>
+                        <ul>
+                            <li>ARM-based EC2 / Fargate / RDS / ElastiCache</li>
+                            <li>~20% cheaper, often better perf-per-watt</li>
+                            <li>Container images: build multi-arch once</li>
+                            <li>Try Fargate Spot for non-critical tiers</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Compute Optimizer is the cheapest 20% you can save without thinking. Graviton is the next 20% if your stack supports it &mdash; most modern languages do.</aside>
+            </section>
+
+            <!-- Storage optimization -->
+            <section>
+                <h2>&#128190; Storage &amp; data transfer</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>S3</h4>
+                        <ul>
+                            <li>Lifecycle &rarr; Glacier / Deep Archive</li>
+                            <li>Intelligent-Tiering for unknown patterns</li>
+                            <li>Delete incomplete multipart uploads</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>EBS</h4>
+                        <ul>
+                            <li>gp3 over gp2 &mdash; cheaper + tunable IOPS</li>
+                            <li>Snapshot lifecycle policies</li>
+                            <li>Delete unattached volumes</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Network</h4>
+                        <ul>
+                            <li>VPC endpoints for S3 / DDB &mdash; kills NAT cost</li>
+                            <li>CloudFront for egress to internet</li>
+                            <li>Watch cross-AZ chatter</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box warning"><strong>The hidden line item:</strong> NAT Gateway egress for traffic that should be going through a VPC endpoint. Audit it &mdash; the savings are usually four-figure monthly.</div>
+                <aside class="notes">VPC endpoints are the single most under-used cost lever. NAT Gateway processing fees add up fast on chatty fleets.</aside>
+            </section>
+
+            <!-- Database cost -->
+            <section>
+                <h2>&#128202; Database cost levers</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Aurora</h4>
+                        <ul>
+                            <li>Aurora Serverless v2 &mdash; capacity scales with load</li>
+                            <li>Aurora pause/resume for dev (Serverless v1)</li>
+                            <li>Reader scaling separate from writer</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>DynamoDB</h4>
+                        <ul>
+                            <li>On-Demand for unpredictable traffic</li>
+                            <li>Provisioned + Auto Scaling for steady</li>
+                            <li>TTL to prune old items</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">Match the billing mode to the load shape, not to what's familiar. On-Demand DynamoDB is cheaper than provisioned <em>if</em> traffic is genuinely spiky.</div>
+                <aside class="notes">Aurora Serverless v2 finally scales fast enough for production OLTP &mdash; v1 had cold-start issues that pushed teams off it. Worth re-evaluating if they tried it years ago.</aside>
+            </section>
+
+            <!-- Cost tools -->
+            <section>
+                <h2>&#128269; AWS cost tooling</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>Cost Explorer</h4>
+                        <p>Trends, grouping by tag/service, forecasting, saved reports.</p>
+                    </div>
+                    <div class="card">
+                        <h4>AWS Budgets</h4>
+                        <p>Spend / usage / RI utilization budgets with email + SNS alerts.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Cost Anomaly Detection</h4>
+                        <p>ML-based anomaly alerts on services or accounts &mdash; near-zero setup.</p>
+                    </div>
+                </div>
+                <div class="key-point"><strong>FinOps stack in 4 steps:</strong> tag everything &rarr; Cost Explorer saved reports per team &rarr; Budget alerts at 80% / 100% / 120% &rarr; Anomaly Detection on top services.</div>
+                <aside class="notes">PDFs in module folder cover Budgets and Cost Explorer in depth &mdash; reference them as deeper reading. Don't read the PDFs to the room.</aside>
+            </section>
+
+            <!-- Tagging and FinOps -->
+            <section>
+                <h2>&#127991;&#65039; Tagging &amp; FinOps culture</h2>
+                <div class="concept-box">
+                    <h3>Tagging is the load-bearing principle</h3>
+                    <p>Without consistent tags, every cost report is "EC2 in us-east-1" &mdash; useless for accountability. Activate cost allocation tags in the billing console (one-way switch) and enforce via SCPs or AWS Config.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Minimum tag set</h4>
+                        <ul>
+                            <li><code>Owner</code> &mdash; person or team</li>
+                            <li><code>Environment</code> &mdash; prod / staging / dev</li>
+                            <li><code>CostCenter</code> &mdash; chargeback target</li>
+                            <li><code>Application</code> &mdash; logical workload</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>FinOps habits</h4>
+                        <ul>
+                            <li>Weekly cost review with engineering</li>
+                            <li>Show-back / charge-back per team</li>
+                            <li>Anomaly alerts to a Slack channel</li>
+                            <li>Quarterly Savings Plan true-up</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Analyze and attribute" from the Well-Architected Cost pillar &mdash; tagging is how you operationalize it. Tag enforcement is where most teams give up; SCPs make it durable.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Pricing model fit:</strong> Compute Savings Plan + On-Demand headroom + Spot for tolerant work covers most fleets.</div>
+                <div class="key-point"><strong>Top three quick wins:</strong> S3 Intelligent-Tiering, gp3 over gp2, VPC endpoints to kill NAT egress.</div>
+                <div class="key-point"><strong>FinOps is a habit, not a tool:</strong> tags + weekly review + anomaly alerts &mdash; the tools follow.</div>
+                <aside class="notes">Hand off into the Cost Explorer walkthrough. If the training account is fresh and lacks billing data, demo from instructor screen.</aside>
+            </section>
+
+            <!-- Lab 12 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 12: Cost Explorer guided walkthrough</h2>
+                <h3>Build a saved report grouped by Course=archadv</h3>
+                <ul>
+                    <li>Open Cost Explorer (Billing &amp; Cost Management console)</li>
+                    <li>Set granularity to <strong>Daily</strong>, time range to last 7 days</li>
+                    <li>Filter: tag <code>Course = archadv</code>; group by <code>Service</code></li>
+                    <li>Save as &quot;archadv weekly burn&quot; &mdash; this becomes a re-runnable report</li>
+                    <li>Bonus: create a Budget at $X with email alert at 80% / 100%</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~30 minutes &middot; <strong>Note:</strong> Cost Explorer needs ~24h of data &mdash; if the account is fresh, instructor demos and shares a screenshot pack; learners then build a Budget alarm + tag-based report against the staged data.
+                </div>
+                <aside class="notes">The tag filter only works if learners have been tagging consistently &mdash; that's why Module 1 set the convention. Show-back loop closes here.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>What's the biggest unexpected line item on your last AWS bill?</p>
+                <aside class="notes">Floor question: invite war stories. NAT, cross-region replication, idle dev environments &mdash; the room will surface real lessons.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

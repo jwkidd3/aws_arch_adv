@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capstone Project | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#127942; Capstone Project</h1>
+                <h2>Design + partial-build a 3-tier web app on AWS</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 14 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div>
+                </div>
+                <aside class="notes">75 minutes total. Most of it is hands-on. Slides are short on purpose &mdash; the assessment is the work, not the lecture.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Capstone objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Synthesize 13 modules into one coherent architecture</li>
+                    <li class="fragment fade-up">Produce a labeled architecture diagram with explicit trade-offs</li>
+                    <li class="fragment fade-up">Reuse Terraform modules from earlier labs &mdash; don't start from scratch</li>
+                    <li class="fragment fade-up">Run <code>terraform init</code> + <code>plan</code> cleanly &mdash; apply is optional</li>
+                    <li class="fragment fade-up">Walk through your decisions to peers &mdash; defend the trade-offs</li>
+                </ul>
+                <aside class="notes">Set the bar early. A working diagram + clean plan + named decisions is the success criterion. A fully-applied stack is a bonus, not the goal.</aside>
+            </section>
+
+            <!-- Scenario brief -->
+            <section>
+                <h2>&#128221; Scenario brief</h2>
+                <div class="concept-box">
+                    <h3>The ask</h3>
+                    <p>Design a production-grade 3-tier web application for a mid-size SaaS. ~100K MAU, mostly US, growing into EU next year. Compliance: standard data-protection. Budget: cost-conscious but reliability matters.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Required components</h4>
+                        <ul>
+                            <li>VPC with public + private subnets, multi-AZ</li>
+                            <li>ALB &rarr; ASG (web/app tier)</li>
+                            <li>Aurora (relational data) + S3 (assets)</li>
+                            <li>CloudFront in front of static + dynamic</li>
+                            <li>WAF on the ALB</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Decisions to defend</h4>
+                        <ul>
+                            <li>Autoscaling trigger (Module 11)</li>
+                            <li>Pricing model mix (Module 12)</li>
+                            <li>Data store choice (Module 10)</li>
+                            <li>Multi-AZ vs. multi-Region (Module 8)</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Read the brief out loud. Constraints matter as much as components &mdash; cost-conscious changes the answer.</aside>
+            </section>
+
+            <!-- Time plan -->
+            <section>
+                <h2>&#9201;&#65039; Time plan</h2>
+                <table>
+                    <tr><th>Time</th><th>Activity</th><th>Output</th></tr>
+                    <tr><td>0:00 &ndash; 0:15</td><td>Pair: architecture diagram</td><td>Labeled diagram, components named</td></tr>
+                    <tr><td>0:15 &ndash; 1:00</td><td>Solo / pair: Terraform reuse from earlier modules</td><td><code>init</code> + <code>plan</code> runs cleanly</td></tr>
+                    <tr><td>1:00 &ndash; 1:15</td><td>Walkthroughs (90 sec per pair)</td><td>Diagram + 3 decisions named &amp; justified</td></tr>
+                </table>
+                <div class="highlight-box success"><strong>Realistic outcome:</strong> a working diagram + Terraform that runs <code>plan</code> cleanly + a list of open decisions. Apply is fine if you have time; not required.</div>
+                <aside class="notes">Be strict on the timer. The diagram is the contract for the Terraform &mdash; pairs that skip the diagram blow the second segment.</aside>
+            </section>
+
+            <!-- Reuse map -->
+            <section>
+                <h2>&#128230; What to reuse from earlier labs</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>Foundations</h4>
+                        <ul>
+                            <li>Module 1 &mdash; VPC + subnets</li>
+                            <li>Module 5 &mdash; endpoints / TGW patterns</li>
+                            <li>Module 8 &mdash; ALB + ASG + WAF</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Data &amp; security</h4>
+                        <ul>
+                            <li>Module 9 &mdash; KMS + Secrets Manager</li>
+                            <li>Module 10 &mdash; Aurora module</li>
+                            <li>Module 6 &mdash; Fargate (if you containerize)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Edge &amp; ops</h4>
+                        <ul>
+                            <li>Module 8 &mdash; CloudFront + WAF</li>
+                            <li>Module 7 &mdash; CI/CD pipeline (optional)</li>
+                            <li>Module 11 &mdash; ASG triggers</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="key-point"><strong>Don't write new HCL if a module already provides it.</strong> Stitch existing modules together &mdash; that's the realistic architect workflow.</div>
+                <aside class="notes">Tell pairs to clone the modules they need into a new <code>capstone/</code> directory and wire variables. Resist new code.</aside>
+            </section>
+
+            <!-- Acceptance bar -->
+            <section>
+                <h2>&#9989; Acceptance bar</h2>
+                <div class="key-point"><strong>Diagram:</strong> all required components present, labeled, with arrows for traffic and data flow.</div>
+                <div class="key-point"><strong>Terraform:</strong> <code>terraform init</code> succeeds; <code>terraform plan</code> shows resources being created with no errors. Apply optional.</div>
+                <div class="key-point"><strong>Decisions:</strong> three open trade-offs named in your walkthrough &mdash; autoscaling trigger, pricing-model mix, and multi-AZ vs. multi-Region. Justify each in one sentence.</div>
+                <aside class="notes">Pacing: at the 60-minute mark, lock the work and switch to walkthroughs even if Terraform isn't clean. Walkthroughs are the assessment moment.</aside>
+            </section>
+
+            <!-- Capstone callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128640; Capstone &mdash; build it now</h2>
+                <h3>25 min framing &amp; recap &middot; 15 min diagram &middot; 25 min Terraform &middot; 10 min walkthroughs</h3>
+                <ul>
+                    <li>Pair up; pick a shared whiteboard / drawing tool for the diagram</li>
+                    <li>Required: VPC, ALB, ASG, Aurora, S3, CloudFront, WAF, multi-AZ</li>
+                    <li>Reuse Terraform modules from Module 1, 8, 9, 10 &mdash; don't rewrite</li>
+                    <li>Goal: <code>init</code> + <code>plan</code> runs cleanly; <code>apply</code> is bonus</li>
+                    <li>Walkthrough: 90 sec each &mdash; diagram + 3 decisions justified</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Tag everything</strong> <code>Owner=&lt;name&gt; Course=archadv</code> &middot; <strong>Cleanup</strong> with <code>terraform destroy</code> if you applied
+                </div>
+                <aside class="notes">Walk the room while pairs work. Common stuck-points: Aurora subnet groups, WAF web ACL association, CloudFront origin config. Have hint snippets ready in INSTRUCTOR.md.</aside>
+            </section>
+
+            <!-- Course close -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#127881; Course close</h2>
+                <p>One architecture decision you're changing Monday.</p>
+                <aside class="notes">Final round-the-room: each learner names one concrete change they'll bring back to work. Quick &mdash; one sentence each. Closes the course on commitment, not theory.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

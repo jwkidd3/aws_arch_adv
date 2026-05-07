@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviewing Architecting Concepts | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#127959;&#65039; Reviewing Architecting Concepts</h1>
+                <h2>The Well-Architected Framework as a working tool</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 1 of 14</h3>
+                <div class="module-progress">
+                    <div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">Welcome the room. Set expectations: this is a 3-day course, hands-on with Terraform throughout. Today we cover foundations, multi-account, hybrid connectivity, and specialized infrastructure. Ask the room to share their current AWS scope in one sentence each.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Recall the six pillars of the Well-Architected Framework</li>
+                    <li class="fragment fade-up">Apply the design principles that flow from each pillar</li>
+                    <li class="fragment fade-up">Use the framework as a review tool, not a checklist</li>
+                    <li class="fragment fade-up">Recognize where each pillar pays off (and where pillars conflict)</li>
+                    <li class="fragment fade-up">Reinforce VPC fundamentals via console + Terraform build</li>
+                </ul>
+                <aside class="notes">~45 minutes of teaching, then a 30-minute lab where learners build a Well-Architected VPC. The lab compares console clicks to Terraform HCL.</aside>
+            </section>
+
+            <!-- The framework -->
+            <section>
+                <h2>&#128218; The Well-Architected Framework</h2>
+                <div class="concept-box">
+                    <h3>What it is</h3>
+                    <p>A set of <strong>questions</strong> AWS uses to evaluate workloads &mdash; structured around six pillars. The framework is a review lens, not an architecture pattern.</p>
+                </div>
+                <div class="key-point">
+                    <strong>Use it as:</strong> a periodic workload review (every 6&ndash;12 months), a launch-readiness checklist, and a vocabulary your team shares when arguing trade-offs.
+                </div>
+                <aside class="notes">Most teams have heard of the framework but haven't actually used the tool. Free to use in the AWS console: Well-Architected Tool &rarr; define a workload &rarr; answer questions &rarr; get a heat-map of risks.</aside>
+            </section>
+
+            <!-- The six pillars -->
+            <section>
+                <h2>&#127963;&#65039; The six pillars</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>Operational Excellence</h4>
+                        <p>Run and monitor systems to deliver business value; continuously improve.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Security</h4>
+                        <p>Protect information, systems, and assets while delivering value.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Reliability</h4>
+                        <p>Recover from failures, scale to demand, and avoid resource saturation.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Performance Efficiency</h4>
+                        <p>Use compute resources efficiently as demand and technology evolve.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Cost Optimization</h4>
+                        <p>Avoid unneeded costs; understand spend and where to allocate it.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Sustainability</h4>
+                        <p>Minimize environmental impact of running cloud workloads.</p>
+                    </div>
+                </div>
+                <aside class="notes">Sustainability was added in 2021 (the sixth pillar). Don't dwell on it &mdash; mention it exists, but the original five carry the bulk of audit weight.</aside>
+            </section>
+
+            <!-- Operational Excellence -->
+            <section>
+                <h2>&#9881;&#65039; Operational Excellence</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Design principles</h4>
+                        <ul>
+                            <li>Perform operations as code</li>
+                            <li>Make frequent, small, reversible changes</li>
+                            <li>Refine procedures frequently</li>
+                            <li>Anticipate failure</li>
+                            <li>Learn from operational events</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>AWS services that move the needle</h4>
+                        <ul>
+                            <li>CloudFormation / CDK / Terraform</li>
+                            <li>Systems Manager (patching, automation)</li>
+                            <li>CloudWatch + EventBridge</li>
+                            <li>X-Ray for distributed tracing</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Operations as code" is the durable principle &mdash; it's what makes the other four achievable. Systems Manager is under-used; teams rebuild what it offers in custom scripts.</aside>
+            </section>
+
+            <!-- Security -->
+            <section>
+                <h2>&#128274; Security</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Design principles</h4>
+                        <ul>
+                            <li>Implement strong identity foundation</li>
+                            <li>Apply security at all layers</li>
+                            <li>Automate security best practices</li>
+                            <li>Protect data in transit and at rest</li>
+                            <li>Prepare for security events</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>AWS services that move the needle</h4>
+                        <ul>
+                            <li>IAM Identity Center, IAM, SCPs</li>
+                            <li>KMS, Secrets Manager, ACM</li>
+                            <li>GuardDuty, Security Hub, Macie</li>
+                            <li>VPC, WAF, Shield, Network Firewall</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>Coming up:</strong> Module 2 (Organizations &amp; SCPs), Module 8 (WAF/Shield), Module 9 (KMS &amp; Secrets Manager).</div>
+                <aside class="notes">"Strong identity foundation" is the load-bearing principle &mdash; everything else fails open without it. Tease the multi-account discussion in Module 2.</aside>
+            </section>
+
+            <!-- Reliability -->
+            <section>
+                <h2>&#128293; Reliability</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Design principles</h4>
+                        <ul>
+                            <li>Automatically recover from failure</li>
+                            <li>Test recovery procedures</li>
+                            <li>Scale horizontally to increase availability</li>
+                            <li>Stop guessing capacity</li>
+                            <li>Manage change in automation</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>AWS services that move the needle</h4>
+                        <ul>
+                            <li>Multi-AZ everything (RDS, ElastiCache, EFS)</li>
+                            <li>Auto Scaling Groups, ELB, Route 53 health checks</li>
+                            <li>S3 cross-region replication</li>
+                            <li>AWS Backup, Resilience Hub</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Test recovery procedures" is what most teams skip &mdash; they have backups but don't restore from them. Resilience Hub is newer and worth a mention.</aside>
+            </section>
+
+            <!-- Performance Efficiency -->
+            <section>
+                <h2>&#9889; Performance Efficiency</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Design principles</h4>
+                        <ul>
+                            <li>Democratize advanced technologies (managed services)</li>
+                            <li>Go global in minutes</li>
+                            <li>Use serverless architectures</li>
+                            <li>Experiment more often</li>
+                            <li>Mechanical sympathy &mdash; pick the right tool</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>AWS services that move the needle</h4>
+                        <ul>
+                            <li>Lambda, Fargate (covered in Module 6 &amp; 11)</li>
+                            <li>CloudFront, Global Accelerator</li>
+                            <li>Aurora, DynamoDB, ElastiCache</li>
+                            <li>Compute Optimizer for right-sizing</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Mechanical sympathy" &mdash; don't put OLTP traffic on Redshift; don't put analytics on DynamoDB. Module 10 is the expanded version of this.</aside>
+            </section>
+
+            <!-- Cost Optimization -->
+            <section>
+                <h2>&#128176; Cost Optimization</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Design principles</h4>
+                        <ul>
+                            <li>Adopt a consumption model</li>
+                            <li>Measure overall efficiency</li>
+                            <li>Stop spending on undifferentiated heavy lifting</li>
+                            <li>Analyze and attribute expenditure</li>
+                            <li>Use managed services to reduce TCO</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>AWS services that move the needle</h4>
+                        <ul>
+                            <li>Cost Explorer, Budgets, Cost Anomaly Detection</li>
+                            <li>Savings Plans, Reserved Instances, Spot</li>
+                            <li>S3 Intelligent-Tiering, EBS gp3</li>
+                            <li>Compute Optimizer</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>Coming up:</strong> Module 12 walks the cost tools end-to-end with a hands-on Cost Explorer report.</div>
+                <aside class="notes">"Analyze and attribute" is the durable principle. Without tagging, every other cost lever is conjecture.</aside>
+            </section>
+
+            <!-- Pillars in conflict -->
+            <section>
+                <h2>&#9878;&#65039; The pillars conflict &mdash; that's the point</h2>
+                <table>
+                    <tr><th>Pull A</th><th>Pull B</th><th>Decision lens</th></tr>
+                    <tr><td>Reliability (multi-region)</td><td>Cost (single region)</td><td>RPO/RTO requirement vs. revenue at risk</td></tr>
+                    <tr><td>Performance (provisioned)</td><td>Cost (on-demand)</td><td>Steady vs. spiky load shape</td></tr>
+                    <tr><td>Security (private subnets only)</td><td>Operational ease (public access)</td><td>Threat model + bastion / SSM Session Manager</td></tr>
+                    <tr><td>Performance (caching)</td><td>Reliability (cache stampede)</td><td>Cache stampede mitigation, TTL strategy</td></tr>
+                </table>
+                <div class="key-point"><strong>The framework's value:</strong> it makes the trade-offs <em>explicit</em>. The right answer is "we picked A because of B" &mdash; not "we have all six pillars covered."</div>
+                <aside class="notes">This is the slide that distinguishes architects from builders. Discussion-worthy: ask the room which pull they live with most often.</aside>
+            </section>
+
+            <!-- Review process -->
+            <section>
+                <h2>&#128203; The Well-Architected Review process</h2>
+                <ol>
+                    <li class="fragment fade-up"><strong>Define a workload</strong> &mdash; not the whole company; one workload</li>
+                    <li class="fragment fade-up"><strong>Answer the questions</strong> per pillar (the WA Tool walks you)</li>
+                    <li class="fragment fade-up"><strong>Generate the heat-map</strong> &mdash; high / medium / low risks per pillar</li>
+                    <li class="fragment fade-up"><strong>Prioritize and address</strong> high risks; defer mediums with intent</li>
+                    <li class="fragment fade-up"><strong>Re-review</strong> after major changes or every 6&ndash;12 months</li>
+                </ol>
+                <div class="highlight-box success">A clean review surfaces 5&ndash;15 issues per workload &mdash; even on workloads the team thought were tight.</div>
+                <aside class="notes">The Well-Architected Tool in the AWS console makes the review tractable &mdash; otherwise the framework feels like 200 pages of text.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Six pillars:</strong> Operational Excellence &middot; Security &middot; Reliability &middot; Performance &middot; Cost &middot; Sustainability.</div>
+                <div class="key-point"><strong>How to use it:</strong> a review tool with explicit trade-offs &mdash; not a checklist of always-on requirements.</div>
+                <div class="key-point"><strong>Course through-line:</strong> we'll touch each pillar in later modules &mdash; Security in 2/8/9, Reliability in 8, Performance in 6/10/11, Cost in 12.</div>
+                <aside class="notes">Hand off into Lab 1. The lab is intentionally a refresher &mdash; if the room is sharp, skip the console steps and go straight to Terraform.</aside>
+            </section>
+
+            <!-- Lab 1 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 1: Well-Architected VPC</h2>
+                <h3>Build the same VPC two ways &mdash; console and Terraform</h3>
+                <ul>
+                    <li>Part A (console): VPC, public + private subnets, IGW, route table, EC2 in the public subnet</li>
+                    <li>Part B (Terraform): review the provided HCL, <code>terraform init</code> &amp; <code>apply</code>, verify the same topology in the console</li>
+                    <li>Validation: SSH (or SSM) to the EC2; confirm reachability; <code>terraform destroy</code> when done</li>
+                    <li>Discuss: which workflow do you reach for in production, and why?</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Both Part A (console) and Part B (Terraform) — compare them</strong>
+                </div>
+                <aside class="notes">Each learner uses their own resource prefix. Tag everything <code>Owner=&lt;name&gt; Course=archadv</code>. Cleanup script keys off these tags.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>Which pillar is the hardest in your org to actually move?</p>
+                <aside class="notes">Use this slide while learners finish Lab 1. Floor-only questions; defer how-to-implement questions to the relevant later module.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

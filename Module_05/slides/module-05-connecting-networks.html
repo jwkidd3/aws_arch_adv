@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting Networks | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#128225; Connecting Networks</h1>
+                <h2>Transit Gateway, VPC endpoints, and shared networking</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 5 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+                </div>
+                <aside class="notes">Day 2 opener. Re-anchor the room: Module 3 covered AWS-to-on-prem; this module covers AWS-to-AWS at scale. 30-minute teach, 45-minute lab. Heavier lab than usual &mdash; budget breaks accordingly.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Choose between VPC peering, Transit Gateway, and Direct Connect Gateway</li>
+                    <li class="fragment fade-up">Design TGW route tables to enforce prod / non-prod isolation</li>
+                    <li class="fragment fade-up">Use VPC sharing via RAM to centralize network ownership</li>
+                    <li class="fragment fade-up">Apply gateway and interface (PrivateLink) endpoints to keep traffic off the public internet</li>
+                    <li class="fragment fade-up">Recognize central-egress and inspection-VPC patterns</li>
+                </ul>
+                <aside class="notes">Pacing: 4 minutes per content slide max. The lab does the deep work &mdash; don't over-explain TGW route tables here; learners will configure them in Lab 5.</aside>
+            </section>
+
+            <!-- VPC Peering -->
+            <section>
+                <h2>&#128279; VPC peering &mdash; the simplest hop</h2>
+                <div class="concept-box">
+                    <h3>One-to-one, no transitive routing</h3>
+                    <p>A peering connection is a private link between exactly two VPCs. If A peers with B and B peers with C, A still <strong>cannot</strong> reach C &mdash; you'd need a third peering A&harr;C.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Use it when</h4>
+                        <ul>
+                            <li>Small number of VPCs (&lt;10)</li>
+                            <li>Stable topology, infrequent changes</li>
+                            <li>You want lowest cost per GB transferred</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Avoid it when</h4>
+                        <ul>
+                            <li>You'll grow past ~15 VPCs (n&sup2; mesh)</li>
+                            <li>You need shared inspection or central egress</li>
+                            <li>Cross-account ownership shifts often</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">The "no transitive routing" rule is the single biggest tripwire. Make learners say it back to you before moving on.</aside>
+            </section>
+
+            <!-- Transit Gateway -->
+            <section>
+                <h2>&#128722; Transit Gateway &mdash; the hub</h2>
+                <div class="concept-box">
+                    <h3>One regional hub, thousands of attachments</h3>
+                    <p>TGW is a regional virtual router. VPCs, VPNs, Direct Connect gateways, and other TGWs (inter-region peering) attach to it. Routing is policy-driven via <strong>TGW route tables</strong>.</p>
+                </div>
+                <div class="key-point"><strong>Two concepts to internalize:</strong> <em>association</em> (which route table an attachment uses for outbound lookups) and <em>propagation</em> (which attachments' routes get auto-installed in a route table).</div>
+                <div class="highlight-box warning"><strong>Pricing reminder:</strong> attachment-hour + per-GB charges. Cheap is relative; mesh peering can be cheaper for tiny topologies, but TGW wins past ~10 VPCs operationally.</div>
+                <aside class="notes">Draw association vs propagation on the whiteboard. This single distinction is what learners get wrong on Lab 5.</aside>
+            </section>
+
+            <!-- TGW route tables for isolation -->
+            <section>
+                <h2>&#128737;&#65039; TGW route tables enforce isolation</h2>
+                <table>
+                    <tr><th>Route table</th><th>Associated attachments</th><th>Propagated from</th></tr>
+                    <tr><td>prod-rt</td><td>prod-vpc-a, prod-vpc-b</td><td>prod-vpc-a, prod-vpc-b, shared-services-vpc</td></tr>
+                    <tr><td>nonprod-rt</td><td>dev-vpc, test-vpc</td><td>dev-vpc, test-vpc, shared-services-vpc</td></tr>
+                    <tr><td>shared-rt</td><td>shared-services-vpc</td><td>all VPC attachments</td></tr>
+                </table>
+                <div class="key-point"><strong>The pattern:</strong> separate route tables per environment, propagate shared services into both, do <em>not</em> propagate prod into nonprod or vice versa. Result: dev cannot reach prod, both can reach shared services.</div>
+                <aside class="notes">This is exactly the topology learners will build in Lab 5. Tease that they'll prove the isolation by trying (and failing) to ping across environments.</aside>
+            </section>
+
+            <!-- Direct Connect Gateway -->
+            <section>
+                <h2>&#127760; Direct Connect Gateway</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>What it solves</h4>
+                        <ul>
+                            <li>One DX connection, many VPCs &mdash; even across regions</li>
+                            <li>Pairs with TGW for hub-and-spoke at scale</li>
+                            <li>Removes the per-VPC virtual-interface limit</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Two attachment styles</h4>
+                        <ul>
+                            <li><strong>Virtual Private Gateway</strong> &mdash; one VPC at a time (legacy)</li>
+                            <li><strong>Transit VIF + TGW</strong> &mdash; many VPCs via DXGW &rarr; TGW (current)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>Hybrid recap (Module 3):</strong> S2S VPN over internet for low-cost / day-one; DX private fiber for predictable bandwidth and latency; combine with DXGW + TGW for fan-out.</div>
+                <aside class="notes">DXGW is often confused with TGW &mdash; it's not a router, it's a gateway that lets a DX connection terminate against many VPCs. Pair the two for serious topologies.</aside>
+            </section>
+
+            <!-- VPC sharing via RAM -->
+            <section>
+                <h2>&#129309; VPC sharing via Resource Access Manager</h2>
+                <div class="concept-box">
+                    <h3>One network team owns the VPC</h3>
+                    <p>RAM lets the network account share <strong>specific subnets</strong> with workload accounts. Workload accounts launch ENIs into those subnets but do not own the VPC, route tables, NAT, or peering.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Why it matters</h4>
+                        <ul>
+                            <li>Centralized CIDR plan, no overlap surprises</li>
+                            <li>One NAT gateway shared across teams (cost)</li>
+                            <li>Network controls live where they belong</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>What's still in the workload account</h4>
+                        <ul>
+                            <li>EC2, RDS, ECS tasks (ENI-bound resources)</li>
+                            <li>Security groups created by the consumer</li>
+                            <li>IAM &amp; service-level config</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Sharing requires AWS Organizations with all-features enabled. SCPs around RAM matter &mdash; share too much and you've effectively un-isolated accounts.</aside>
+            </section>
+
+            <!-- VPC endpoints -->
+            <section>
+                <h2>&#128274; VPC endpoints &mdash; keep traffic off the internet</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>Gateway endpoints</h4>
+                        <p>Free. Route-table entries.</p>
+                        <ul>
+                            <li>S3</li>
+                            <li>DynamoDB</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Interface endpoints</h4>
+                        <p>Hourly + per-GB. ENI in your subnet.</p>
+                        <ul>
+                            <li>Most AWS services</li>
+                            <li>Backed by PrivateLink</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Endpoint services</h4>
+                        <p>Expose <em>your</em> NLB privately to other VPCs / accounts.</p>
+                        <ul>
+                            <li>SaaS-style sharing</li>
+                            <li>One-way connectivity</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box success"><strong>Default rule of thumb:</strong> use the gateway endpoint for S3/DynamoDB on every private VPC. It's free and removes a NAT hop.</div>
+                <aside class="notes">PrivateLink is the load-bearing primitive &mdash; it's what makes interface endpoints and endpoint services work. Mention it as a name learners will see again.</aside>
+            </section>
+
+            <!-- Central egress -->
+            <section>
+                <h2>&#127968; Central egress and inspection patterns</h2>
+                <div class="concept-box">
+                    <h3>One egress VPC, many spokes</h3>
+                    <p>Spoke VPCs have no IGW or NAT. They route 0.0.0.0/0 to the TGW; the TGW routes it to a centralized egress VPC that owns the NAT gateways and (optionally) AWS Network Firewall for east/west or north/south inspection.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Wins</h4>
+                        <ul>
+                            <li>One NAT bill instead of N</li>
+                            <li>Central allow-list / inspection</li>
+                            <li>Audit and DLP from one place</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Costs</h4>
+                        <ul>
+                            <li>Extra TGW data-processing charge</li>
+                            <li>One blast radius if egress VPC fails</li>
+                            <li>Operational discipline required</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">Most organizations grow into central egress around 8&ndash;12 VPCs. Below that, per-VPC NAT is simpler and not meaningfully more expensive.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>Decision lens:</strong> peering for tiny meshes; TGW once you cross ~10 VPCs or need cross-account at scale; DXGW + TGW when DX joins the picture.</div>
+                <div class="key-point"><strong>Isolation lever:</strong> TGW route tables &mdash; associate one per environment, propagate shared-services into all, prod and nonprod stay apart.</div>
+                <div class="key-point"><strong>Reduce blast and bill:</strong> gateway endpoints for S3/DynamoDB on every private VPC; central egress once the VPC count justifies it.</div>
+                <aside class="notes">Hand off into Lab 5. Remind learners the lab is 45 minutes &mdash; it's the longer one in this module pair.</aside>
+            </section>
+
+            <!-- Lab 5 callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128295; Lab 5: TGW isolation + S3 VPC endpoint</h2>
+                <h3>Two parts &mdash; isolation by design, then private S3 with a deny-by-default endpoint policy</h3>
+                <ul>
+                    <li><strong>Part A (~35 min)</strong> &mdash; TGW with prod-rt and nonprod-rt; shared-services reaches both, prod and nonprod cannot reach each other. Validate by ping.</li>
+                    <li><strong>Part B (~15 min)</strong> &mdash; Attach an S3 <em>gateway</em> VPC endpoint to the prod VPC with an endpoint policy allowing <strong>only the lab bucket</strong>. <code>aws s3 ls</code> on the lab bucket succeeds; on any other bucket returns <code>AccessDenied</code>.</li>
+                    <li>Inspect the prefix-list route in the prod private subnet route table &mdash; that's the gateway endpoint at work.</li>
+                    <li>Stretch: tighten the endpoint policy further with <code>aws:PrincipalOrgID</code>.</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> <code>terraform destroy</code> at the end
+                </div>
+                <aside class="notes">Two moments of truth &mdash; the failed ping across tiers (Part A) and the AccessDenied on the second bucket (Part B). If Part A's ping works when it shouldn't, walk their TGW route tables on screen. If Part B's deny doesn't fire, check the endpoint policy is attached and the route via the endpoint is in the private subnet route table. Trim teach time to 25 min so the lab fits in 50.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>Where would central egress save you the most &mdash; cost, audit, or both?</p>
+                <aside class="notes">Use this slide while learners finish Lab 5. Defer DX-specific questions to Module 3 references; this module is about AWS-side connectivity at scale.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrating Workloads | Advanced Architecting on AWS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/monokai.css">
+    <style>
+        :root { --heading-color: #232f3e; --accent-color: #ff9900; --success-color: #2f855a; --warning-color: #c05621; --danger-color: #c53030; --text-color: #2d3748; }
+        .reveal { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); font-size: 28px; }
+        .reveal .slides section { text-align: left; padding: 20px 40px; }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 { color: var(--heading-color); font-weight: 700; text-transform: none; }
+        .reveal h1 { font-size: 2.2em; } .reveal h2 { font-size: 1.6em; } .reveal h3 { font-size: 1.3em; }
+        .title-slide { text-align: center !important; }
+        .title-slide h1 { color: #ffffff; font-size: 2.4em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 0.3em; }
+        .title-slide h2 { color: #e2e8f0; font-size: 1.4em; font-weight: 400; }
+        .title-slide h3 { color: #cbd5e0; font-size: 1.1em; font-weight: 300; }
+        .section-divider { text-align: center !important; }
+        .section-divider h2 { color: #ffffff; font-size: 2.0em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .section-divider h3 { color: #e2e8f0; font-size: 1.2em; font-weight: 400; }
+        .highlight-box { background: #fff7ed; border-left: 4px solid var(--accent-color); padding: 20px 25px; border-radius: 0 8px 8px 0; margin: 15px 0; text-align: left; }
+        .highlight-box.success { background: #f0fff4; border-left-color: var(--success-color); }
+        .highlight-box.warning { background: #fffaf0; border-left-color: var(--warning-color); }
+        .highlight-box.danger { background: #fff5f5; border-left-color: var(--danger-color); }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; text-align: left; }
+        .three-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; text-align: left; }
+        .card { background: #ffffff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: left; }
+        .card h3, .card h4 { margin-top: 0; color: var(--accent-color); }
+        .concept-box { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; padding: 25px; margin: 15px 0; border: 1px solid #fdba74; text-align: left; }
+        .concept-box h3, .concept-box h4 { color: var(--heading-color); margin-top: 0; }
+        .key-point { background: #fff7ed; border: 2px solid var(--accent-color); border-radius: 12px; padding: 20px 25px; margin: 15px 0; text-align: left; font-size: 0.95em; }
+        .key-point strong { color: var(--accent-color); }
+        .lab-callout h2 { color: #ffffff; font-size: 1.8em; margin-bottom: 0.3em; }
+        .lab-callout h3 { color: #fed7aa; font-size: 1.3em; font-weight: 400; }
+        .lab-callout p { color: #e2e8f0; font-size: 1.0em; }
+        .lab-callout ul { color: #e2e8f0; text-align: left; display: inline-block; }
+        .lab-callout .highlight-box { background: rgba(255,255,255,0.1); border-left-color: #fed7aa; color: #e2e8f0; }
+        .questions-slide h2 { color: #ffffff; font-size: 2.2em; }
+        .questions-slide p { color: #e2e8f0; font-size: 1.2em; }
+        .module-progress { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .module-progress .step { width: 26px; height: 6px; border-radius: 3px; background: #cbd5e0; }
+        .module-progress .step.active { background: var(--accent-color); }
+        .module-progress .step.completed { background: var(--success-color); }
+        .reveal table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin: 15px 0; }
+        .reveal table th { background: var(--heading-color); color: #ffffff; padding: 12px 16px; text-align: left; font-weight: 600; }
+        .reveal table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .reveal table tr:nth-child(even) { background: #f7fafc; }
+        .reveal ul, .reveal ol { text-align: left; display: block; margin-left: 1em; }
+        .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
+        .reveal p { line-height: 1.6; }
+        .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="title-slide">
+                <h1>&#128649; Migrating Workloads</h1>
+                <h2>The 7 Rs framework, MGN, DMS, DataSync &mdash; design choices first</h2>
+                <h3>Advanced Architecting on AWS &mdash; Module 13 of 14</h3>
+                <div class="module-progress">
+                    <div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step completed"></div><div class="step active"></div><div class="step"></div>
+                </div>
+                <aside class="notes">45-min discussion-led. No console lab. The room has been deploying greenfield all course &mdash; this is where they confront the existing-fleet reality most of them work in.</aside>
+            </section>
+
+            <!-- Objectives -->
+            <section>
+                <h2>&#127919; Module objectives</h2>
+                <ul>
+                    <li class="fragment fade-up">Apply the 7 Rs framework &mdash; and tell the seven apart</li>
+                    <li class="fragment fade-up">Plan a discovery and assessment phase before any cutover</li>
+                    <li class="fragment fade-up">Pick the right tool: MGN for servers, DMS for databases, DataSync / Snow for bulk data</li>
+                    <li class="fragment fade-up">Handle Oracle &rarr; Aurora PostgreSQL with DMS + Schema Conversion Tool</li>
+                    <li class="fragment fade-up">Decide when to migrate vs. modernize per workload</li>
+                </ul>
+                <aside class="notes">The 7 Rs is the whole framework &mdash; if they walk out fluent in those, this module worked.</aside>
+            </section>
+
+            <!-- Migration phases -->
+            <section>
+                <h2>&#128205; The three phases</h2>
+                <div class="three-columns">
+                    <div class="card">
+                        <h4>1. Assess</h4>
+                        <p>Inventory, dependencies, TCO. Output: a migration portfolio with per-workload R-strategy.</p>
+                    </div>
+                    <div class="card">
+                        <h4>2. Mobilize</h4>
+                        <p>Landing zone, networking, security, pilot moves. Build the muscle on a low-risk workload first.</p>
+                    </div>
+                    <div class="card">
+                        <h4>3. Migrate &amp; Modernize</h4>
+                        <p>Wave-based execution. Each wave: cutover, validate, sunset on-prem. Modernize after stabilizing.</p>
+                    </div>
+                </div>
+                <div class="highlight-box"><strong>Discovery tools:</strong> AWS Application Discovery Service (agent-based or agentless), Migration Evaluator (free TCO modeling), AWS Migration Hub (single pane across waves).</div>
+                <aside class="notes">Most failed migrations fail in Assess &mdash; teams jump to Mobilize without a real inventory and discover dependencies mid-cutover. Push the discipline of finishing Assess.</aside>
+            </section>
+
+            <!-- The 7 Rs -->
+            <section>
+                <h2>&#128203; The 7 Rs &mdash; one strategy per workload</h2>
+                <table>
+                    <tr><th>Strategy</th><th>What it means</th><th>When</th></tr>
+                    <tr><td>Retire</td><td>Turn it off</td><td>No one uses it; you just discovered that</td></tr>
+                    <tr><td>Retain</td><td>Leave on-prem (for now)</td><td>Mainframe, regulatory hold, near end-of-life</td></tr>
+                    <tr><td>Rehost</td><td>Lift &amp; shift &mdash; same OS, EC2</td><td>Speed matters; modernization later</td></tr>
+                    <tr><td>Relocate</td><td>VMware-to-VMware on AWS</td><td>VMware Cloud on AWS &mdash; preserve hypervisor</td></tr>
+                    <tr><td>Repurchase</td><td>Drop and replace with SaaS</td><td>Email, CRM, HR &mdash; off-the-shelf wins</td></tr>
+                    <tr><td>Replatform</td><td>Lift &amp; tinker &mdash; managed DB, etc.</td><td>Move SQL Server &rarr; RDS without rewriting app</td></tr>
+                    <tr><td>Refactor</td><td>Re-architect for cloud-native</td><td>Strategic apps that justify the spend</td></tr>
+                </table>
+                <aside class="notes">Drill the difference between Rehost / Relocate / Replatform / Refactor &mdash; that's where the room conflates. Repurchase is the cheapest "migration" of all and the room forgets it exists.</aside>
+            </section>
+
+            <!-- Migration tools -->
+            <section>
+                <h2>&#128295; AWS migration tools</h2>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Servers &amp; VMs</h4>
+                        <ul>
+                            <li><strong>AWS MGN</strong> (Application Migration Service, formerly CloudEndure) &mdash; block-level replication, automated cutover, Rehost workhorse</li>
+                            <li><strong>VMware Cloud on AWS</strong> &mdash; Relocate strategy</li>
+                            <li><strong>Snowball Edge / Snow Family</strong> &mdash; offline transfer for slow links or air-gapped</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Data &amp; databases</h4>
+                        <ul>
+                            <li><strong>DMS</strong> &mdash; continuous replication, homogeneous (Oracle &rarr; Oracle on RDS) and heterogeneous (Oracle &rarr; Aurora PostgreSQL)</li>
+                            <li><strong>Schema Conversion Tool (SCT)</strong> &mdash; pairs with DMS for engine changes</li>
+                            <li><strong>DataSync</strong> &mdash; NFS / SMB / S3 bulk transfer</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">MGN replaces what was CloudEndure &mdash; if learners are studying old material, the names confuse. DMS + SCT is the classic Oracle-to-Aurora-PostgreSQL story; that's the case the room asks about most.</aside>
+            </section>
+
+            <!-- Database migration deep -->
+            <section>
+                <h2>&#128190; Oracle &rarr; Aurora PostgreSQL with DMS + SCT</h2>
+                <div class="concept-box">
+                    <h3>The classic heterogeneous migration</h3>
+                    <p>SCT converts schema and PL/SQL to PostgreSQL syntax, flags non-convertible blocks, generates an assessment report. DMS streams data continuously while the source stays live &mdash; cutover is a small window when replication lag goes near zero.</p>
+                </div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Steps</h4>
+                        <ol>
+                            <li>SCT assessment report</li>
+                            <li>Convert + manually fix flagged objects</li>
+                            <li>DMS full load + change capture</li>
+                            <li>Cut over when lag is acceptable</li>
+                        </ol>
+                    </div>
+                    <div class="card">
+                        <h4>Watch out for</h4>
+                        <ul>
+                            <li>Stored procedures with Oracle-specific features</li>
+                            <li>Sequences, triggers, sysdate semantics</li>
+                            <li>Application driver (JDBC) changes</li>
+                            <li>Replication slot bloat on the source</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">The interview question they'll get is "how do you migrate Oracle?" The answer is "DMS continuous replication + SCT for schema; cut over in a small window." Make them say it.</aside>
+            </section>
+
+            <!-- Modernization -->
+            <section>
+                <h2>&#128293; Migrate now, modernize later</h2>
+                <div class="key-point"><strong>Pattern:</strong> Rehost first to stop the on-prem clock, then modernize wave-by-wave. Modernization without migration drags the cutover by quarters; migration without modernization wastes the move.</div>
+                <div class="two-columns">
+                    <div class="card">
+                        <h4>Modernization opportunities</h4>
+                        <ul>
+                            <li>Stateless web tier &rarr; Lambda or Fargate</li>
+                            <li>Self-managed DB &rarr; RDS / Aurora</li>
+                            <li>Cron + scripts &rarr; Step Functions / EventBridge</li>
+                            <li>NFS share &rarr; S3 + presigned URLs</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h4>Sequencing</h4>
+                        <ul>
+                            <li>Pilot light wave: 1 low-risk app</li>
+                            <li>Wave N: 5&ndash;15 apps with shared dependencies</li>
+                            <li>Each wave ends with a retro &mdash; tune the runbook</li>
+                            <li>Sunset on-prem capacity as waves complete</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">"Migrate now, modernize later" is the durable principle &mdash; don't let perfect block good. Refactor is a long pole; only do it where it matters.</aside>
+            </section>
+
+            <!-- Module recap -->
+            <section>
+                <h2>&#9989; Module recap</h2>
+                <div class="key-point"><strong>7 Rs:</strong> Retire, Retain, Rehost, Relocate, Repurchase, Replatform, Refactor &mdash; one strategy per workload, not one strategy per portfolio.</div>
+                <div class="key-point"><strong>Tooling map:</strong> MGN for servers, DMS + SCT for databases, DataSync / Snow for bulk data, Migration Hub to track the wave.</div>
+                <div class="key-point"><strong>Order of operations:</strong> Assess &rarr; Mobilize &rarr; Migrate (in waves) &rarr; Modernize. Skipping Assess is the most common failure mode.</div>
+                <aside class="notes">Hand off into the design exercise. The exercise is what cements the 7 Rs &mdash; abstract definitions slide off, concrete decisions stick.</aside>
+            </section>
+
+            <!-- Design exercise callout -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
+                <h2>&#128161; Design exercise</h2>
+                <h3>Apply the 7 Rs to a real-ish workload mix</h3>
+                <ul>
+                    <li>Scenario: a mid-size company has these workloads to move:
+                        <ul>
+                            <li>A 12-year-old Java monolith on Tomcat (still core to revenue)</li>
+                            <li>An Oracle 11g database (license up for renewal)</li>
+                            <li>An on-prem CRM (vendor is 5 years from EOL)</li>
+                            <li>A nightly batch job written in Perl on an aging VM</li>
+                            <li>A SharePoint server used by ~40 people</li>
+                        </ul>
+                    </li>
+                    <li>Pairs decide: which R per workload? Which AWS tool? What order?</li>
+                    <li>Share-back: 2 minutes per pair, name and justify each strategy</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>Duration:</strong> ~20 min pair work + ~10 min share-back (~30 min activity) &middot; <strong>No console</strong> &middot; <strong>Whiteboard or shared doc</strong>
+                </div>
+                <aside class="notes">Push pairs to commit. The Perl batch job is a Retire candidate (or rewrite as a Lambda). SharePoint is Repurchase &mdash; M365. Oracle is the marquee Replatform / Refactor question. Java monolith is Rehost first, modernize later.</aside>
+            </section>
+
+            <!-- Questions -->
+            <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" class="questions-slide" style="text-align: center;">
+                <h2>&#10067; Questions &amp; discussion</h2>
+                <p>What's the one workload at your org that's been "we'll migrate it next year" for three years?</p>
+                <aside class="notes">Floor question; war stories. Then break before the capstone &mdash; learners need a reset before Module 14.</aside>
+            </section>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/highlight/highlight.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/notes/notes.js"></script>
+    <script>
+        Reveal.initialize({ hash: true, slideNumber: true, transition: 'slide', plugins: [RevealHighlight, RevealNotes] });
+    </script>
+</body>
+</html>
