@@ -2,6 +2,8 @@
 
 Three-day, introductory-level architecting course aligned with the AWS *Advanced Architecting on AWS* curriculum. Each module presents a scenario with an architectural challenge and walks through AWS services and features as solutions.
 
+**Delivery model:** the course is **console-driven**. Students work in the AWS Management Console inside an **AWS Organization**, with each student assigned their own member account. There is a separate Terraform course; this course does not teach Terraform. (One optional Terraform cameo may appear on Day 3 in the capstone — see Module 14.)
+
 ## Audience
 
 - Cloud architects
@@ -13,7 +15,7 @@ Three-day, introductory-level architecting course aligned with the AWS *Advanced
 - Working knowledge of core AWS services across Compute, Storage, Networking, and IAM
 - Prior attendance of *Architecting on AWS* (or equivalent experience)
 - At least one year of operating AWS workloads
-- Comfortable in a Linux shell (the labs use Cloud9 / CloudShell terminals and Terraform)
+- Comfortable navigating the AWS Management Console
 
 ## Course outcomes
 
@@ -32,6 +34,17 @@ By the end of the course, participants will be able to:
 - Plan a workload migration using the 7 Rs framework, AWS MGN, DMS, and DataSync
 - Synthesize the above in a capstone design project
 
+## Lab environment — shared AWS Organization
+
+The course runs inside a **single shared AWS Organization** owned by the instructor. Layout:
+
+- **Management account** — owned by the instructor. Hosts the Organization, IAM Identity Center, Control Tower (if enabled), Org-level CloudTrail, Service Control Policies. Students never sign in here directly — instructor demos Org-level concepts from this account in front of the room.
+- **Sandbox OU** — one OU under the Org root.
+- **Sandbox accounts** — one per student, named `Sandbox1`, `Sandbox2`, … `SandboxN`. Each student is granted an IAM Identity Center user that maps to `AWSAdministratorAccess` in their assigned account only. Students do all hands-on lab work inside their sandbox account.
+- **Shared/Support accounts (optional)** — `Audit` and `Log Archive` accounts under a Security OU, used for the Module 9 (CloudTrail Org trail) and Module 12 (consolidated billing) demos.
+
+> **Sign-in flow for students:** AWS access portal URL → IAM Identity Center user → choose `Sandbox<N>` → `AWSAdministratorAccess` → "Open AWS console". This is the same flow real customers use.
+
 ## Schedule
 
 Each day runs **9:00–4:00**, with lunch 12:00–1:00 and two 15-minute breaks.
@@ -41,7 +54,7 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 
 | Time | Slot |
 |---|---|
-| 9:00 – 9:15 | Welcome, intros, AWS environment access |
+| 9:00 – 9:15 | Welcome, intros, AWS access portal sign-in to assigned Sandbox account |
 | 9:15 – 10:30 | **Module 1** *Reviewing Architecting Concepts* (25) + **Lab 1** Well-Architected VPC (50) |
 | 10:30 – 10:45 | Break |
 | 10:45 – 12:00 | **Module 2** *Single to Multiple Accounts* (25) + **Lab 2** Organizations / SCP / IAM Identity Center (50) |
@@ -76,74 +89,68 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 1:00 – 1:45 | **Module 12** *Optimizing Cost* — Cost Explorer, Budgets, Savings Plans (15) + **Lab 12** Cost Explorer + Budgets (30) |
 | 1:45 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Exercise 13** paired 7Rs walkthrough (30) |
 | 2:30 – 2:45 | Break |
-| 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (25) + design + build + walkthrough (50) |
+| 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (25) + design + walkthrough (50) |
 
-> **Lecture / lab split:** every module is paced at roughly **30% lecture, 70% lab**. Across the course this works out to ~305 min lecture and ~640 min lab (≈ 32 / 68). Modules 11 and 13 do not deploy infrastructure; their "lab" half is a structured paired design exercise (scaling design, 7 Rs walkthrough) — counted as lab time because it is learner-driven activity. The capstone in Module 14 is the integrative hands-on close.
+> **Lecture / lab split:** every module is paced at roughly **30% lecture, 70% lab**. Across the course this works out to ~305 min lecture and ~640 min lab (≈ 32 / 68). Modules 11 and 13 do not deploy infrastructure; their "lab" half is a structured paired design exercise (scaling design, 7 Rs walkthrough) — counted as lab time because it is learner-driven activity. The capstone in Module 14 is the integrative close.
 
 ## Repository layout
 
 ```
 aws_arch_adv/
-├── Module_00/        Instructor reference Terraform — multi-account scaffolding
-├── Module_01/ … Module_14/
-│   ├── slides/       Module slide deck
-│   ├── labs/         Lab guide (md + pdf)
-│   └── terraform/    Lab Terraform starter
-├── install_terraform_ubuntu   One-liner Terraform install for Cloud9 / CloudShell
+├── Module_00/        Instructor reference — multi-account scaffolding (instructor-only)
+├── Module_01/ … Module_13/
+│   ├── slides/       Module slide deck (Reveal.js HTML)
+│   └── labs/         Lab guide (md + pdf) — console-driven steps
+├── Module_14/        Capstone — slides + lab guide + optional Terraform reference
 ├── README.md         This file
 └── INSTRUCTOR.md     Instructor-only — pacing notes, lab solutions, gotchas
 ```
 
 ## Required environment
 
-This course is designed to run inside a **shared AWS training account** with one workspace per learner.
+### Per student
 
-### Per-learner workspace (recommended)
+- AWS access portal URL + IAM Identity Center username/password (instructor distributes on Day 1).
+- Modern browser (Firefox or Chrome). The course is 100% console; no local CLI install required.
+- Optional: AWS CloudShell within the assigned Sandbox account for the few labs that benefit from CLI validation (Modules 5, 9, 10). Pre-installed in every account; no setup.
 
-- **AWS Cloud9** environment if the training account supports it
-  - Suggested instance: `t3.medium` on Amazon Linux 2023
-  - Each learner names their environment `archadv-<your-name>`
-  - Cloud9 onboarding closed to new AWS customers in 2024 — see fallback below
-- **Fallback if Cloud9 is unavailable:** AWS CloudShell (region-attached, free) or a local terminal with the AWS CLI configured against issued credentials. CloudShell lacks long-running session persistence; for the longer Terraform applies (Modules 5, 7, 8) instructors should pre-warm a backup workspace.
-- Terraform installed via `bash install_terraform_ubuntu` (Cloud9 / CloudShell on AL2023 use the equivalent `dnf` form; see `INSTRUCTOR.md`).
+### Per Sandbox account (Sandbox1 … SandboxN)
 
-### Per-learner IAM
+Each student's Sandbox account is provisioned with `AWSAdministratorAccess` for that student. Service-quota notes:
 
-The shared account must provide each learner with a named IAM user (or IAM Identity Center user) and a role bundle granting:
+- VPC, EC2, EBS, EFS — default quotas are sufficient
+- Transit Gateway (Module 5), VPCs > 5 (Module 5) — confirm regional quota in `us-east-1` before class
+- ECS Fargate, ECR (Module 6) — default quotas are sufficient
+- CodePipeline, CodeBuild, CodeDeploy, S3 (Module 7)
+- WAF, CloudFront, ALB (Module 8)
+- KMS, Secrets Manager (Module 9)
+- Aurora, DynamoDB (Module 10) — default quotas are sufficient
+- Cost Explorer, Budgets (Module 12) — Cost Explorer needs ~24 hours of data; if Sandbox accounts are fresh, demo from the management account
+- DataSync, Storage Gateway (Modules 4, 13)
 
-- VPC / EC2 / EBS / EFS full access (scoped to a learner-prefixed name pattern via tag-based conditions where possible)
-- Transit Gateway, VPC peering, RAM (Module 5)
-- ECR, ECS, Fargate (Module 6)
-- CodeCommit / CodePipeline / CodeBuild / CodeDeploy, CloudFormation, S3 artifact bucket (Module 7)
-- WAF, Shield Standard, CloudFront, ALB (Module 8)
-- KMS create/use, Secrets Manager, IAM PassRole for service roles (Module 9)
-- Aurora / DynamoDB read-write to learner-prefixed resources (Modules 10–11)
-- Cost Explorer & Budgets read (Module 12)
-- DataSync, Storage Gateway, MGN read (Modules 4, 13)
+### Shared-Org guardrails (instructor side, in management account)
 
-A starting permissions boundary policy is included as commentary in `Module_00/cross_account_terraform/`.
-
-### Shared-account guardrails
-
-- Each learner uses a unique resource prefix (their first name + lab number) so resources are easy to identify and clean up
-- Tag every Terraform resource with `Owner=<learner>` and `Course=archadv` — instructor cleanup script keys off these tags
-- Module 2 (Organizations / Control Tower) cannot create new top-level org structures inside the shared training account. Learners run a **scoped sub-exercise** in a sandbox OU the instructor pre-creates; full Control Tower walkthrough is demonstrated, not deployed by each learner. See `INSTRUCTOR.md` for the pre-class setup.
+- Service Control Policy denying regions outside an approved list (default: `us-east-1`, `us-east-2`) attached to the Sandbox OU. Module 2 lab attaches/detaches a stricter SCP for the demo.
+- Account-level Budget alarm in each Sandbox at $10/day (configurable) — instructor receives the notification.
+- Tag policy requiring `Owner=<student>` and `Course=archadv` on taggable resources where supported.
+- Cleanup script keyed on `Owner=<student>` and `Course=archadv` tags, run after class to nuke residual resources.
 
 ## Instructor pre-work
 
 Before learners sign in:
 
-1. Provision the shared training account; distribute the sign-in URL and per-learner IAM Identity Center credentials.
-2. Pre-create the sandbox OU and target sub-account used in Module 2's scoped exercise.
-3. Pre-create the on-prem-simulator VPC for Module 3 (Site-to-Site VPN endpoint).
-4. Provision one Cloud9 (or confirm CloudShell access) per learner; verify Terraform installs cleanly.
-5. Run a smoke test of the capstone Terraform from the instructor workstation.
-6. Distribute these materials (e.g., push to a private repo learners can `git clone` from inside Cloud9).
+1. Provision (or reuse) the shared Organization. Confirm IAM Identity Center is enabled in the management account.
+2. Pre-create the Sandbox OU and one Sandbox account per student (`Sandbox1` … `SandboxN`). Use Account Factory in Control Tower if available; otherwise create accounts manually under the Sandbox OU.
+3. Create one IAM Identity Center user per student. Assign each user `AWSAdministratorAccess` to their Sandbox account only.
+4. Stage the deny-non-approved-regions SCP on the Sandbox OU (detached) for Module 2.
+5. Pre-create the on-prem-simulator VPC for Module 3 (Site-to-Site VPN endpoint) — see INSTRUCTOR.md for the exact build.
+6. Set the per-account daily Budget alarm in each Sandbox.
+7. Distribute the access portal URL + per-student credentials.
 
 ## Notes for instructors
 
-- All hands-on builds use Terraform — every module's `terraform/` directory is a runnable starter. Learners are expected to read the HCL, not just `apply` it.
-- Lab guides (`labs/Module_NN_Lab_Guide.md`) are intentionally short — they prescribe the *what*, the slides supply the *why*, and the instructor fills the *how* live.
-- Modules 10, 11, and 13 ship with outline-only labs (no detailed step-by-step). Run them as paired design exercises with whiteboard / digital diagram, not as console walkthroughs. This is reflected in the schedule.
+- This is a **concept and console** course. The student's hands stay on a browser. Do not introduce Terraform, CDK, or CloudFormation flows in class — the dedicated Terraform course covers IaC.
+- Lab guides (`labs/Module_NN_Lab_Guide.md`) are intentionally short — they prescribe the *what*, the slides supply the *why*, the instructor fills the *how* live.
+- Modules 11 and 13 are paired design exercises (no console build). Use whiteboard or shared diagram tool.
 - Use the on-screen timer for breaks (~15 min mid-morning and mid-afternoon, lunch midday).
-- The capstone closes the course. Learners should leave with a working diagram and partially-applied Terraform, not necessarily a fully-deployed stack — the design decisions matter more than the final `apply`.
+- The capstone closes the course. Module 14 may include a brief Terraform reference for engineers who took the separate Terraform course; it is optional and not required to pass.
