@@ -36,6 +36,7 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] Deny-non-approved-regions SCP is staged on the Sandbox OU **detached** (Module 2 lab attaches/detaches it live)
 - [ ] On-prem-simulator VPC for Module 3 exists (see *Module 3 setup* below)
 - [ ] Per-account Budget alarm in each Sandbox at $10/day; instructor email subscribed
+- [ ] **VPC quota raised to 15 in each Sandbox.** Default is 5/region; Lab 5 alone needs 3, plus the default VPC and earlier-lab VPCs leave students at the cap mid-Day-2. Submit "VPCs per Region" quota increase to 15 in `us-east-1` per Sandbox via Service Quotas (auto-approves in minutes). Optional: also delete the default VPC in each Sandbox to free a slot.
 - [ ] Cleanup script keyed on `Owner=<student>` + `Course=archadv` tags is tested
 - [ ] AWS access portal URL + per-student credentials packet is ready to distribute
 

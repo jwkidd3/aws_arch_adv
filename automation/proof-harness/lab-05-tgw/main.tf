@@ -127,6 +127,9 @@ resource "aws_instance" "ec2" {
   iam_instance_profile   = aws_iam_instance_profile.ssm.name
   associate_public_ip_address = true
 
+  # SSM agent authenticates via the role's policy — must be attached before instance boots.
+  depends_on = [aws_iam_role_policy_attachment.ssm_core]
+
   tags = { Name = "archadv-${var.harness_owner}-lab05-${each.key}" }
 }
 
