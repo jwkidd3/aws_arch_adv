@@ -121,7 +121,32 @@ automation/tools/cleanup.sh --owner ci --yes
 
 The script targets only resources tagged `Course=archadv` AND `Owner=ci`. Nothing else is touched.
 
-## 6. Asking Claude to run a test
+## 6. Owner slug — multi-user shared-account safety
+
+The harness derives an **owner slug** from your AWS caller identity and uses it in resource names + the `Owner` tag. This lets multiple users in a shared account run the harness concurrently without collisions.
+
+| Caller identity | Slug |
+|---|---|
+| `arn:aws:iam::ACCT:root` | `root` |
+| `arn:aws:iam::ACCT:user/alice` | `alice` |
+| `arn:aws:sts::ACCT:assumed-role/AWSReservedSSO_X/alice@example.com` | `alice-example-com` (sanitized) |
+
+To see the slug your session resolves to:
+
+```bash
+automation/tools/identity.sh
+```
+
+To override (e.g., to use a fixed slug for CI):
+
+```bash
+export ARCHADV_OWNER=ci-runner
+automation/tools/run-harness.sh lab-01-vpc
+```
+
+Resources are named `archadv-<slug>-labNN-*` and tagged `Owner=<slug>` + `Course=archadv`. The cleanup script targets only resources matching the **current** caller's slug — so cleaning up after your run doesn't touch other users' resources.
+
+## 7. Asking Claude to run a test
 
 After setup, tell Claude:
 
@@ -129,7 +154,7 @@ After setup, tell Claude:
 > "Run lab-05 and report what fails"
 > "Run all implemented harnesses"
 
-Claude will invoke `automation/tools/run-harness.sh <lab>` (or `run-all.sh`) and report the output. Cleanup runs automatically.
+Claude will invoke `automation/tools/run-harness.sh <lab>` (or `run-all.sh`) and report the output. Cleanup runs automatically (scoped to your owner slug).
 
 If you want a test run that DOESN'T destroy at the end (so you can inspect resources):
 

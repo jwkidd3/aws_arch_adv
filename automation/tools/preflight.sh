@@ -41,6 +41,15 @@ if AUTH=$(aws sts get-caller-identity --output json 2>/dev/null); then
   pass "AWS auth: account $ACCT"
   echo "        identity: $ARN"
 
+  # Derive the owner slug the harness will use
+  source "$(dirname "$0")/identity.sh"
+  OWNER=$(derive_owner_slug)
+  if [[ -n "$OWNER" && "$OWNER" != "unknown" ]]; then
+    pass "harness owner slug: $OWNER (used for resource names + Owner tag)"
+  else
+    fail "could not derive harness owner slug from caller identity"
+  fi
+
   # Warn about root usage
   if [[ "$ARN" == *":root" ]]; then
     warn "you are signed in as the ROOT user. Tests will work, but root usage is discouraged. Prefer a power-user IAM user or IAM Identity Center session."

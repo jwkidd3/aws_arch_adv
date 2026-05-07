@@ -16,6 +16,17 @@ HARNESS_ROOT="$(cd "$TOOL_DIR/../proof-harness" && pwd)"
 LAB_DIR="$HARNESS_ROOT/$LAB"
 CLEANUP_SCRIPT="$TOOL_DIR/cleanup.sh"
 
+# Derive owner slug from AWS caller identity so multiple users sharing the
+# account don't collide on resource names / cleanup tags.
+source "$TOOL_DIR/identity.sh"
+OWNER=$(derive_owner_slug)
+[[ -z "$OWNER" || "$OWNER" == "unknown" ]] && {
+  echo "ERROR: could not derive owner slug from AWS caller identity. Run 'aws configure' or set ARCHADV_OWNER." >&2
+  exit 1
+}
+export TF_VAR_harness_owner="$OWNER"
+echo "==> $LAB: owner=$OWNER"
+
 if [[ ! -d "$LAB_DIR" ]]; then
   echo "ERROR: $LAB_DIR does not exist" >&2
   exit 2
@@ -32,7 +43,7 @@ cleanup_on_exit() {
   echo
   echo "==> Cleanup (running terraform destroy)..."
   terraform destroy -auto-approve || true
-  "$CLEANUP_SCRIPT" --owner ci --yes || true
+  "$CLEANUP_SCRIPT" --owner "$OWNER" --yes || true
 }
 trap cleanup_on_exit EXIT
 
