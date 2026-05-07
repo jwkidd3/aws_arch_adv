@@ -1,7 +1,10 @@
 # Terraform internals — never commit these
 .terraform/
 .terraform.lock.hcl
+.terraform.tfstate.lock.info
 *.tfstate
 *.tfstate.backup
 *.tfvars
 crash.log
+override.tf
+override.tf.json
