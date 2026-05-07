@@ -141,20 +141,24 @@ This appears to students as "the on-prem datacenter you're connecting to". You w
 - 15 min teach: anchor on the access-pattern decision lens (OLTP / OLAP / event / cache / lake) and the Aurora Global vs DynamoDB Global comparison. Drop the per-engine deep-dive.
 - **Lab 10** is S3 + Glue Crawler + Athena, all in the Sandbox account console. With 30 min, push the Parquet-CTAS stretch goal — re-running the same `GROUP BY` query against the converted table to compare `Data scanned`. That's the data-lake economic argument in numbers.
 
-### Module 11 — Large-Scale Applications (10 min teach + 20 min paired exercise)
+### Module 11 — Large-Scale Applications (10 min teach + 25 min hands-on lab + 5 min discussion)
 
-- 10 min teach: only the **scaling triggers** slide (CPU / memory / custom CW metric / request count per target) and Route 53 latency-vs-geo. Everything else is exercise.
-- **Exercise 11** (paired, 20 min): each pair receives a scenario card and designs the autoscaling triggers + traffic-routing strategy. 12 min pair work, 8 min share-back. Whiteboard or shared doc — no console.
+- 10 min teach: only the **scaling triggers** slide (CPU / memory / custom CW metric / request count per target) and Route 53 latency-vs-geo.
+- **Lab 11** (25 min hands-on): students build ALB + ASG with target tracking on `ALBRequestCountPerTarget`, generate load via `ab` from CloudShell, watch the ASG scale from 2 to 3-4 instances. Validates the *behavior* of "scale on the right metric."
+- **5 min discussion** at the end: hand out the scenario cards (spiky news site, internal HR app, real-time game, batch image, IoT) and walk through which trigger fits each — this preserves the design-thinking that the prior paper exercise emphasized.
+- Slot is 30 min total; if the teach finishes early, hand the time to the lab. If the lab runs long, cut the optional scale-down step.
 
 ### Module 12 — Optimizing Cost (15 min teach + 30 min lab)
 
 - 15 min teach: AWS pricing models comparison + tagging-as-foundation. Skip the per-service cost optimization slides — they belong to the relevant module's lab.
 - **Lab 12** with 30 min: Cost Explorer saved report grouped by `Course=archadv` tag (instructor demo from management account if Sandboxes are fresh) + a student-built Budget alarm at $5 with email subscription. Confirm the SubscriptionConfirmation arrives.
 
-### Module 13 — Migrating Workloads (15 min teach + 30 min paired exercise)
+### Module 13 — Migrating Workloads (15 min teach + 30 min hands-on lab + 10 min discussion)
 
 - 15 min teach: drill the **7 Rs** (Retire, Retain, Rehost, Relocate, Repurchase, Replatform, Refactor) and DMS homogeneous vs heterogeneous. Cut the MGN video to 60 seconds.
-- **Exercise 13** (paired, 30 min): pairs receive a workload portfolio card (e.g., "Java 8 monolith on RHEL + Oracle 11g + Tomcat fleet + 50TB SAN backups"). Pick a strategy per workload and justify. 20 min pair work, 10 min share-back.
+- **Lab 13** (30 min hands-on): students build a complete DMS pipeline (replication instance + source MySQL endpoint + S3 target endpoint + migration task) but **do not start the task** — there's no real source DB. The pre-migration assessment failure is the validation of "you'd really want this to run before promoting to prod."
+- **10 min discussion** at the end: portfolio-card walkthrough (Insurance / Healthcare SaaS / Manufacturing) — pairs pick strategy + AWS service per workload. Preserves the 7 Rs design-thinking the prior paper exercise emphasized.
+- **Cost watch:** the dms.t3.small replication instance is ~$0.07/hr while running. With cleanup at slot end, ~$0.05/student total. Across 27 students: ~$1.35.
 
 ### Module 14 — Capstone (25 min framing + 50 min build/walkthrough)
 

@@ -84,14 +84,14 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 9:15 – 10:30 | **Module 9** *Securing Data* — KMS, Secrets Manager, CloudHSM (25) + **Lab 9** KMS + Secrets Manager (50) |
 | 10:30 – 10:45 | Break |
 | 10:45 – 11:30 | **Module 10** *Large-Scale Data Stores* — Aurora, DynamoDB, data lake patterns (15) + **Lab 10** S3 + Glue + Athena data lake (30) |
-| 11:30 – 12:00 | **Module 11** *Large-Scale Applications* — multi-tier, autoscaling, geo-routing (10) + **Exercise 11** paired scaling-design (20) |
+| 11:30 – 12:00 | **Module 11** *Large-Scale Applications* — multi-tier, autoscaling, geo-routing (10) + **Lab 11** ASG with custom CloudWatch metric scaling (25) + scenario discussion (5) |
 | 12:00 – 1:00 | **Lunch** |
 | 1:00 – 1:45 | **Module 12** *Optimizing Cost* — Cost Explorer, Budgets, Savings Plans (15) + **Lab 12** Cost Explorer + Budgets (30) |
-| 1:45 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Exercise 13** paired 7Rs walkthrough (30) |
+| 1:45 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Lab 13** DMS console build (no task start) (30) + 7 Rs portfolio discussion (10) |
 | 2:30 – 2:45 | Break |
 | 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (25) + design + walkthrough (50) |
 
-> **Lecture / lab split:** every module is paced at roughly **30% lecture, 70% lab**. Across the course this works out to ~305 min lecture and ~640 min lab (≈ 32 / 68). Modules 11 and 13 do not deploy infrastructure; their "lab" half is a structured paired design exercise (scaling design, 7 Rs walkthrough) — counted as lab time because it is learner-driven activity. The capstone in Module 14 is the integrative close.
+> **Lecture / lab split:** every module is paced at roughly **30% lecture, 70% lab**. Across the course this works out to ~305 min lecture and ~640 min lab (≈ 32 / 68). Every module now has a hands-on lab; Modules 11 and 13 wrap with a design-discussion segment to preserve the architectural-decision practice that the prior paper exercises emphasized. The capstone in Module 14 is the integrative close.
 
 ## Repository layout
 
