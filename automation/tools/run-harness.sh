@@ -11,8 +11,10 @@ if [[ $# -ne 1 ]]; then
 fi
 
 LAB="$1"
-HARNESS_ROOT="$(cd "$(dirname "$0")/../proof-harness" && pwd)"
+TOOL_DIR="$(cd "$(dirname "$0")" && pwd)"
+HARNESS_ROOT="$(cd "$TOOL_DIR/../proof-harness" && pwd)"
 LAB_DIR="$HARNESS_ROOT/$LAB"
+CLEANUP_SCRIPT="$TOOL_DIR/cleanup.sh"
 
 if [[ ! -d "$LAB_DIR" ]]; then
   echo "ERROR: $LAB_DIR does not exist" >&2
@@ -26,7 +28,13 @@ fi
 
 cd "$LAB_DIR"
 
-trap 'echo; echo "==> Cleanup (running terraform destroy)..."; terraform destroy -auto-approve || true; "$(dirname "$0")/cleanup.sh" --owner ci --yes || true' EXIT
+cleanup_on_exit() {
+  echo
+  echo "==> Cleanup (running terraform destroy)..."
+  terraform destroy -auto-approve || true
+  "$CLEANUP_SCRIPT" --owner ci --yes || true
+}
+trap cleanup_on_exit EXIT
 
 echo "==> $LAB: terraform init"
 terraform init -input=false

@@ -94,7 +94,7 @@ resource "aws_iam_instance_profile" "ssm" {
 resource "aws_security_group" "workload" {
   name        = "archadv-${var.harness_owner}-lab01-workload"
   vpc_id     = module.vpc.vpc_id
-  description = "Egress only — SSM uses VPC endpoints or NAT egress"
+  description = "Egress only - SSM uses NAT egress"
 
   egress {
     from_port   = 0
@@ -110,6 +110,11 @@ resource "aws_instance" "workload" {
   subnet_id              = module.vpc.private_subnets[0]
   vpc_security_group_ids = [aws_security_group.workload.id]
   iam_instance_profile   = aws_iam_instance_profile.ssm.name
+
+  # SSM agent on the instance authenticates using the role's permissions —
+  # the policy must be attached before the instance boots, or the agent
+  # tries to register with no permissions and gives up before retry.
+  depends_on = [aws_iam_role_policy_attachment.ssm_core]
 
   tags = { Name = "archadv-${var.harness_owner}-lab01-workload" }
 }
