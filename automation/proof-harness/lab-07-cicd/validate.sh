@@ -5,6 +5,9 @@ set -uo pipefail
 
 cd "$(dirname "$0")"
 
+source "$(cd ../../tools && pwd)/identity.sh"
+OWNER=$(derive_owner_slug)
+
 if ! TF_OUT=$(terraform output -json 2>/dev/null); then
   echo "ERROR: terraform output failed" >&2
   exit 2
@@ -73,7 +76,7 @@ echo "$STAGES" | grep -q "Build"  && pass "Pipeline has Build stage"  || fail "P
 
 # DEBUG: dump the pipeline role's policies
 echo "  --- Pipeline role policies (debug) ---"
-PROLE=archadv-ci-lab07-pipeline
+PROLE="archadv-${OWNER}-lab07-pipeline"
 aws iam list-role-policies --role-name "$PROLE" --output text 2>/dev/null
 for P in $(aws iam list-role-policies --role-name "$PROLE" --query 'PolicyNames' --output text 2>/dev/null); do
   echo "  Policy: $P"

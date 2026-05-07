@@ -5,6 +5,9 @@ set -uo pipefail
 
 cd "$(dirname "$0")"
 
+source "$(cd ../../tools && pwd)/identity.sh"
+OWNER=$(derive_owner_slug)
+
 if ! TF_OUT=$(terraform output -json 2>/dev/null); then
   echo "ERROR: terraform output failed" >&2
   exit 2
@@ -64,7 +67,7 @@ HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://${ALB_D
   || fail "ALB returns $HTTP_CODE (expected 200)"
 
 # 6. Task uses awsvpc network mode (Fargate requirement) and private subnets
-NETWORK_MODE=$(aws ecs describe-task-definition --task-definition archadv-ci-lab06-hello \
+NETWORK_MODE=$(aws ecs describe-task-definition --task-definition "archadv-${OWNER}-lab06-hello" \
   --query 'taskDefinition.networkMode' --output text 2>/dev/null || echo "")
 [[ "$NETWORK_MODE" == "awsvpc" ]] && pass "task network mode: awsvpc" || fail "network mode: $NETWORK_MODE"
 

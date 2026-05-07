@@ -5,6 +5,9 @@ set -uo pipefail
 
 cd "$(dirname "$0")"
 
+source "$(cd ../../tools && pwd)/identity.sh"
+OWNER=$(derive_owner_slug)
+
 if ! TF_OUT=$(terraform output -json 2>/dev/null); then
   echo "ERROR: terraform output failed — run 'terraform apply' first" >&2
   exit 2
@@ -45,7 +48,7 @@ else
 fi
 
 # 5. Glue role has both AWSGlueServiceRole AND S3 read permissions
-ROLE_NAME="archadv-ci-lab10-glue"
+ROLE_NAME="archadv-${OWNER}-lab10-glue"
 ATTACHED=$(aws iam list-attached-role-policies --role-name "$ROLE_NAME" \
   --query 'AttachedPolicies[].PolicyArn' --output text 2>/dev/null || echo "")
 echo "$ATTACHED" | grep -q 'AWSGlueServiceRole' \
@@ -58,17 +61,21 @@ echo "$INLINE" | grep -q 'lake-s3-read' \
   && pass "Glue role has inline S3 read policy" \
   || fail "Glue role missing inline S3 read policy"
 
-# 6. Run the Crawler
+# 6. Run the Crawler (only if it's currently READY — don't start one that's already running)
 echo "  Triggering crawler $CRAWLER..."
-aws glue start-crawler --name "$CRAWLER" >/dev/null 2>&1 || true
+PRESTART_STATE=$(aws glue get-crawler --name "$CRAWLER" --query 'Crawler.State' --output text 2>/dev/null || echo "")
+if [[ "$PRESTART_STATE" == "READY" ]]; then
+  aws glue start-crawler --name "$CRAWLER" >/dev/null 2>&1 || true
+fi
 
-# Wait for crawler to finish (READY state means idle/finished)
-for _ in $(seq 1 30); do
+# Wait for crawler to settle to READY (terminal state for both finished + idle).
+# Up to 6 min — STOPPING/RUNNING transition can take a while on first run.
+for _ in $(seq 1 36); do
   STATE=$(aws glue get-crawler --name "$CRAWLER" --query 'Crawler.State' --output text 2>/dev/null || echo "")
   [[ "$STATE" == "READY" ]] && break
   sleep 10
 done
-[[ "$STATE" == "READY" ]] && pass "crawler reached READY state" || fail "crawler stuck in $STATE after 5 min"
+[[ "$STATE" == "READY" ]] && pass "crawler reached READY state" || fail "crawler stuck in $STATE after 6 min"
 
 # 7. Crawler last-run was successful
 LAST_STATUS=$(aws glue get-crawler --name "$CRAWLER" \

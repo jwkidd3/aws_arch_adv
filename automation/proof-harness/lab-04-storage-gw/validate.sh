@@ -5,6 +5,10 @@ set -uo pipefail
 
 cd "$(dirname "$0")"
 
+# Derive owner slug for resource-name lookups
+source "$(cd ../../tools && pwd)/identity.sh"
+OWNER=$(derive_owner_slug)
+
 if ! TF_OUT=$(terraform output -json 2>/dev/null); then
   echo "ERROR: terraform output failed" >&2
   exit 2
@@ -48,7 +52,7 @@ PUB=$(aws s3api get-public-access-block --bucket "$BUCKET" \
 [[ "$PUB" == "True" ]] && pass "S3 public access blocked" || fail "S3 public access block: $PUB"
 
 # 5. Storage Gateway IAM role exists and trusts storagegateway.amazonaws.com
-SGW_ROLE_NAME="archadv-ci-lab04-sgw"
+SGW_ROLE_NAME="archadv-${OWNER}-lab04-sgw"
 TRUST=$(aws iam get-role --role-name "$SGW_ROLE_NAME" \
   --query 'Role.AssumeRolePolicyDocument.Statement[0].Principal.Service' --output text 2>/dev/null || echo "")
 [[ "$TRUST" == "storagegateway.amazonaws.com" ]] \
