@@ -1,26 +1,28 @@
-# Lab 10 proof harness — STUB
+# Lab 10 proof harness
 
-**Status: not yet implemented.**
+Builds: S3 data lake bucket with two seed CSVs under `sales/year=2024/` + Glue catalog DB + Glue Crawler with IAM role + Athena workgroup with results bucket.
 
-## Scope when implemented
+## What it asserts
 
-- Provision the data lake S3 bucket with two seed CSVs under `sales/year=2024/`
-- Provision a Glue catalog database (with hyphen-stripped name)
-- Provision the IAM role for Glue (`AWSGlueServiceRole` + S3 read inline)
-- Provision the Glue Crawler pointed at `sales/`
-- Trigger the crawler via API and wait for `Ready` state
-- Provision an Athena workgroup pointed at a results bucket
-- Submit the SELECT query via Athena API and validate row count + result shape
+- Lake bucket exists with public access fully blocked
+- Seed CSVs are under the partition path
+- Glue database exists with hyphen-stripped name (per the lab guide patch)
+- Glue role has both `AWSGlueServiceRole` managed policy and inline S3 read
+- Crawler can be triggered, reaches `READY` state, and last-run is `SUCCEEDED`
+- Sales table appears in catalog with expected columns + `year` partition key
+- Athena query against the workgroup returns the expected 4 region rows + header
 
-## Validation
+## What it does NOT assert
 
-- Crawler runs successfully (status `Ready`, no errors)
-- `sales` table appears in catalog with expected columns + `year` partition key
-- Athena query returns 4 region rows
-- Drop a third CSV via API, re-run crawler, re-run query — totals change
+- The CTAS-to-Parquet stretch goal (it's a stretch, and adds time/cost)
+- QuickSight integration (not API-driven from a CI runner)
 
-## Why this is not implemented in the initial harness
+## Cost (approximate, per harness run)
 
-This lab's API surface is well-suited to automation (every step has a stable API). Implement next after the foundation is proven — high value, low risk.
+- S3: free for this size
+- Glue catalog: $1/100k ops/month — negligible
+- Glue Crawler: $0.44/DPU-hour, ~1 min run = ~$0.01
+- Athena query: $5/TB scanned; this query scans <1KB = ~$0.000005
+- IAM: free
 
-Copy `lab-09-kms-secrets/` as the template (similar shape — a bucket + IAM + a service that consumes the bucket).
+Per run: **< $0.02**. Weekly CI: < $1/year.

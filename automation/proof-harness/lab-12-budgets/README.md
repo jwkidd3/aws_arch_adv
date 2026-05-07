@@ -1,21 +1,29 @@
-# Lab 12 proof harness — STUB
+# Lab 12 proof harness
 
-**Status: not yet implemented.**
+Builds: a Cost Budget with a $5 monthly limit, 80% Actual alert + 100% Forecasted alert, both with email subscribers.
 
-## Scope when implemented
+## What it asserts
 
-- Provision a Budget with email notification at 80% Actual and 100% Forecasted
-- Validate the Budget exists and has the expected thresholds and recipients
-- Optionally: provision a tag (`Course=archadv`) on a small dummy resource and verify it shows up in the Budget filter dropdown (this requires the cost allocation tag to be activated, which is account-level)
+- Budget exists with `$5 USD MONTHLY COST`
+- Two notifications attached:
+  - 80% ACTUAL with email subscriber
+  - 100% FORECASTED with email subscriber
+- Subscribers are configured for both
 
-## What can NOT be automated
+## What it does NOT assert
 
-- Cost Explorer activation — Cost Explorer takes ~24 hours to populate; CI cannot prove it works without a stable longitudinal account
-- Cost allocation tag activation — also account-level state; CI runs are ephemeral
-- Member-account billing access — depends on Org-side configuration the CI Sandbox doesn't model
+- Cost Explorer activation (account-level, ~24h delay before data populates — out of scope for an ephemeral harness)
+- Cost allocation tag activation (also account-level + days-long propagation)
+- Email delivery confirmation (would require a real inbox)
+- AWS Cost Anomaly Detection auto-creation (recently introduced — could be added)
 
-## Why this is not implemented in the initial harness
+## Cost (approximate, per harness run)
 
-Most of Lab 12 is observational. The Budget creation flow is automatable but doesn't catch much that wouldn't already be caught by service-level health checks. Lower priority than Labs 4, 6, 7, 8, 10.
+- Budgets resource: free (AWS gives 2 budgets/account at no charge)
+- IAM: free
 
-Copy `lab-09-kms-secrets/` as the template.
+Per run: **$0**. Weekly CI: **$0**.
+
+## Note on test email
+
+The default `noreply+lab12@example.com` is non-routable. AWS Budgets accepts the address at creation time but the alert email never delivers — that's fine for the harness. Override with `-var alert_email=...` if you want real delivery for a manual test.

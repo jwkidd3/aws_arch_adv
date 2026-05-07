@@ -1,24 +1,28 @@
-# Lab 6 proof harness — STUB
+# Lab 6 proof harness
 
-**Status: not yet implemented.**
+Builds: VPC + ECR repo + ECS Fargate cluster + task definition (uses public nginx image — skips the docker build/push) + ALB + ECS service with 2 tasks.
 
-## Scope when implemented
+## What it asserts
 
-- Provision an ECR repository
-- Build the `nginx:alpine` image and push to ECR — needs Docker available in CI runner (`docker://` or `kaniko`)
-- Provision an ECS Fargate cluster, task definition, and service
-- Provision an ALB with IP-target target group, listener, security groups
-- Validate `curl <ALB-DNS>` returns the expected payload
-- Validate rolling update path: push v2 image, update task def, watch tasks drain
+- ECR repository exists with valid repository URI
+- ECS cluster is `ACTIVE`
+- ECS service stabilizes with 2 running tasks
+- 2 targets healthy in the ALB target group
+- ALB returns HTTP 200 on `/` (proves the full flow: ALB → TG → ENI → Fargate task → nginx)
+- Task definition uses `awsvpc` network mode (Fargate requirement)
+- Tasks have NO public IP (proves NAT egress + private subnet pattern)
 
-## Notes for implementer
+## What it does NOT assert
 
-- GitHub Actions runners have Docker; this is straightforward
-- Reuse the Lab 1 VPC pattern (build a fresh VPC inline rather than depending on Lab 1's harness)
-- The lab guide explicitly requires Lab 1's VPC (private subnets + NAT) — don't use the default VPC
+- Docker build & push from CloudShell — uses public ECR image instead. To validate Docker availability in CloudShell, see the May 2026 doc-validation memo.
+- Rolling update behavior — not part of the smoke test.
+- The student-facing console clicks for service create.
 
-## Why this is not implemented in the initial harness
+## Cost (approximate, per harness run)
 
-ECR + ECS + ALB on a fresh VPC takes ~10-12 min apply + ~3 min destroy and runs ~$0.10/hr while up. Weekly CI for this lab is ~$5/year. Worth implementing once the foundation is proven.
+- NAT Gateway: $0.045/hr
+- ALB: $0.0225/hr base + LCU
+- 2 Fargate tasks (0.25 vCPU, 0.5 GB): ~$0.012/hr each
+- ECR: free for this size
 
-Copy `lab-01-vpc/` and `lab-05-tgw/` as templates.
+Per run (~12 min wall clock): **~$0.05**. Weekly CI: ~$2.60/year.

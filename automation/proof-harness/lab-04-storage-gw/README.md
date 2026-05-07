@@ -1,29 +1,30 @@
-# Lab 4 proof harness — STUB
+# Lab 4 proof harness (lightweight)
 
-**Status: not yet implemented.**
+## Scope
 
-## Scope when implemented
+This is a **lightweight** harness — it validates the things that change (AMIs, managed policies, instance-type availability) without launching real Storage Gateway or DataSync agent EC2s.
 
-- Provision the destination S3 bucket
-- Provision the File Gateway VM as EC2 (`m5.xlarge` per current minimum) with a 150 GiB cache volume
-- Provision a DataSync agent VM as EC2 (`m5.2xlarge` per current minimum)
-- Skip the actual gateway *activation* step (it requires a console-side activation key handshake that's painful to script; assert the EC2s boot and the AMIs resolve)
-- Validate that an NFS file share can be created (API-only)
-- Validate DataSync source + destination locations and a task can be created
-- Validate `m5.2xlarge` is the minimum that boots (the central blocker the validation pass found)
+**What it does:**
+- Resolves `aws-storage-gateway-*` AMI and `aws-datasync-*` AMI in `us-east-1`
+- Creates an S3 bucket with SSE-S3 + public access blocked
+- Creates the Storage Gateway IAM role + S3 inline policy
+- Confirms `m5.2xlarge` (DataSync minimum) is offered in the region
 
-## Lower-cost alternative
+**What it does NOT do:**
+- Launch a Storage Gateway EC2 (~$0.012/hr for `m5.xlarge`)
+- Launch a DataSync agent EC2 (~$0.024/hr for `m5.2xlarge`)
+- Activate the gateway (HTTP-based handshake is awkward to script)
+- Create an actual NFS file share or DataSync task
 
-If the cost of two `m5.xlarge`-class EC2s is unacceptable for weekly CI ($0.40-0.60/run), constrain to:
+The end-to-end activation flow is covered by the instructor pre-class dry-run. This harness catches the AWS-side drift items that have hit the validation pass:
 
-1. AMI resolution check (does the Storage Gateway AMI still resolve in this region?)
-2. IAM managed-policy check (`AWSGlueServiceRole`-equivalent for Storage Gateway)
-3. Quota check (can this Sandbox launch `m5.2xlarge`?)
+- Storage Gateway AMI deprecation
+- DataSync minimum instance type changes
+- IAM principal trust changes for `storagegateway.amazonaws.com`
+- Region-level capacity issues for `m5.2xlarge`
 
-Skip the actual EC2 launch. Rely on instructor dry-run for the remainder.
+## Cost (approximate, per harness run)
 
-## Why this is not implemented in the initial harness
+S3 bucket: free for this size. IAM: free. Data sources: free.
 
-Storage Gateway activation is the longest path in the lab and is largely instructor-pre-flight territory. The 6 critical blockers fixed in May 2026 are all asserted by the lab guide patch (cache disk in launch step, agent type bump). A weekly CI would mostly re-confirm those didn't regress, at substantial cost.
-
-If you want it built, copy `lab-01-vpc/` as the template and add the Storage Gateway resources.
+Per run: **< $0.001**. Weekly CI: < $0.10/year.

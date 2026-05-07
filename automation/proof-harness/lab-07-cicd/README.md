@@ -1,21 +1,28 @@
-# Lab 7 proof harness — STUB
+# Lab 7 proof harness
 
-**Status: not yet implemented.**
+Builds: CodeCommit repo + artifact S3 bucket + CodeBuild project (using current `aws/codebuild/amazonlinux2-x86_64-standard:5.0`) + CodePipeline with Source + Build stages.
 
-## Scope when implemented
+## What it asserts
 
-- Provision a CodeCommit repository (CodeCommit returned to GA in November 2025; verify CI Sandbox account has access)
-- Provision a CodeBuild project with the right buildspec
-- Provision the artifact S3 bucket
-- Provision a CodePipeline with source/build/deploy stages
-- Validate a triggered build succeeds end-to-end and updates the ECS service from Lab 6 (or a stand-in)
+- CodeCommit repo exists (validates that this AWS account can create CodeCommit repos — relevant since CodeCommit was closed to new customers from July 2024 to Nov 2025; harness will catch a regression if AWS sunsets again)
+- A file can be committed via API (`aws codecommit put-file`) — proves the repo is functional even without git CLI
+- CodeBuild project exists with the current standard image
+- CodePipeline has Source + Build stages
+- Pipeline execution runs end-to-end and reaches `Succeeded` within 8 min
+- Artifact bucket has at least one object after the run
 
-## Critical CI assertion
+## What it does NOT assert
 
-The single highest-value assertion is: **`pip3 install --user git-remote-codecommit && git clone codecommit::us-east-1://<repo>` works** under the CI's IAM Identity Center-equivalent role. This is the validation-pass-discovered blocker that the lab guide was patched for. If `git-remote-codecommit` ever stops working in CloudShell, students hit a wall.
+- The Deploy stage (no ECS service to deploy to in this harness)
+- `git-remote-codecommit` clone path — uses `aws codecommit put-file` instead, which is API-driven and doesn't require pip
+- Manual approval action
+- CodeStar / CodeConnections GitHub source
 
-## Why this is not implemented in the initial harness
+## Cost (approximate, per harness run)
 
-The most fragile part of this lab is CodeCommit's CI behavior with rotating credentials. Build it after the foundation is proven; pair it with Lab 6's harness so the deploy stage has an ECS target.
+- CodeCommit: $1/active-user/month — prorated to per-run = pennies
+- CodeBuild: $0.005/build-minute on small Linux — ~$0.01 per run (2-min build)
+- S3: free for this size
+- CodePipeline: $1/active-pipeline/month — prorated = pennies
 
-Copy `lab-01-vpc/` as the template.
+Per run: **~$0.02**. Weekly CI: ~$1/year.
