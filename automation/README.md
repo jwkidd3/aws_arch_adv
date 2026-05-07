@@ -2,6 +2,8 @@
 
 This subtree is **instructor-side infrastructure**. It is **not** part of the student-facing course materials. Students never see this directory; they work in the AWS console per the lab guides under `Module_NN/labs/`.
 
+> **First time here? Read [SETUP.md](SETUP.md) and run `automation/tools/preflight.sh`.**
+
 The goal is to detect AWS service drift between class deliveries before students hit it. Every lab that has a meaningful API surface gets a Terraform module that builds the same end-state the lab guide describes, plus a `validate.sh` that asserts the lab's validation checklist via the AWS CLI. CI runs them weekly in a dedicated CI Sandbox account.
 
 Yes, the irony is intentional: the course is intentionally Terraform-free for students, and the harness is Terraform. The harness is plumbing, not pedagogy.
