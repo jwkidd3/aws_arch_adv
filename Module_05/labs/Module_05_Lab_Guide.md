@@ -30,7 +30,7 @@ Wire three VPCs to a Transit Gateway using **two TGW route tables** (prod vs non
 ## Pre-flight
 
 1. Sign in to `Sandbox<N>`. Region `us-east-1`.
-2. **Check VPC quota.** This lab creates **3 new VPCs**. The default AWS quota is 5 VPCs per region; if you have prior-lab VPCs lingering plus the default VPC, you can hit the cap. The instructor should have raised the quota to 15 pre-class. To verify: **Service Quotas → AWS services → Amazon VPC → VPCs per Region**. If yours is still 5, either request an increase (minutes to auto-approve) or delete prior-lab VPCs first.
+2. **Check VPC quota.** This lab creates **3 new VPCs**. With the default 5 VPCs/region and the default VPC + your Lab 1 VPC already present, you'll be at the cap. If the instructor pre-raised the quota to 15, you're fine. If not: either ensure all prior-lab VPCs are cleaned up before starting (verify in **VPC → Your VPCs**), or request an increase via **Service Quotas → AWS services → Amazon VPC → VPCs per Region** (auto-approves in minutes).
 
 ## Part A — Build the three VPCs (10 min)
 
