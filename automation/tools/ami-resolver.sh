@@ -49,7 +49,7 @@ DS_AMI=$(aws ec2 describe-images \
 for POLICY in \
   arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore \
   arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole \
-  arn:aws:iam::aws:policy/AmazonECSTaskExecutionRolePolicy \
+  arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy \
   arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
 do
   if aws iam get-policy --policy-arn "$POLICY" >/dev/null 2>&1; then
@@ -59,6 +59,27 @@ do
   fi
 done
 
+# Per-AZ availability probe for instance types the labs use.
+# Catches "t3.micro blocked in us-east-1b" / "m5.2xlarge unavailable" issues
+# before a student hits them.
 echo
-echo "==> AMI/policy resolver: $PASS passed, $FAIL failed"
+echo "==> Per-AZ availability probe"
+
+for TYPE in t3.micro t3.small m5.xlarge m5.2xlarge; do
+  AZS=$(aws ec2 describe-instance-type-offerings \
+    --location-type availability-zone \
+    --filters "Name=instance-type,Values=$TYPE" \
+    --query 'InstanceTypeOfferings[].Location' \
+    --output text --region "$REGION" 2>/dev/null || echo "")
+  if [[ -z "$AZS" ]]; then
+    fail "$TYPE: not offered in any AZ in $REGION"
+  else
+    N=$(echo "$AZS" | wc -w | tr -d ' ')
+    echo "  $TYPE: $N AZ(s) — $(echo "$AZS" | tr '\t' ' ')"
+    [[ "$N" -ge 2 ]] && pass "$TYPE: ≥2 AZs (lab redundancy possible)" || fail "$TYPE: only $N AZ — labs may fail"
+  fi
+done
+
+echo
+echo "==> AMI/policy/AZ resolver: $PASS passed, $FAIL failed"
 exit $(( FAIL > 0 ? 1 : 0 ))

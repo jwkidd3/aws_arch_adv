@@ -1,0 +1,52 @@
+name: Org-wide auto-cleanup
+
+# Daily nuke of stuck archadv-tagged resources across every Sandbox account
+# in the org. Catches forgotten student resources from prior cohorts.
+#
+# Setup:
+# 1. IAM role 'archadv-org-cleanup' in management account with permissions to:
+#    - sts:AssumeRole on arn:aws:iam::*:role/OrganizationAccountAccessRole
+#    - organizations:ListAccounts
+# 2. Trust policy: GitHub OIDC for this repo
+# 3. Add secret AWS_ORG_CLEANUP_ROLE_ARN with the role ARN
+
+on:
+  schedule:
+    # Every day at 03:00 UTC (after most class sessions end)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-run (preview without deleting)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ORG_CLEANUP_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Run org-wide cleanup
+        run: |
+          chmod +x automation/tools/*.sh
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            automation/tools/org-cleanup.sh --dry-run
+          else
+            automation/tools/org-cleanup.sh
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::warning::Org cleanup failed. Investigate before next class."
