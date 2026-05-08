@@ -95,6 +95,12 @@ In **AWS Well-Architected Tool**, define a workload for this VPC and run the fra
 
 ## Cleanup
 
+> **Important:** **Labs 3, 4, 6, 8, 11, 13, and 14 all reuse this VPC.** Do **not** delete it now if you're continuing the course. Defer cleanup until **end of class** (after Module 14 / capstone).
+>
+> If you must stop overnight between class days, the NAT Gateway costs ~$0.045/hr while running. Either accept ~$1/night per student or run cleanup at end-of-day and rebuild the VPC at the start of the next session (~5 min).
+
+When you're ready to clean up (end of course, or end of day-1 if not continuing):
+
 - Terminate both EC2s.
 - **VPC → Your VPCs → select → Actions → Delete VPC** — this removes the subnets, route tables, IGW, and NAT in one shot.
 - If Delete VPC errors on a NAT/EIP dependency, delete the NAT Gateway from **VPC → NAT gateways** first (wait ~1 min), then retry Delete VPC.

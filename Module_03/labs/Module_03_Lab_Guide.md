@@ -124,7 +124,7 @@ In this order to avoid dependency errors:
 3. Delete the Site-to-Site VPN connection.
 4. Detach the VGW from the VPC, then delete the VGW.
 5. Delete the Customer Gateway.
-6. Leave the VPC for Lab 5.
+6. **Leave the VPC** — it's reused by Labs 4, 6, 8, 11, 13, and 14. Lab 1's cleanup section is the right place to delete it (at end of course).
 
 ## Stretch goals
 
