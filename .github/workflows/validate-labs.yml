@@ -35,8 +35,15 @@ jobs:
       matrix:
         lab:
           - lab-01-vpc
+          - lab-04-storage-gw
           - lab-05-tgw
+          - lab-06-ecs
+          - lab-07-cicd
+          - lab-08-alb-asg-waf
           - lab-09-kms-secrets
+          - lab-10-data-lake
+          - lab-11-asg-scaling
+          - lab-12-budgets
 
     steps:
       - uses: actions/checkout@v4
