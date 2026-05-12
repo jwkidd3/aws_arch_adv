@@ -43,7 +43,7 @@ The course runs inside a **single shared AWS Organization** owned by the instruc
 - **Sandbox accounts** — one per student, named `Sandbox1`, `Sandbox2`, … `SandboxN`. Each student is granted an IAM Identity Center user that maps to `AWSAdministratorAccess` in their assigned account only. Students do all hands-on lab work inside their sandbox account.
 - **Shared/Support accounts (optional)** — `Audit` and `Log Archive` accounts under a Security OU, used for the Module 9 (CloudTrail Org trail) and Module 12 (consolidated billing) demos.
 
-> **Sign-in flow for students:** AWS access portal URL → IAM Identity Center user → choose `Sandbox<N>` → `AWSAdministratorAccess` → "Open AWS console". This is the same flow real customers use.
+> **Sign-in flow for students:** On Day 1, students start with **starter credentials** to the management account (instructor pre-stages one per student). Lab 1 Part A walks them through creating their own IAM Identity Center user and assigning `AdministratorAccess` to their Sandbox. From that point on, the sign-in is: AWS access portal URL → their own IdC user → choose `Sandbox<N>` → `AdministratorAccess` → "Open AWS console". Same flow real customers use, but students own their identity end-to-end.
 
 ## Schedule
 

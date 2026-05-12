@@ -32,7 +32,8 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] Shared AWS Organization is operational; IAM Identity Center is enabled in the management account
 - [ ] Sandbox OU exists under the Org root
 - [ ] One Sandbox member account per student (`Sandbox1` … `SandboxN`) exists under the Sandbox OU
-- [ ] One IAM Identity Center user per student exists; each is assigned `AWSAdministratorAccess` to their Sandbox account only
+- [ ] **Per-student starter credential** in the mgmt account `001613358280` — gives the student enough access to create their own IAM Identity Center user (Lab 1 Part A). Easiest: an IAM user per student with `AWSSSOMemberAccountAdministrator` (managed policy) + an inline policy permitting `sso:CreateUser` and `sso:CreateAccountAssignment` on the student's assigned Sandbox. Hand out username + initial password.
+- [ ] **`AdministratorAccess` permission set exists** in IAM Identity Center (this is the AWS-managed predefined permission set; Lab 1 Part A assigns it to the student's Sandbox)
 - [ ] Deny-non-approved-regions SCP is staged on the Sandbox OU **detached** (Module 2 lab attaches/detaches it live)
 - [ ] On-prem-simulator VPC for Module 3 exists (see *Module 3 setup* below)
 - [ ] Per-account Budget alarm in each Sandbox at $10/day; instructor email subscribed

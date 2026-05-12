@@ -1,18 +1,61 @@
-# Lab 1 — Well-Architected VPC (console build)
+# Lab 1 — Identity Center user + Well-Architected VPC
 
 ## Objective
 
-Build a multi-AZ VPC by hand in the AWS console and validate it against the Well-Architected reliability and security pillars. The point is **building the network foundation every other lab will sit on**, while practicing the WAFR lens.
+Two parts. First (Part A): create your own IAM Identity Center user in the management account and grant it `AdministratorAccess` to your assigned Sandbox. This is your identity for the rest of the course. Second (Part B): build a multi-AZ VPC and validate it against the Well-Architected reliability and security pillars — the network foundation every other lab will sit on.
 
-## Time budget: 50 minutes
+## Time budget: 60 minutes (10 min Part A + 50 min Part B)
 
 ## Pre-flight
 
-1. Open the AWS access portal URL from your credentials packet.
-2. Sign in with your IAM Identity Center user.
-3. Choose your assigned account — `Sandbox<N>` — and the `AWSAdministratorAccess` role.
-4. Click **Open AWS console**. Confirm the badge in the top-right reads `AWSAdministratorAccess @ Sandbox<N>`.
-5. Set region to **US East (N. Virginia) — `us-east-1`** in the top-right region selector.
+You should have received from the instructor:
+
+- A **starter credential** (username + password or sign-in link) that gets you into the **management account** `001613358280`. You'll use this once, in Part A.
+- The **AWS access portal URL** for the org (looks like `d-xxxxxxxxxx.awsapps.com/start`). You'll use this after Part A as your normal sign-in.
+- Your **assigned Sandbox account name** (e.g., `Sandbox7`) and account ID.
+
+## Part A — Create your Identity Center user (10 min)
+
+### 1. Sign into the management account
+
+- Open the AWS console and sign in with the **starter credentials** from the instructor.
+- Confirm the badge in the top-right shows account `001613358280` (the management account).
+- Set region to **US East (N. Virginia) — `us-east-1`**.
+
+### 2. Open IAM Identity Center
+
+- Service search → **IAM Identity Center**.
+- If asked, the org's IdC region is the same as your console session region.
+
+### 3. Create your user
+
+- Left sidebar → **Users** → **Add user**.
+- Username: `<your-name>` (lowercase, no spaces — e.g., `alice` or `alice.smith`)
+- Email: your real email (Identity Center will send an activation email here)
+- First name / Last name: your own
+- Password: **Generate a one-time password and share it with the user manually** (you'll receive the password on screen)
+- Skip group assignment (we'll grant the permission set directly in step 4).
+- Add user.
+
+### 4. Assign yourself `AdministratorAccess` to your Sandbox
+
+- **IAM Identity Center → AWS accounts** (left sidebar).
+- Find your assigned `Sandbox<N>` in the account list and click into it.
+- **Assign users or groups** → select your newly-created user from the **Users** tab → **Next**.
+- **Permission sets**: select **`AdministratorAccess`** (an existing pre-staged permission set) → **Next**.
+- **Submit**. Wait ~30 sec for the assignment to provision.
+
+### 5. Sign out and sign back in as your new user
+
+- Sign out of the starter session.
+- Open the **AWS access portal URL** from your credentials packet (`d-xxxxxxxxxx.awsapps.com/start`).
+- Sign in with the username + one-time password from step 3. You'll be prompted to set a new password and configure MFA.
+- After sign-in, you should see exactly one account: `Sandbox<N>`. Click it → `AdministratorAccess` → **Open AWS console**.
+- Confirm the badge in the top-right reads `AdministratorAccess @ Sandbox<N>`. **You are now in your own Sandbox.** You will not need the management account starter credentials again.
+
+## Part B — Well-Architected VPC (50 min)
+
+You're now signed in to your Sandbox as your own IdC user. Set region to **us-east-1**.
 
 ## Steps
 
