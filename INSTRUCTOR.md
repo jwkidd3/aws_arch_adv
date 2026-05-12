@@ -93,12 +93,12 @@ If you want to restore the original simulator-based flow (instructor running lib
 - Spend disproportionate time on the **OU strategy** slide — this is the durable concept; SCPs are mechanics. Cut the IAM Identity Center deep-dive to a single comparison row.
 - **Lab 2**: students experience their Sandbox account from the inside, then watch a live SCP attach/detach from the management account. The "aha" is *not* the SCP itself — it's that the deny propagated without the student touching their account. Stretch goal: instructor attaches a tag-required SCP, students try untagged launches, see deny, then succeed when tags are added.
 
-### Module 3 — Hybrid Connectivity (25 min teach + 65 min lab)
+### Module 3 — Hybrid Connectivity (25 min teach + 50 min lab)
 
 - The **VPN vs Direct Connect vs Cloud WAN** slide is the pivotal teach moment. After that, hand off into the lab.
 - FIPS 140-2 question comes up — short answer: "Direct Connect terminating to a FIPS-validated CGW; for VPN, GovCloud or a customer-managed FIPS appliance on-prem."
-- **Lab 3** has the longest lab budget on Day 1 (65 min). Use the spare time for the Route 53 Resolver outbound endpoint section — set up a forwarder and prove `dig host.corp.example.com @<resolver-ip>` from CloudShell returns the on-prem record from the simulator. That's the "aha" moment.
-- Tunnel typically takes 5–10 min to come up after the student creates it. If still `DOWN` after 15 min, check that the student picked the correct on-prem PIP and PSK from the credentials packet.
+- **Lab 3 is configure-only as of 2026-05-12.** Students build all AWS-side hybrid resources (CGW, VGW, VPN, Resolver outbound, forwarding rule) using placeholder on-prem values from the lab guide. The tunnel stays `DOWN` because there's no IPsec responder — that's the teaching point. Have students inspect the **Download configuration** vendor file from the Tunnel details tab as the "aha" moment — it's the exact config an on-prem engineer would feed into their router.
+- The 5-min wrap-up discussion (Step 8) is where Direct Connect, the missing on-prem side, and CloudWatch tunnel metrics get covered.
 
 ### Module 4 — Specialized Infrastructure (25 min teach + 50 min lab)
 
