@@ -14,7 +14,7 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 |---|---|
 | Lab 1 | NAT EIP release works during cleanup; no quota issue |
 | Lab 2 | SCP attach/propagation timing in *your* org (typically <30 sec) |
-| Lab 3 | **Simulator's IPsec daemon is actively peering** — without it, no tunnel comes UP and the lab cannot succeed |
+| Lab 3 | Lab 3 is configure-only (no simulator). Tunnels stay `DOWN` by design. Validation focuses on AWS-side resource creation. |
 | Lab 4 | DataSync agent boots on `m5.2xlarge`; File Gateway 150 GiB cache disk attached at launch |
 | Lab 5 | EC2s in **public subnets** so SSM Agent reaches SSM via IGW (private subnets without endpoints don't work); ping isolation matches the validation table |
 | Lab 6 | **Lab 1 VPC** is used (default VPC has only public subnets and breaks Step 6) |
@@ -35,7 +35,7 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] **Per-student starter credential** in the mgmt account `001613358280` — gives the student enough access to create their own IAM Identity Center user (Lab 1 Part A). Easiest: an IAM user per student with `AWSSSOMemberAccountAdministrator` (managed policy) + an inline policy permitting `sso:CreateUser` and `sso:CreateAccountAssignment` on the student's assigned Sandbox. Hand out username + initial password.
 - [ ] **`AdministratorAccess` permission set exists** in IAM Identity Center (this is the AWS-managed predefined permission set; Lab 1 Part A assigns it to the student's Sandbox)
 - [ ] Deny-non-approved-regions SCP is staged on the Sandbox OU **detached** (Module 2 lab attaches/detaches it live)
-- [ ] On-prem-simulator VPC for Module 3 exists (see *Module 3 setup* below)
+- [x] Module 3 simulator: **NOT NEEDED** — Lab 3 was pivoted to configure-only on 2026-05-12. Students build all AWS-side hybrid resources and observe the `DOWN` state; no IPsec responder required. See updated Module 3 lab guide.
 - [ ] Per-account Budget alarm in each Sandbox at $10/day; instructor email subscribed
 - [ ] **VPC quota — recommended raise to 15 in each Sandbox.** The default 5/region *technically fits* the course (Lab 5 peak = default + Lab-1-style VPC + 3 Lab-5 VPCs = exactly 5) but only with perfect cleanup discipline; one stale VPC from Module 4 troubleshooting and Lab 5 fails at apply with `VpcLimitExceeded`. Raising to 15 via Service Quotas → "VPCs per Region" is free, auto-approves in minutes, and removes the class-blocker risk. Skip it only if you trust your students' cleanup discipline. Optional: delete the default VPC in each Sandbox to free another slot.
 - [ ] Cleanup script keyed on `Owner=<student>` + `Course=archadv` tags is tested
@@ -69,16 +69,13 @@ Module 2's lab cannot have students create new top-level Org structure (only the
 
 The "aha" moment is the deny propagating across all student accounts simultaneously without any student doing anything in their own account. Pre-stage the SCP **detached** so attaching it live is the demo.
 
-### Module 3 setup (must be done before class)
+### Module 3 setup (no pre-class work needed)
 
-Build a "fake on-prem" VPC in a separate region (e.g., `us-west-2`) inside one of the support accounts (or the management account). Configure:
+**Updated 2026-05-12:** Lab 3 is now **configure-only** — students build the AWS-side hybrid networking resources (CGW, VGW, Site-to-Site VPN, Route 53 Resolver outbound endpoint, forwarding rule) and observe the `DOWN` tunnel state, but no IPsec responder is required. Students use placeholder values (`203.0.113.10` peer IP, `archadv-lab3-2026` PSK, ASN 65000, etc.) defined in the lab guide.
 
-- VPC `10.99.0.0/16` with one public + one private subnet
-- An EC2 in the private subnet running a Route 53 inbound resolver target (or a tiny BIND server) for `corp.example.com` zone with one A record
-- A Customer Gateway-like NAT EIP that students will use as the on-prem peer in their Site-to-Site VPN
-- Document the public IP, BGP ASN (e.g., 65000), and pre-shared key in the per-student credentials packet
+The teaching point shifts from "see the tunnel come UP" to "see exactly what AWS provides to a hybrid customer, including the downloaded vendor-specific config that an on-prem network engineer would paste into their router." Lab time reduced from 75 to 50 min.
 
-This appears to students as "the on-prem datacenter you're connecting to". You will share the same simulator across the class.
+If you want to restore the original simulator-based flow (instructor running libreswan + FRR + BIND on a single EC2), see the lab guide version prior to commit on 2026-05-12.
 
 ---
 
