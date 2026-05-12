@@ -39,10 +39,7 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] Per-account Budget alarm in each Sandbox at $10/day; instructor email subscribed
 - [ ] **VPC quota — recommended raise to 15 in each Sandbox.** The default 5/region *technically fits* the course (Lab 5 peak = default + Lab-1-style VPC + 3 Lab-5 VPCs = exactly 5) but only with perfect cleanup discipline; one stale VPC from Module 4 troubleshooting and Lab 5 fails at apply with `VpcLimitExceeded`. Raising to 15 via Service Quotas → "VPCs per Region" is free, auto-approves in minutes, and removes the class-blocker risk. Skip it only if you trust your students' cleanup discipline. Optional: delete the default VPC in each Sandbox to free another slot.
 - [ ] Cleanup script keyed on `Owner=<student>` + `Course=archadv` tags is tested
-- [ ] **Plan for VPC continuity.** Lab 1's VPC is reused by Labs 3, 4, 6, 8, 11, 13, and 14. Decide pre-class:
-      - **Option A (recommended):** keep Lab 1's VPC up across all 3 days; accept ~$0.045/hr NAT cost (~$1/student × 3 days = ~$3/student total). Cleanup at end of Module 14.
-      - **Option B:** destroy and rebuild at end of each day. Adds ~5 min to next-day's first lab. Saves ~$2/student.
-      - The lab guides default to Option A (Lab 1's cleanup says "defer to end of class"). If you pick Option B, brief students at end-of-day to run Lab 1's cleanup, then prefix Day-2/Day-3 with "rebuild Lab 1's VPC."
+- [ ] **VPC continuity: locked in — Lab 1's VPC stays up for the full course.** Confirmed 2026-05-12. Students do NOT delete the VPC at any point during class. Cost: NAT Gateway ~$0.045/hr × 24h × 3 nights = ~$3/student (~$81 for 27 students). After class ends, you (the instructor) clean up VPCs centrally across all Sandboxes — Lab 1 / Lab 3 / etc. cleanup sections in the lab guides only direct students to remove the per-lab compute (EC2s, NAT-attached EIPs are kept) so the VPC stays available for the next lab.
 - [ ] AWS access portal URL + per-student credentials packet is ready to distribute
 
 ### Org structure at a glance
