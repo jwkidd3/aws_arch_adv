@@ -144,7 +144,7 @@ Before learners sign in:
 1. Provision (or reuse) the shared Organization. Confirm IAM Identity Center is enabled in the management account.
 2. Pre-create the Sandbox OU and one Sandbox account per student (`Sandbox1` … `SandboxN`). Use Account Factory in Control Tower if available; otherwise create accounts manually under the Sandbox OU.
 3. Create one IAM Identity Center user per student. Assign each user `AWSAdministratorAccess` to their Sandbox account only.
-4. Stage the deny-non-approved-regions SCP on the Sandbox OU (detached) for Module 2.
+4. Stage the `DenyOutsideApprovedRegions` SCP on the Sandbox OU (detached) for Module 2.
 5. Pre-create the on-prem-simulator VPC for Module 3 (Site-to-Site VPN endpoint) — see INSTRUCTOR.md for the exact build.
 6. Set the per-account daily Budget alarm in each Sandbox.
 7. Distribute the access portal URL + per-student credentials.

@@ -66,6 +66,35 @@ Module 2's lab cannot have students create new top-level Org structure (only the
 
 The "aha" moment is the deny propagating across all student accounts simultaneously without any student doing anything in their own account. Pre-stage the SCP **detached** so attaching it live is the demo.
 
+#### The exact SCP staged in this Org
+
+Policy name: **`DenyOutsideApprovedRegions`**. Approved regions: `us-east-1` and `us-east-2`. `NotAction` excludes global services (IAM, Organizations, STS, billing, CloudFront, Route 53, etc.) so the deny only kicks in for regional services in non-approved regions.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyOutsideApprovedRegions",
+      "Effect": "Deny",
+      "NotAction": [
+        "iam:*", "organizations:*", "sts:*", "support:*", "account:*",
+        "billing:*", "ce:*", "budgets:*", "cloudfront:*", "route53:*",
+        "route53domains:*", "globalaccelerator:*", "networkmanager:*",
+        "waf:*", "shield:*", "health:*", "tag:*", "trustedadvisor:*",
+        "pricing:*", "ec2:DescribeRegions"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": ["us-east-1", "us-east-2"]
+        }
+      }
+    }
+  ]
+}
+```
+
 ### Module 3 setup (no pre-class work needed)
 
 **Updated 2026-05-12:** Lab 3 is now **configure-only** — students build the AWS-side hybrid networking resources (CGW, VGW, Site-to-Site VPN, Route 53 Resolver outbound endpoint, forwarding rule) and observe the `DOWN` tunnel state, but no IPsec responder is required. Students use placeholder values (`203.0.113.10` peer IP, `archadv-lab3-2026` PSK, ASN 65000, etc.) defined in the lab guide.
@@ -181,7 +210,7 @@ Console build typically takes 25–35 min for this audience. The validation step
 Expected sequence:
 1. Student is signed into their Sandbox account via IAM IdC.
 2. Student tries to launch an EC2 in `eu-west-1` — succeeds.
-3. **Instructor (in management account) attaches the staged deny-non-approved-regions SCP to the Sandbox OU.**
+3. **Instructor (in management account) attaches the staged `DenyOutsideApprovedRegions` SCP to the Sandbox OU.**
 4. Student retries the EC2 launch in `eu-west-1` — denied. Tries `us-east-1` — succeeds.
 5. Instructor detaches the SCP. Student confirms `eu-west-1` works again.
 

@@ -167,7 +167,7 @@ the region selector to <strong><code>eu-west-1</code></strong>.</li>
 succeed.</li>
 <li>Terminate that instance.</li>
 <li><strong>Step 2 (instructor):</strong> Attaches the staged
-<code>DenyNonApprovedRegions</code> SCP to the Sandbox OU. Counts down
+<code>DenyOutsideApprovedRegions</code> SCP to the Sandbox OU. Counts down
 "3, 2, 1, attached" — wait for the cue.</li>
 <li><strong>Step 3 (you):</strong> Repeat the launch in
 <code>eu-west-1</code>. It fails with <code>UnauthorizedOperation</code>
@@ -223,7 +223,7 @@ difference between <strong>IAM Identity Center</strong> and standalone
 </ul>
 <h2 id="discussion-prompts">Discussion prompts</h2>
 <ul>
-<li>Where would the deny-non-approved-regions SCP belong in
+<li>Where would the DenyOutsideApprovedRegions SCP belong in
 <em>your</em> org — at the root, at an OU, or per-account? Why?</li>
 <li>What goes in a Sandbox OU vs a Prod OU vs a Security OU? What SCPs
 differ?</li>
