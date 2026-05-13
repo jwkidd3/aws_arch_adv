@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -79,7 +82,7 @@
                     <li class="fragment fade-up">Pick a data store given throughput, consistency, and latency requirements</li>
                     <li class="fragment fade-up">Build a working data lake (S3 + Glue Crawler + Athena) in the hands-on lab</li>
                 </ul>
-                <aside class="notes">~45 minutes of discussion, ending in a paired exercise. No Terraform applied today &mdash; learners produce a decision and a justification, not a deployment.</aside>
+                <aside class="notes">~45 minutes of discussion, ending in a paired exercise. No infrastructure deployed today &mdash; learners produce a decision and a justification, not a deployment.</aside>
             </section>
 
             <!-- Access patterns -->
@@ -234,7 +237,7 @@
                 <div class="key-point"><strong>Match shape to shape.</strong> OLTP &rarr; Aurora / DynamoDB. OLAP &rarr; Redshift / Athena. Cache &rarr; Redis. Lake &rarr; S3 + Glue + Athena.</div>
                 <div class="key-point"><strong>Aurora Global vs DynamoDB Global.</strong> Single-writer relational vs active-active LWW. The conflict-tolerance question decides for you.</div>
                 <div class="key-point"><strong>The decision lens beats the service catalog.</strong> Access pattern, consistency, scale, geography, team &mdash; in that order.</div>
-                <aside class="notes">Hand off into Lab 10. Remind the room: terraform apply provisions S3 + Glue catalog + crawler + Athena workgroup with seed data; learners run the crawler, query in Athena, then drop a new file to see the table grow.</aside>
+                <aside class="notes">Hand off into Lab 10. Remind the room: the lab provisions S3 + Glue catalog + crawler + Athena workgroup with seed data; learners run the crawler, query in Athena, then drop a new file to see the table grow.</aside>
             </section>
 
             <!-- Lab 10 callout -->
@@ -242,14 +245,14 @@
                 <h2>&#128295; Lab 10: Build a data lake</h2>
                 <h3>S3 + Glue Crawler + Athena &mdash; SQL on files, no database</h3>
                 <ul>
-                    <li><code>terraform apply -var "learner=&lt;name&gt;"</code> &mdash; provisions an S3 lake bucket with seed CSVs, a Glue catalog DB, a Glue Crawler, and an Athena workgroup</li>
+                    <li>Lab provisions an S3 lake bucket with seed CSVs, a Glue catalog DB, a Glue Crawler, and an Athena workgroup</li>
                     <li>Run the crawler in the Glue console; confirm the <code>sales</code> table and partition <code>year=2024</code> appear in the catalog</li>
                     <li>Query in Athena: <code>SELECT region, SUM(revenue) FROM sales WHERE year='2024' GROUP BY region</code></li>
                     <li>Drop a new CSV under <code>sales/year=2024/</code>; re-run the crawler; re-run the query &mdash; new rows appear without schema changes</li>
                     <li>Note <strong>Data scanned</strong> per query &mdash; that is the bill</li>
                 </ul>
                 <div class="highlight-box">
-                    <strong>Duration:</strong> ~30 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> empty the bucket then <code>terraform destroy</code>
+                    <strong>Duration:</strong> ~30 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> empty the bucket then console cleanup
                 </div>
                 <aside class="notes">The big &quot;aha&quot;: no database was provisioned. Files in S3, catalog in Glue, query with Athena. That separation is the data-lake pattern. If a learner asks &quot;why not just RDS&quot; — the answer is the Data scanned metric and the schema-on-read flexibility.</aside>
             </section>

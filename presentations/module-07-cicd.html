@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -152,7 +155,7 @@ Resources:
           ContainerPort: 8080</code></pre>
                     </div>
                 </div>
-                <aside class="notes">These two files are the contract between humans and the pipeline. Pipeline JSON / Terraform is the plumbing &mdash; these files are what developers actually edit.</aside>
+                <aside class="notes">These two files are the contract between humans and the pipeline. Pipeline JSON is the plumbing &mdash; these files are what developers actually edit.</aside>
             </section>
 
             <!-- Deployment strategies -->
@@ -186,11 +189,11 @@ Resources:
                         </ul>
                     </div>
                     <div class="card">
-                        <h4>Terraform equivalent</h4>
+                        <h4>Lab note</h4>
                         <ul>
-                            <li>CodeBuild stage runs <code>terraform plan</code></li>
+                            <li>CodeBuild stage runs <code>cfn-lint</code> or your linter of choice</li>
                             <li>Manual approval action</li>
-                            <li>Second CodeBuild runs <code>terraform apply</code></li>
+                            <li>Second CodeBuild runs build in the console</li>
                         </ul>
                     </div>
                 </div>
@@ -241,7 +244,7 @@ Resources:
                         <ul>
                             <li>Plain CodeBuild environment variables (visible in logs)</li>
                             <li>Hardcoded in the source repo</li>
-                            <li>Hardcoded in CloudFormation templates / Terraform vars files</li>
+                            <li>Hardcoded in CloudFormation templates or pipeline variables</li>
                         </ul>
                     </div>
                 </div>
@@ -263,13 +266,13 @@ Resources:
                 <h2>&#128295; Lab 7: CodeCommit &rarr; CodeBuild &rarr; CodeDeploy</h2>
                 <h3>A working pipeline triggered by a single git push</h3>
                 <ul>
-                    <li>Run <code>terraform apply</code> to create the CodeCommit repo, CodeBuild project, CodeDeploy app/group, and CodePipeline</li>
+                    <li>Build the CodeCommit repo, CodeBuild project, CodeDeploy app/group, and CodePipeline in the AWS console</li>
                     <li>Clone the repo, edit <code>index.html</code>, commit and push &mdash; observe the pipeline auto-trigger</li>
                     <li>Watch the Build stage compile, then the Deploy stage push the new artifact to the EC2 deployment group</li>
                     <li>Hit the ALB; confirm the change is live; deliberately break the build and verify pipeline failure messaging</li>
                 </ul>
                 <div class="highlight-box">
-                    <strong>Duration:</strong> ~65 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> <code>terraform destroy</code> + delete pipeline artifact bucket
+                    <strong>Duration:</strong> ~65 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> console cleanup + delete pipeline artifact bucket
                 </div>
                 <aside class="notes">Common stalls: missing <code>iam:PassRole</code> on the pipeline role; artifact-bucket KMS permissions; CodeDeploy agent not installed on the EC2 target. Have the agent install one-liner ready.</aside>
             </section>

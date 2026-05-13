@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -260,7 +263,7 @@
                     <li>Deploy a File Gateway VM (or use the provided pre-staged appliance) and create an SMB/NFS file share backed by an S3 bucket in your prefix</li>
                     <li>Mount the share from a learner EC2 instance; write a few files; verify they appear in S3</li>
                     <li>Configure a DataSync task from a source location (provided EFS or NFS dataset) to a destination S3 bucket; run the task and inspect transfer metrics in CloudWatch</li>
-                    <li>Compare the two: gateway = continuous access; DataSync = one-shot or scheduled bulk move; <code>terraform destroy</code> when done</li>
+                    <li>Compare the two: gateway = continuous access; DataSync = one-shot or scheduled bulk move; console cleanup when done</li>
                 </ul>
                 <div class="highlight-box">
                     <strong>Duration:</strong> ~50 minutes &middot; <strong>Pre-req:</strong> instructor-staged File Gateway appliance &middot; <strong>End of Day 1</strong>

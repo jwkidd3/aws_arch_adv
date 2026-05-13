@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -287,14 +290,14 @@
                 <h2>&#128295; Lab 8: WAF + ALB + Auto Scaling Group</h2>
                 <h3>Build it, attack it, watch the block</h3>
                 <ul>
-                    <li>Terraform an ALB + ASG (2 AZs, t3.micro web servers running a tiny Flask echo app)</li>
+                    <li>Build a ALB + ASG (2 AZs, t3.micro web servers running a tiny Flask echo app)</li>
                     <li>Create a WAF web ACL with AWS-managed rule groups: Core, Known Bad Inputs, SQLi</li>
                     <li>Associate the web ACL to the ALB; enable WAF logging to CloudWatch Logs</li>
                     <li>Send a normal <code>curl</code> &mdash; observe a 200; send <code>?id=1' OR '1'='1</code> &mdash; observe a 403 from WAF</li>
                     <li>Open CloudWatch Logs Insights, filter for <code>action = "BLOCK"</code>, identify which managed rule fired</li>
                 </ul>
                 <div class="highlight-box">
-                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Cleanup:</strong> <code>terraform destroy</code> when the block is verified
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Cleanup:</strong> console cleanup when the block is verified
                 </div>
                 <aside class="notes">Keep the ASG at min=desired=2 to avoid scaling churn during the lab. The "BLOCK" log entry is the moment of payoff &mdash; make sure every learner sees it before destroying.</aside>
             </section>

@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -268,7 +271,7 @@
                     <li>Stretch: tighten the endpoint policy further with <code>aws:PrincipalOrgID</code>.</li>
                 </ul>
                 <div class="highlight-box">
-                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> <code>terraform destroy</code> at the end
+                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Tag:</strong> Owner=&lt;name&gt; Course=archadv &middot; <strong>Cleanup:</strong> console cleanup at the end
                 </div>
                 <aside class="notes">Two moments of truth &mdash; the failed ping across tiers (Part A) and the AccessDenied on the second bucket (Part B). If Part A's ping works when it shouldn't, walk their TGW route tables on screen. If Part B's deny doesn't fire, check the endpoint policy is attached and the route via the endpoint is in the private subnet route table. Trim teach time to 25 min so the lab fits in 50.</aside>
             </section>

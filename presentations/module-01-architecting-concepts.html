@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -66,7 +69,7 @@
                 <div class="module-progress">
                     <div class="step active"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
                 </div>
-                <aside class="notes">Welcome the room. Set expectations: this is a 3-day course, hands-on with Terraform throughout. Today we cover foundations, multi-account, hybrid connectivity, and specialized infrastructure. Ask the room to share their current AWS scope in one sentence each.</aside>
+                <aside class="notes">Welcome the room. Set expectations: this is a 3-day course, hands-on console build throughout. Today we cover foundations, multi-account, hybrid connectivity, and specialized infrastructure. Ask the room to share their current AWS scope in one sentence each.</aside>
             </section>
 
             <!-- Objectives -->
@@ -77,7 +80,7 @@
                     <li class="fragment fade-up">Apply the design principles that flow from each pillar</li>
                     <li class="fragment fade-up">Use the framework as a review tool, not a checklist</li>
                     <li class="fragment fade-up">Recognize where each pillar pays off (and where pillars conflict)</li>
-                    <li class="fragment fade-up">Reinforce VPC fundamentals via console + Terraform build</li>
+                    <li class="fragment fade-up">Reinforce VPC fundamentals via console build</li>
                 </ul>
                 <aside class="notes">~45 minutes of teaching, then a 30-minute lab where learners build a Well-Architected VPC. The lab compares console clicks to Terraform HCL.</aside>
             </section>
@@ -304,15 +307,15 @@
             <!-- Lab 1 callout -->
             <section data-background="linear-gradient(135deg, #232f3e 0%, #ff9900 100%)" data-background-color="#232f3e" class="lab-callout">
                 <h2>&#128295; Lab 1: Well-Architected VPC</h2>
-                <h3>Build the same VPC two ways &mdash; console and Terraform</h3>
+                <h3>Build a Well-Architected VPC in the console</h3>
                 <ul>
-                    <li>Part A (console): VPC, public + private subnets, IGW, route table, EC2 in the public subnet</li>
-                    <li>Part B (Terraform): review the provided HCL, <code>terraform init</code> &amp; <code>apply</code>, verify the same topology in the console</li>
-                    <li>Validation: SSH (or SSM) to the EC2; confirm reachability; <code>terraform destroy</code> when done</li>
+                    <li>Part A: create your own IAM Identity Center user in the mgmt account, assign AdministratorAccess to your assigned Sandbox</li>
+                    <li>Part B: build a multi-AZ VPC in the console — public + private subnets, IGW, NAT, bastion + workload EC2</li>
+                    <li>Validation: SSH (or SSM) to the EC2; confirm reachability; console cleanup when done</li>
                     <li>Discuss: which workflow do you reach for in production, and why?</li>
                 </ul>
                 <div class="highlight-box">
-                    <strong>Duration:</strong> ~50 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Both Part A (console) and Part B (Terraform) — compare them</strong>
+                    <strong>Duration:</strong> ~55 minutes &middot; <strong>Pair:</strong> Optional &middot; <strong>Part A (IdC user, 10 min) + Part B (VPC build, 45 min)</strong>
                 </div>
                 <aside class="notes">Each learner uses their own resource prefix. Tag everything <code>Owner=&lt;name&gt; Course=archadv</code>. Cleanup script keys off these tags.</aside>
             </section>

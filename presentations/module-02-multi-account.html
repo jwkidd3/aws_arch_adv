@@ -52,6 +52,9 @@
         .reveal li { margin-bottom: 0.5em; line-height: 1.5; font-size: 0.9em; }
         .reveal p { line-height: 1.6; }
         .reveal pre code { font-size: 0.7em; line-height: 1.4; max-height: 500px; overflow: auto; border-radius: 8px; }
+        /* OVERFLOW_GUARD: ensure dense slides scroll instead of clipping */
+        .reveal .slides section { overflow-y: auto; max-height: 90vh; }
+        .reveal .slides section section { max-height: none; }
     </style>
 </head>
 <body>
@@ -221,9 +224,9 @@
                 <aside class="notes">External ID and condition keys (aws:PrincipalOrgID) are the safety net for cross-account roles. Demonstrate a tiny trust policy with both. Module 9 reuses this pattern for KMS key policies.</aside>
             </section>
 
-            <!-- Terraform multi-account -->
+            <!-- IaC multi-account -->
             <section>
-                <h2>&#129520; Terraform across accounts</h2>
+                <h2>&#129520; IaC across accounts</h2>
                 <div class="two-columns">
                     <div class="card">
                         <h4>Provider aliasing</h4>
@@ -242,7 +245,7 @@
                         </ul>
                     </div>
                 </div>
-                <div class="highlight-box danger"><strong>Blast-radius warning:</strong> a single <code>terraform destroy</code> with the wrong provider alias can wipe the wrong account. Use separate state files per account.</div>
+                <div class="highlight-box danger"><strong>Blast-radius warning:</strong> a single console cleanup with the wrong provider alias can wipe the wrong account. Use separate state files per account.</div>
                 <aside class="notes">Show a 10-line provider block with two aliases live, if possible. State separation is the durable habit; aliases alone aren't enough &mdash; use one workspace or one state file per account.</aside>
             </section>
 
@@ -275,7 +278,7 @@
                     <li>Inspect the sandbox OU layout and the pre-vended target sub-account in the management console</li>
                     <li>Author and attach a deny-region SCP scoped to your learner prefix; verify it blocks an attempt outside the approved region</li>
                     <li>Create an IAM Identity Center permission set, assign it to your group, and assume into the target account via the SSO portal</li>
-                    <li>Apply the provided Terraform that uses provider aliasing + <code>assume_role</code> to deploy a tagged S3 bucket cross-account; <code>destroy</code> when done</li>
+                    <li>Observe the live SCP demo: instructor attaches the deny-regions SCP to the Sandbox OU; students retry their EC2 launch in eu-west-1 and see the deny propagate</li>
                 </ul>
                 <div class="highlight-box">
                     <strong>Duration:</strong> ~50 minutes &middot; <strong>Constraint:</strong> shared account &mdash; do not create top-level OUs &middot; <strong>Sandbox OU is pre-created by the instructor</strong>
