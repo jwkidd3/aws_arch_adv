@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 13 — DMS console build (replication instance + endpoints + task) | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1
+id="lab-13--dms-console-build-replication-instance--endpoints--task">Lab
+13 — DMS console build (replication instance + endpoints + task)</h1>
+<h2 id="objective">Objective</h2>
+<p>Build the AWS Database Migration Service (DMS) infrastructure for a
+homogeneous MySQL → S3 migration. Provision the replication instance,
+define source and target endpoints, and create the migration task.
+<strong>Don't actually start the task</strong> — there's no real source
+database to migrate from. The point is to experience the DMS wizards and
+understand what each piece is for; the actual data movement is exercise
+theatre at this scale and time budget.</p>
+<h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
+<p>This replaces the prior paper exercise. The 7 Rs design-thinking
+still happens — the discussion at the end (10 min) uses the same
+portfolio cards and asks "which strategy fits this workload, and what
+AWS service implements it?".</p>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>You need an existing VPC — reuse Lab 1's, or use the default
+VPC.</li>
+</ol>
+<h2 id="steps">Steps</h2>
+<h3 id="1-replication-instance-5-min-to-start-10-min-to-provision">1.
+Replication instance (5 min to start; ~10 min to provision)</h3>
+<p>The replication instance is the EC2 that DMS uses to read from
+source, transform, and write to target. It's the only piece that costs
+real money in this lab — start it first so it provisions while you do
+the rest of the steps.</p>
+<ul>
+<li><strong>AWS DMS → Replication instances → Create replication
+instance</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-lab13-ri</code></li>
+<li>Instance class: <strong>dms.t3.small</strong></li>
+<li>Engine version: latest</li>
+<li>Allocated storage: 20 GB (default)</li>
+<li>VPC: yours</li>
+<li>Multi-AZ: <strong>Single-AZ</strong> (lab — production would be
+Multi-AZ)</li>
+<li>Public accessibility: <strong>Yes</strong> (for the lab — production
+would be No with VPC peering / TGW to source)</li>
+<li>Advanced settings:
+<ul>
+<li>VPC security group: default (or create new)</li>
+<li>KMS key: AWS-managed default</li>
+</ul></li>
+<li>Maintenance: <strong>Don't upgrade automatically</strong></li>
+<li>Create.</li>
+</ul>
+<p>The instance enters <code>creating</code> and takes ~10 min to reach
+<code>available</code>. Continue with steps 2-4 while you wait.</p>
+<h3 id="2-source-endpoint--rds-mysql-placeholder-values-5-min">2. Source
+endpoint — RDS MySQL (placeholder values; 5 min)</h3>
+<ul>
+<li><strong>DMS → Endpoints → Create endpoint</strong></li>
+<li>Endpoint type: <strong>Source endpoint</strong></li>
+<li>Endpoint identifier:
+<code>archadv-&lt;you&gt;-lab13-source</code></li>
+<li>Source engine: <strong>MySQL</strong></li>
+<li>Access source: <strong>Provide access information
+manually</strong></li>
+<li>Server name: <code>placeholder.example.com</code> (we're not testing
+the connection)</li>
+<li>Port: <code>3306</code></li>
+<li>User name: <code>dmsuser</code></li>
+<li>Password: <code>placeholder</code></li>
+<li>Secure Socket Layer (SSL) mode: <code>none</code></li>
+<li><strong>Test endpoint connection: skip</strong> (would need a real
+MySQL on the other end)</li>
+<li>Create endpoint.</li>
+</ul>
+<p>Inspect the endpoint after creation — note the <strong>Status:
+untested</strong> indicator. In production you would test from the
+replication instance once it's available.</p>
+<h3 id="3-target-endpoint--s3-5-min">3. Target endpoint — S3 (5
+min)</h3>
+<p>S3 is the realistic target for a "lift to data lake" migration
+pattern.</p>
+<ul>
+<li><strong>S3 → Create bucket</strong> first:
+<code>archadv-&lt;you&gt;-lab13-target</code>. Block all public
+access.</li>
+<li><strong>DMS → Endpoints → Create endpoint</strong></li>
+<li>Endpoint type: <strong>Target endpoint</strong></li>
+<li>Endpoint identifier:
+<code>archadv-&lt;you&gt;-lab13-target</code></li>
+<li>Target engine: <strong>Amazon S3</strong></li>
+<li>Access role: <strong>Create new IAM role</strong> (or pick existing
+role with <code>AmazonS3FullAccess</code> + DMS trust)</li>
+<li>Service access role ARN: the role you created</li>
+<li>Bucket name: <code>archadv-&lt;you&gt;-lab13-target</code></li>
+<li>Bucket folder: <code>dms-migration/</code></li>
+<li>Other settings: leave defaults (CSV format, no compression)</li>
+<li>Create.</li>
+</ul>
+<h3 id="4-database-migration-task-5-min">4. Database migration task (5
+min)</h3>
+<ul>
+<li><strong>DMS → Database migration tasks → Create task</strong></li>
+<li>Task identifier: <code>archadv-&lt;you&gt;-lab13-task</code></li>
+<li>Replication instance: <code>archadv-&lt;you&gt;-lab13-ri</code> (may
+still be <code>creating</code> — that's OK; you can save the task and
+start it later)</li>
+<li>Source database endpoint:
+<code>archadv-&lt;you&gt;-lab13-source</code></li>
+<li>Target database endpoint:
+<code>archadv-&lt;you&gt;-lab13-target</code></li>
+<li>Migration type: <strong>Migrate existing data</strong> (full load
+only — for the demo; in production you'd choose
+<code>Migrate existing data and replicate ongoing changes</code> for
+CDC)</li>
+<li><strong>Editing mode: JSON editor</strong> (so students see what's
+actually being saved)</li>
+<li>Table mappings: include schema <code>mydb</code>, table
+<code>%</code> (wildcard)</li>
+<li>Task settings: defaults (full LOB mode, target-table-prep mode
+<code>DROP_AND_CREATE</code>)</li>
+<li>Migration task startup configuration: <strong>Manually
+later</strong> (do NOT auto-start)</li>
+<li>Create.</li>
+</ul>
+<p>The task enters <code>Ready</code> state. It would start replication
+if the source were real — but ours isn't, so we leave it unstarted.</p>
+<h3 id="5-inspect-the-task-configuration-5-min">5. Inspect the task
+configuration (5 min)</h3>
+<ul>
+<li>Click into the task.</li>
+<li><strong>Table mappings</strong> tab — review the JSON. Note the
+<code>rule-type: selection</code> for picking schemas/tables.</li>
+<li><strong>Migration task assessment</strong> tab — click <strong>Run
+pre-migration assessment</strong>. (This actually does a structural
+check; for our placeholder source, it'll likely fail with "cannot
+connect" — that's the expected outcome and the assessment screen is what
+students should see.)</li>
+<li><strong>Logs</strong> tab — empty (task hasn't run).</li>
+<li><strong>Statistics</strong> tab — empty.</li>
+</ul>
+<p>In production, after running the assessment and addressing any
+blockers, you'd start the task and monitor the
+<strong>Statistics</strong> tab for row counts, errors, and CDC lag.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Replication instance reaches
+<code>available</code> within 15 min</label></li>
+<li><label><input type="checkbox" />Source endpoint exists with engine
+<code>MySQL</code></label></li>
+<li><label><input type="checkbox" />Target endpoint exists with engine
+<code>Amazon S3</code> and points at your bucket</label></li>
+<li><label><input type="checkbox" />IAM role for the S3 endpoint trusts
+<code>dms.amazonaws.com</code> and has S3 access</label></li>
+<li><label><input type="checkbox" />Migration task is in
+<code>Ready</code> state with both endpoints attached and table mappings
+configured</label></li>
+</ul>
+<h2 id="discussion--7-rs-portfolio-10-min--instructor-led">Discussion —
+7 Rs portfolio (10 min — instructor-led)</h2>
+<p>Hand out the portfolio cards (Insurance, Healthcare SaaS, or
+Manufacturing — your choice). For each workload in the portfolio, the
+room votes on:</p>
+<ol type="1">
+<li>Which of the 7 Rs is the right strategy?</li>
+<li>Which AWS service implements that strategy?</li>
+</ol>
+<p>Quick reference (the cheat sheet from the original exercise):</p>
+<table>
+<thead>
+<tr>
+<th>R</th>
+<th>Service</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retire</td>
+<td>n/a</td>
+<td>Stop running it</td>
+</tr>
+<tr>
+<td>Retain</td>
+<td>n/a</td>
+<td>Leave on-prem</td>
+</tr>
+<tr>
+<td>Rehost</td>
+<td><strong>AWS MGN</strong></td>
+<td>Lift-and-shift VMs</td>
+</tr>
+<tr>
+<td>Relocate</td>
+<td>VMware Cloud on AWS</td>
+<td>Same hypervisor, different host</td>
+</tr>
+<tr>
+<td>Repurchase</td>
+<td>SaaS catalog</td>
+<td>Drop + replace</td>
+</tr>
+<tr>
+<td>Replatform</td>
+<td><strong>DMS / RDS / ElastiCache / MSK</strong></td>
+<td>Rehost + one optimization (this lab's tool)</td>
+</tr>
+<tr>
+<td>Refactor</td>
+<td>Lambda / EKS / Aurora Serverless</td>
+<td>Rewrite cloud-native</td>
+</tr>
+</tbody>
+</table>
+<p>The most common mistake in real migrations is <strong>Refactoring
+everything</strong> — expensive, slow, and the business gets nothing in
+the meantime. A typical successful migration is 60% Rehost +
+Replatform.</p>
+<h2 id="cleanup">Cleanup</h2>
+<p>In this order:</p>
+<ol type="1">
+<li><strong>Database migration task</strong> → Delete (must be
+<code>Ready</code>/<code>Stopped</code>, not <code>Running</code>).</li>
+<li><strong>Endpoints</strong> → Delete both.</li>
+<li><strong>Replication instance</strong> → Delete (this is the
+expensive one — confirm it's gone).</li>
+<li><strong>S3 bucket</strong> → Empty + delete.</li>
+<li><strong>IAM role for S3 endpoint</strong> → Delete.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Open <strong>DMS Schema Conversion</strong> (formerly the AWS Schema
+Conversion Tool) and create a migration project that converts a sample
+MySQL schema to PostgreSQL. Generate the assessment report.</li>
+<li>Open <strong>Application Migration Service (MGN)</strong> in the
+console. Walk through the agent install instructions for Linux. Don't
+actually install — just see what students would see if they were
+rehosting an on-prem VM.</li>
+<li>Compare cost: a 100 GB / 24h DMS migration vs 100 GB / 24h DataSync
+transfer vs 100 GB / 24h MGN replication. (Hint: DataSync is cheapest,
+MGN is most expensive but covers OS-level recreation.)</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

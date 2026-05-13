@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 6 — Build & deploy a container on ECS Fargate | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-6--build--deploy-a-container-on-ecs-fargate">Lab 6 — Build
+&amp; deploy a container on ECS Fargate</h1>
+<h2 id="objective">Objective</h2>
+<p>Build a container image, push it to ECR, then run it as an
+<strong>ECS Fargate</strong> service behind an <strong>Application Load
+Balancer</strong>. End with a rolling update so you see ECS draining old
+tasks while bringing up new ones.</p>
+<h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>You need a VPC with <strong>public + private subnets across 2 AZs
+and a NAT</strong> — reuse Lab 1's VPC. <strong>Do not use the default
+VPC</strong> — it has only public subnets, and Step 6 below requires
+private subnets with NAT for the Fargate tasks.</li>
+<li>Open <strong>CloudShell</strong> in <code>us-east-1</code>
+(top-right toolbar). All build steps run here.</li>
+</ol>
+<h2 id="steps">Steps</h2>
+<h3 id="1-create-the-ecr-repository-2-min">1. Create the ECR repository
+(2 min)</h3>
+<ul>
+<li><strong>Amazon ECR → Repositories → Create repository</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-hello</code></li>
+<li>Image scanning: enable</li>
+<li>Encryption: AES-256</li>
+<li>Create.</li>
+</ul>
+<p>Note the <strong>URI</strong> — looks like
+<code>123456789012.dkr.ecr.us-east-1.amazonaws.com/archadv-&lt;you&gt;-hello</code>.</p>
+<h3 id="2-build-the-image-cloudshell-5-min">2. Build the image
+(CloudShell, 5 min)</h3>
+<p>In CloudShell:</p>
+<pre class="bash"><code>mkdir -p hello &amp;&amp; cd hello
+
+cat &gt; Dockerfile &lt;&lt;&#39;EOF&#39;
+FROM public.ecr.aws/docker/library/nginx:1.27-alpine
+RUN echo &#39;&lt;h1&gt;archadv hello v1&lt;/h1&gt;&#39; &gt; /usr/share/nginx/html/index.html
+EOF
+
+ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+REGION=us-east-1
+REPO=$ACCOUNT.dkr.ecr.$REGION.amazonaws.com/archadv-&lt;you&gt;-hello
+
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT.dkr.ecr.$REGION.amazonaws.com
+docker build -t archadv-hello:v1 .
+docker tag archadv-hello:v1 $REPO:v1
+docker push $REPO:v1</code></pre>
+<p>Replace <code>&lt;you&gt;</code> with your name throughout. The push
+should complete in 30–60 sec.</p>
+<h3 id="3-ecs-cluster-1-min">3. ECS cluster (1 min)</h3>
+<ul>
+<li><strong>Amazon ECS → Clusters → Create cluster</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-cluster</code></li>
+<li>Infrastructure: <strong>AWS Fargate (serverless)</strong></li>
+<li>Create. (Cluster is empty until you add a service.)</li>
+</ul>
+<h3 id="4-task-definition-3-min">4. Task definition (3 min)</h3>
+<ul>
+<li><strong>ECS → Task definitions → Create new task
+definition</strong></li>
+<li>Family: <code>archadv-&lt;you&gt;-hello</code></li>
+<li>Launch type: Fargate</li>
+<li>OS, architecture: Linux/X86_64</li>
+<li>CPU: <code>0.25 vCPU</code>, Memory: <code>0.5 GB</code></li>
+<li>Task role: leave blank</li>
+<li>Task execution role: <strong>Create new</strong> (will be created
+with <code>AmazonECSTaskExecutionRolePolicy</code>)</li>
+<li>Container:
+<ul>
+<li>Name: <code>web</code></li>
+<li>Image URI:
+<code>&lt;account&gt;.dkr.ecr.us-east-1.amazonaws.com/archadv-&lt;you&gt;-hello:v1</code></li>
+<li>Port: <code>80</code> (TCP)</li>
+</ul></li>
+<li>Create.</li>
+</ul>
+<h3 id="5-application-load-balancer-5-min">5. Application Load Balancer
+(5 min)</h3>
+<ul>
+<li><strong>EC2 → Load Balancers → Create load balancer →
+Application</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-alb</code></li>
+<li>Scheme: internet-facing</li>
+<li>VPC: yours (or default)</li>
+<li>Mappings: 2 AZs, <strong>public</strong> subnets in each</li>
+<li>Security group: new — allow <code>80/tcp</code> from
+<code>0.0.0.0/0</code></li>
+<li>Listener: <code>HTTP:80</code></li>
+<li>Target group: <strong>Create target group</strong> in a new tab:
+<ul>
+<li>Type: <strong>IP addresses</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-tg</code></li>
+<li>Protocol: HTTP, port <code>80</code></li>
+<li>VPC: same</li>
+<li>Health check path: <code>/</code></li>
+<li>Create.</li>
+</ul></li>
+<li>Back in the ALB tab, refresh and select the new target group as the
+default action.</li>
+<li>Create the ALB. Wait ~2 min until state <code>Active</code>.</li>
+</ul>
+<h3 id="6-ecs-service-3-min">6. ECS service (3 min)</h3>
+<ul>
+<li><strong>ECS → Clusters → archadv-<you>-cluster → Services →
+Create</strong></li>
+<li>Compute: Fargate, latest platform version</li>
+<li>Application type: Service</li>
+<li>Family: <code>archadv-&lt;you&gt;-hello</code>, latest revision</li>
+<li>Service name: <code>archadv-&lt;you&gt;-hello-svc</code></li>
+<li>Desired tasks: <code>2</code></li>
+<li>Networking: your VPC, <strong>private</strong> subnets, security
+group: create new — allow <code>80/tcp</code> from the <strong>ALB's
+security group</strong> only</li>
+<li>Public IP: <strong>off</strong> (Fargate tasks egress via NAT)</li>
+<li>Load balancing: Application Load Balancer
+<ul>
+<li>Choose <code>archadv-&lt;you&gt;-alb</code>, listener
+<code>80:HTTP</code></li>
+<li>Target group: <code>archadv-&lt;you&gt;-tg</code></li>
+</ul></li>
+<li>Create. Wait ~3 min until <strong>Last status: RUNNING</strong> for
+both tasks.</li>
+</ul>
+<h3 id="7-validate">7. Validate</h3>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+curl http://$ALB
+# Expected: &lt;h1&gt;archadv hello v1&lt;/h1&gt;</code></pre>
+<h3 id="8-rolling-update-5-min">8. Rolling update (5 min)</h3>
+<p>In CloudShell:</p>
+<pre class="bash"><code>sed -i &#39;s/v1/v2/&#39; Dockerfile
+docker build -t archadv-hello:v2 .
+docker tag archadv-hello:v2 $REPO:v2
+docker push $REPO:v2</code></pre>
+<p>In the console:</p>
+<ul>
+<li><strong>ECS → Task definitions → archadv-<you>-hello → Create new
+revision</strong>. Change the image tag from <code>:v1</code> to
+<code>:v2</code>. Create.</li>
+<li><strong>ECS → Services → archadv-<you>-hello-svc → Update</strong>.
+Pick the new revision. Update.</li>
+<li>Watch the <strong>Tasks</strong> tab. ECS will start 2 new tasks,
+wait for them to be healthy, then drain the 2 old ones.</li>
+</ul>
+<p>While the rollout is in progress, run this in a CloudShell loop:</p>
+<pre class="bash"><code>while true; do curl -s http://$ALB; sleep 1; done</code></pre>
+<p>You'll see the response transition from <code>v1</code> to
+<code>v2</code> as old tasks drain. There should be <strong>zero failed
+responses</strong> during the rollout — that's the point.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />ECR repository contains
+<code>:v1</code> and <code>:v2</code> images</label></li>
+<li><label><input type="checkbox" />ALB DNS returns the expected HTML on
+the public internet</label></li>
+<li><label><input type="checkbox" />ECS service has 2 RUNNING
+tasks</label></li>
+<li><label><input type="checkbox" />Rolling update completes with no
+failed <code>curl</code> responses</label></li>
+<li><label><input type="checkbox" />After update, ALB returns
+<code>v2</code> payload</label></li>
+<li><label><input type="checkbox" />Tasks have <strong>no public
+IP</strong>; they reach the internet only via NAT (or not at
+all)</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<ol type="1">
+<li>ECS service → Update → desired tasks <code>0</code>, then
+<strong>Delete</strong>.</li>
+<li>ECS cluster → Delete.</li>
+<li>ALB → Delete. Target group → Delete.</li>
+<li>ECR repository → Delete (and image scan results).</li>
+<li>Task execution role → Delete.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add <strong>Container Insights</strong> to the cluster and inspect a
+task's CPU and memory metrics during the rolling update.</li>
+<li>Switch the ALB listener to <strong>HTTPS:443</strong> with an
+ACM-issued certificate (you'll need a Route 53 hosted zone you control
+or DNS validation through email — instructor-provided).</li>
+<li>Add an <strong>ECS service auto-scaling policy</strong> (target
+tracking on CPU 50%) and trigger it with <code>ab</code> from
+CloudShell.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

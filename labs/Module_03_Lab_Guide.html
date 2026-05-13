@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 3 — Site-to-Site VPN + Route 53 Resolver (configure-only) | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-3--site-to-site-vpn--route-53-resolver-configure-only">Lab 3
+— Site-to-Site VPN + Route 53 Resolver (configure-only)</h1>
+<h2 id="objective">Objective</h2>
+<p>Build all the AWS-side resources for a hybrid network: Customer
+Gateway, Virtual Private Gateway, Site-to-Site VPN connection, route
+propagation, and a Route 53 Resolver outbound endpoint with a forwarding
+rule. <strong>The on-prem side is intentionally absent</strong> — there
+is no IPsec responder for the tunnel to negotiate with, so the tunnel
+will stay <code>DOWN</code>. That's the teaching point: you'll see
+exactly what AWS provides to a hybrid customer, what the on-prem network
+engineer would need to plug in on their side, and what state AWS reports
+while the other side is silent.</p>
+<h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>You should have a VPC <code>10.0.0.0/16</code> from Lab 1. (The
+bastion EC2 isn't needed for this lab.)</li>
+<li>Use these <strong>placeholder "on-prem" values</strong> for your CGW
+and VPN config:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Use this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>On-prem peer public IP</td>
+<td><code>203.0.113.10</code> (RFC 5737 documentation range — unroutable
+on purpose)</td>
+</tr>
+<tr>
+<td>Pre-shared key</td>
+<td><code>archadv-lab3-2026</code></td>
+</tr>
+<tr>
+<td>On-prem BGP ASN</td>
+<td><code>65000</code></td>
+</tr>
+<tr>
+<td>On-prem private CIDR</td>
+<td><code>10.99.0.0/16</code></td>
+</tr>
+<tr>
+<td>On-prem DNS resolver IP</td>
+<td><code>10.99.10.10</code></td>
+</tr>
+<tr>
+<td>On-prem DNS zone</td>
+<td><code>corp.example.com</code></td>
+</tr>
+</tbody>
+</table>
+<p>AWS accepts these values at configuration time — it doesn't check
+whether the peer actually exists until it tries to negotiate.</p>
+<h2 id="steps">Steps</h2>
+<h3 id="1-customer-gateway-2-min">1. Customer Gateway (2 min)</h3>
+<ul>
+<li><strong>VPC → Customer gateways → Create customer
+gateway</strong></li>
+<li>Name: <code>archadv-&lt;your-name&gt;-cgw</code></li>
+<li>BGP ASN: <code>65000</code></li>
+<li>IP address: <code>203.0.113.10</code></li>
+<li>Create.</li>
+</ul>
+<h3 id="2-virtual-private-gateway-2-min">2. Virtual Private Gateway (2
+min)</h3>
+<ul>
+<li><strong>VPC → Virtual private gateways → Create virtual private
+gateway</strong></li>
+<li>Name: <code>archadv-&lt;your-name&gt;-vgw</code></li>
+<li>ASN: <strong>Amazon default ASN</strong></li>
+<li>Create.</li>
+<li>Select it → <strong>Actions → Attach to VPC</strong> → choose your
+VPC.</li>
+</ul>
+<h3 id="3-site-to-site-vpn-connection-5-min">3. Site-to-Site VPN
+connection (5 min)</h3>
+<ul>
+<li><strong>VPC → Site-to-Site VPN connections → Create VPN
+connection</strong></li>
+<li>Name: <code>archadv-&lt;your-name&gt;-vpn</code></li>
+<li>Target gateway type: <strong>Virtual Private Gateway</strong>,
+choose <code>archadv-&lt;your-name&gt;-vgw</code></li>
+<li>Customer Gateway: <strong>Existing</strong>, choose
+<code>archadv-&lt;your-name&gt;-cgw</code></li>
+<li>Routing options: <strong>Dynamic (BGP)</strong></li>
+<li>Pre-shared key storage type: <strong>Standard</strong></li>
+<li>Outside IP address type: <strong>PublicIpv4</strong></li>
+<li>Tunnel options: leave <strong>inside CIDRs</strong> at AWS default.
+Expand <strong>Tunnel options</strong> for each tunnel and set
+<strong>pre-shared key</strong> to <code>archadv-lab3-2026</code>.</li>
+<li>Create.</li>
+</ul>
+<h3 id="4-enable-route-propagation-2-min">4. Enable route propagation (2
+min)</h3>
+<ul>
+<li><strong>VPC → Route Tables</strong> → select your VPC's private
+subnet route table</li>
+<li><strong>Route propagation tab</strong> → Edit → enable propagation
+from the VGW.</li>
+</ul>
+<p>This <em>would</em> cause BGP-learned routes (e.g.,
+<code>10.99.0.0/16</code>) to appear here once the tunnel was UP. Since
+the on-prem side is absent in this lab, the propagation is configured
+but inert.</p>
+<h3 id="5-observe-the-aws-side-state-5-min">5. Observe the AWS-side
+state (5 min)</h3>
+<ul>
+<li><strong>VPC → Site-to-Site VPN connections</strong> → select yours →
+<strong>Tunnel details</strong> tab.</li>
+<li>Both tunnels will be in <code>DOWN</code> state with "Last status
+change: ... Status: DOWN" and a status message like <em>"IPSEC IS
+DOWN"</em> or <em>"No response from peer"</em>. That's expected —
+there's no responder at <code>203.0.113.10</code>.</li>
+<li>Click <strong>Download configuration</strong>. Pick a vendor (e.g.,
+Cisco ASA, Cisco IOS, generic OpenVPN-style). The downloaded file is the
+<strong>exact config a real on-prem network engineer would paste into
+their router</strong>. Review it — note the IPsec proposals (encryption
+algorithms, DH groups), the inside tunnel IPs (e.g.,
+<code>169.254.21.0/30</code>), the AWS-side public IP and BGP ASN, and
+the PSK.</li>
+<li>This downloaded file is the <em>complete contract</em> AWS offers
+for hybrid connectivity. Everything between this and a working tunnel is
+on the on-prem side.</li>
+</ul>
+<h3 id="6-route-53-resolver-outbound-endpoint-10-min">6. Route 53
+Resolver outbound endpoint (10 min)</h3>
+<p>The Resolver pieces don't depend on the tunnel being UP — they're
+independent DNS infrastructure inside your VPC. Build them anyway
+because they're the second half of every real hybrid-DNS design.</p>
+<ul>
+<li><strong>Route 53 → Resolver → Outbound endpoints →
+Create</strong></li>
+<li>Name: <code>archadv-&lt;your-name&gt;-r53out</code></li>
+<li>VPC: your VPC</li>
+<li>Security group: create new — allow UDP/TCP <code>53</code> outbound
+to <code>10.99.0.0/16</code></li>
+<li>IP addresses: 2 IPs across 2 AZs (use the private subnets from Lab
+1)</li>
+<li>Create. Wait ~3 min until status <code>Operational</code>.</li>
+</ul>
+<h3 id="7-forwarding-rule-2-min">7. Forwarding rule (2 min)</h3>
+<ul>
+<li><strong>Route 53 → Resolver → Rules → Create</strong></li>
+<li>Rule type: <strong>Forward</strong></li>
+<li>Domain name: <code>corp.example.com</code></li>
+<li>VPCs that use this rule: your VPC</li>
+<li>Outbound endpoint: the one from step 6</li>
+<li>Target IP: <code>10.99.10.10</code> on port <code>53</code></li>
+<li>Create.</li>
+</ul>
+<h3 id="8-discussion--whats-missing-5-min-instructor-led">8. Discussion
+— what's missing? (5 min, instructor-led)</h3>
+<p>Hand the room these questions:</p>
+<ol type="1">
+<li>What would <code>dig host.corp.example.com</code> return right now
+if you ran it from inside your VPC?</li>
+<li>Look at the Resolver outbound endpoint's logs (CloudWatch). When
+would queries actually go out the endpoint, and what would happen to
+them if they did?</li>
+<li>The downloaded VPN config in Step 5 has all the IPsec/BGP
+parameters. What does the on-prem engineer need to physically do with
+their router for the tunnel to come up?</li>
+<li>If you had Direct Connect instead of Site-to-Site VPN, which parts
+of this lab would change? (Hint: very few — that's the point.)</li>
+</ol>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />CGW exists with on-prem peer IP
+<code>203.0.113.10</code>, ASN <code>65000</code></label></li>
+<li><label><input type="checkbox" />VGW exists and is attached to your
+VPC</label></li>
+<li><label><input type="checkbox" />Site-to-Site VPN exists; both
+tunnels show <code>DOWN</code> with a "No response from peer" or
+equivalent status message</label></li>
+<li><label><input type="checkbox" />Tunnel details show inside IPs
+(169.254.x.x/30) and your VPN's AWS-side public IPs</label></li>
+<li><label><input type="checkbox" />You downloaded the vendor-specific
+configuration file and reviewed the IPsec proposals</label></li>
+<li><label><input type="checkbox" />Private route table has route
+propagation enabled (propagated routes section is empty —
+expected)</label></li>
+<li><label><input type="checkbox" />Route 53 Resolver outbound endpoint
+is <code>Operational</code></label></li>
+<li><label><input type="checkbox" />Forwarding rule for
+<code>corp.example.com</code> exists and is associated with your
+VPC</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<p>In this order to avoid dependency errors:</p>
+<ol type="1">
+<li>Delete the Resolver forwarding rule.</li>
+<li>Delete the Resolver outbound endpoint.</li>
+<li>Delete the Site-to-Site VPN connection.</li>
+<li>Detach the VGW from the VPC, then delete the VGW.</li>
+<li>Delete the Customer Gateway.</li>
+<li><strong>Leave the VPC</strong> — it's reused by Labs 4, 6, 8, 11,
+13, and 14. Lab 1's cleanup section is the right place to delete it (at
+end of course).</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Open the <strong>AWS VPN troubleshooting guide</strong> for your
+downloaded vendor config and find the <code>crypto isakmp policy</code>
+(or equivalent IKE parameters) line. Identify which encryption algorithm
+AWS proposed.</li>
+<li>Inspect the <strong>CloudWatch metrics</strong> for your VPN
+connection — <code>TunnelState</code>, <code>TunnelDataIn</code>,
+<code>TunnelDataOut</code>. Confirm <code>TunnelState</code> is 0 (DOWN)
+on both tunnels.</li>
+<li>Read the <strong>Direct Connect vs Site-to-Site VPN</strong> doc and
+write down which step in this lab would change if you swapped to DX.
+(Almost none — that's the point.)</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

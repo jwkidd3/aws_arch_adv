@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 1 — Identity Center user + Well-Architected VPC | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-1--identity-center-user--well-architected-vpc">Lab 1 —
+Identity Center user + Well-Architected VPC</h1>
+<h2 id="objective">Objective</h2>
+<p>Two parts. First (Part A): create your own IAM Identity Center user
+in the management account and grant it <code>AdministratorAccess</code>
+to your assigned Sandbox. This is your identity for the rest of the
+course. Second (Part B): build a multi-AZ VPC and validate it against
+the Well-Architected reliability and security pillars — the network
+foundation every other lab will sit on.</p>
+<h2 id="time-budget-60-minutes-10-min-part-a--50-min-part-b">Time
+budget: 60 minutes (10 min Part A + 50 min Part B)</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<p>You should have received from the instructor:</p>
+<ul>
+<li>A <strong>starter credential</strong> (username + password or
+sign-in link) that gets you into the <strong>management account</strong>
+<code>001613358280</code>. You'll use this once, in Part A.</li>
+<li>The <strong>AWS access portal URL</strong> for the org (looks like
+<code>d-xxxxxxxxxx.awsapps.com/start</code>). You'll use this after Part
+A as your normal sign-in.</li>
+<li>Your <strong>assigned Sandbox account name</strong> (e.g.,
+<code>Sandbox7</code>) and account ID.</li>
+</ul>
+<h2 id="part-a--create-your-identity-center-user-10-min">Part A — Create
+your Identity Center user (10 min)</h2>
+<h3 id="1-sign-into-the-management-account">1. Sign into the management
+account</h3>
+<ul>
+<li>Open the AWS console and sign in with the <strong>starter
+credentials</strong> from the instructor.</li>
+<li>Confirm the badge in the top-right shows account
+<code>001613358280</code> (the management account).</li>
+<li>Set region to <strong>US East (N. Virginia) —
+<code>us-east-1</code></strong>.</li>
+</ul>
+<h3 id="2-open-iam-identity-center">2. Open IAM Identity Center</h3>
+<ul>
+<li>Service search → <strong>IAM Identity Center</strong>.</li>
+<li>If asked, the org's IdC region is the same as your console session
+region.</li>
+</ul>
+<h3 id="3-create-your-user">3. Create your user</h3>
+<ul>
+<li>Left sidebar → <strong>Users</strong> → <strong>Add
+user</strong>.</li>
+<li>Username: <code>&lt;your-name&gt;</code> (lowercase, no spaces —
+e.g., <code>alice</code> or <code>alice.smith</code>)</li>
+<li>Email: your real email (Identity Center will send an activation
+email here)</li>
+<li>First name / Last name: your own</li>
+<li>Password: <strong>Generate a one-time password and share it with the
+user manually</strong> (you'll receive the password on screen)</li>
+<li>Skip group assignment (we'll grant the permission set directly in
+step 4).</li>
+<li>Add user.</li>
+</ul>
+<h3 id="4-assign-yourself-administratoraccess-to-your-sandbox">4. Assign
+yourself <code>AdministratorAccess</code> to your Sandbox</h3>
+<ul>
+<li><strong>IAM Identity Center → AWS accounts</strong> (left
+sidebar).</li>
+<li>Find your assigned <code>Sandbox&lt;N&gt;</code> in the account list
+and click into it.</li>
+<li><strong>Assign users or groups</strong> → select your newly-created
+user from the <strong>Users</strong> tab → <strong>Next</strong>.</li>
+<li><strong>Permission sets</strong>: select
+<strong><code>AdministratorAccess</code></strong> (an existing
+pre-staged permission set) → <strong>Next</strong>.</li>
+<li><strong>Submit</strong>. Wait ~30 sec for the assignment to
+provision.</li>
+</ul>
+<h3 id="5-sign-out-and-sign-back-in-as-your-new-user">5. Sign out and
+sign back in as your new user</h3>
+<ul>
+<li>Sign out of the starter session.</li>
+<li>Open the <strong>AWS access portal URL</strong> from your
+credentials packet (<code>d-xxxxxxxxxx.awsapps.com/start</code>).</li>
+<li>Sign in with the username + one-time password from step 3. You'll be
+prompted to set a new password and configure MFA.</li>
+<li>After sign-in, you should see exactly one account:
+<code>Sandbox&lt;N&gt;</code>. Click it →
+<code>AdministratorAccess</code> → <strong>Open AWS
+console</strong>.</li>
+<li>Confirm the badge in the top-right reads
+<code>AdministratorAccess @ Sandbox&lt;N&gt;</code>. <strong>You are now
+in your own Sandbox.</strong> You will not need the management account
+starter credentials again.</li>
+</ul>
+<h2 id="part-b--well-architected-vpc-50-min">Part B — Well-Architected
+VPC (50 min)</h2>
+<p>You're now signed in to your Sandbox as your own IdC user. Set region
+to <strong>us-east-1</strong>.</p>
+<h2 id="steps">Steps</h2>
+<h3 id="1-create-the-vpc">1. Create the VPC</h3>
+<ul>
+<li>Console: <strong>VPC → Your VPCs → Create VPC</strong></li>
+<li>Resources to create: <strong>VPC and more</strong> (use the VPC
+wizard)</li>
+<li>Name tag auto-generation:
+<code>archadv-&lt;your-name&gt;</code></li>
+<li>IPv4 CIDR: <code>10.0.0.0/16</code></li>
+<li>Number of Availability Zones: <strong>2</strong></li>
+<li>Number of public subnets: <strong>2</strong>, private subnets:
+<strong>2</strong></li>
+<li>NAT gateways: <strong>In 1 AZ</strong> (cost-aware)</li>
+<li>VPC endpoints: <strong>None</strong> (we'll add S3 in Lab 5)</li>
+<li>DNS options: enable both <strong>DNS hostnames</strong> and
+<strong>DNS resolution</strong></li>
+<li>Click <strong>Create VPC</strong>. Wait ~60 sec for the workflow to
+finish.</li>
+</ul>
+<h3 id="2-tag-everything">2. Tag everything</h3>
+<p>In the VPC, subnets, IGW, NAT, and route tables, add tags:</p>
+<ul>
+<li><code>Owner=&lt;your-name&gt;</code></li>
+<li><code>Course=archadv</code></li>
+</ul>
+<h3 id="3-launch-a-public-subnet-ec2-the-bastion">3. Launch a
+public-subnet EC2 (the bastion)</h3>
+<ul>
+<li><strong>EC2 → Launch instance</strong></li>
+<li>Name: <code>archadv-&lt;your-name&gt;-bastion</code></li>
+<li>AMI: latest <strong>Amazon Linux 2023</strong></li>
+<li>Instance type: <code>t3.micro</code></li>
+<li>Key pair: create a new one named
+<code>archadv-&lt;your-name&gt;</code> (download the .pem)</li>
+<li>Network: your new VPC</li>
+<li>Subnet: one of the <strong>public</strong> subnets</li>
+<li>Auto-assign public IP: <strong>Enable</strong></li>
+<li>Security group: create new — allow SSH (22) from <strong>My
+IP</strong></li>
+<li>Launch.</li>
+</ul>
+<h3 id="4-launch-a-private-subnet-ec2-the-workload">4. Launch a
+private-subnet EC2 (the workload)</h3>
+<ul>
+<li>Same flow as above. Name:
+<code>archadv-&lt;your-name&gt;-workload</code>.</li>
+<li>Subnet: one of the <strong>private</strong> subnets.</li>
+<li>Auto-assign public IP: <strong>Disable</strong>.</li>
+<li>Security group: new — allow SSH (22) from the <strong>bastion's
+security group ID</strong> (not from <code>0.0.0.0/0</code>).</li>
+<li>Launch.</li>
+</ul>
+<h3 id="5-validate-connectivity">5. Validate connectivity</h3>
+<p>From your laptop:</p>
+<pre class="bash"><code>chmod 400 archadv-&lt;your-name&gt;.pem
+ssh -i archadv-&lt;your-name&gt;.pem ec2-user@&lt;bastion-public-ip&gt;</code></pre>
+<p>From inside the bastion, SSH to the workload's private IP:</p>
+<pre class="bash"><code>ssh -i archadv-&lt;your-name&gt;.pem ec2-user@&lt;workload-private-ip&gt;</code></pre>
+<p>From the workload, confirm internet egress works through the NAT:</p>
+<pre class="bash"><code>curl -s https://checkip.amazonaws.com</code></pre>
+<p>You should see the <strong>NAT Gateway's</strong> public IP, not the
+workload's private IP.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />VPC exists with
+<code>10.0.0.0/16</code> and 2 public + 2 private subnets across 2
+AZs</label></li>
+<li><label><input type="checkbox" />Public subnets have a route
+<code>0.0.0.0/0 → igw-...</code></label></li>
+<li><label><input type="checkbox" />Private subnets have a route
+<code>0.0.0.0/0 → nat-...</code></label></li>
+<li><label><input type="checkbox" />Bastion is reachable from your
+laptop on port 22</label></li>
+<li><label><input type="checkbox" />Workload is reachable <strong>only
+via the bastion</strong> (not from the public internet)</label></li>
+<li><label><input type="checkbox" />Workload can <code>curl</code> an
+HTTPS URL through the NAT</label></li>
+<li><label><input type="checkbox" />Every resource is tagged
+<code>Owner</code> + <code>Course=archadv</code></label></li>
+</ul>
+<h2 id="wafr-self-review">WAFR self-review</h2>
+<p>In <strong>AWS Well-Architected Tool</strong>, define a workload for
+this VPC and run the framework review. Capture three high-risk issues in
+the <strong>Security</strong> and <strong>Reliability</strong> pillars
+and discuss with your pair what you'd change before this VPC went to
+production.</p>
+<h2 id="cleanup">Cleanup</h2>
+<blockquote>
+<p><strong>Important: do NOT delete the VPC.</strong> It's reused by
+Labs 3, 4, 6, 8, 11, 13, and 14 across all 3 days of the course. The
+instructor will clean up VPCs centrally after the course ends.</p>
+</blockquote>
+<p>Lab-1-specific cleanup:</p>
+<ul>
+<li>Terminate the <strong>bastion</strong> and <strong>workload</strong>
+EC2s — they're not needed for any other lab.</li>
+<li>Delete the key pair you created for the bastion.</li>
+</ul>
+<p>Leave everything else (VPC, subnets, IGW, NAT, route tables, Elastic
+IP) in place.</p>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add a <strong>VPC flow log</strong> to the VPC, sending to a new
+CloudWatch log group. Generate traffic and inspect a few flow
+records.</li>
+<li>Replace the SSH bastion with <strong>EC2 Instance Connect</strong>
+or <strong>Session Manager</strong> — SSM is the production answer;
+bastions are legacy.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

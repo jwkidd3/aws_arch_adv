@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 12 — Cost Explorer + Budgets | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-12--cost-explorer--budgets">Lab 12 — Cost Explorer +
+Budgets</h1>
+<h2 id="objective">Objective</h2>
+<p>Build a tag-grouped Cost Explorer report and a Budget that emails you
+when spend crosses a threshold. The Budget alarm is the part that
+actually runs in production — every account should have one.</p>
+<h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li><strong>Note:</strong> Cost Explorer needs ~24 hours of data after
+first activation. If your Sandbox account is fresh, your Cost Explorer
+will be empty — the instructor will demo the report from the management
+account, and you'll focus on building the Budget alarm in your own
+Sandbox.</li>
+<li><strong>If you see "You don't have access" on Cost
+Explorer</strong>, your management account has restricted member-account
+billing access. Skip Parts A/C/E and do only Part D (Budgets) — Budgets
+create works regardless.</li>
+</ol>
+<h2 id="part-a--activate-cost-explorer-2-min">Part A — Activate Cost
+Explorer (2 min)</h2>
+<ul>
+<li><strong>Billing and Cost Management → Cost Explorer</strong></li>
+<li>If prompted, click <strong>Launch Cost Explorer</strong>.
+(Activation takes a few minutes; data starts populating immediately and
+historical data fills in over ~24 hours.)</li>
+</ul>
+<h2 id="part-b--activate-cost-allocation-tags-3-min">Part B — Activate
+cost allocation tags (3 min)</h2>
+<ul>
+<li><strong>Billing and Cost Management → Cost allocation
+tags</strong></li>
+<li>Find <code>Owner</code> and <code>Course</code> in the user-defined
+tags list.</li>
+<li>Activate both. (User-defined tags must be activated before they show
+up in Cost Explorer reports.)</li>
+<li>Note: <strong>tag activation only affects costs incurred after
+activation.</strong> This is one of the most common AWS finance mistakes
+— activating tags after the fact and being surprised that historical
+data isn't grouped.</li>
+</ul>
+<h2
+id="part-c--build-a-saved-cost-explorer-report-5-min-instructor-led-if-sandbox-is-fresh">Part
+C — Build a saved Cost Explorer report (5 min, instructor-led if Sandbox
+is fresh)</h2>
+<p>The instructor demos this from the management account where data
+exists; you follow along reading-only in your own account if data is
+missing.</p>
+<ul>
+<li><strong>Cost Explorer → Reports → Create new report</strong></li>
+<li>Date range: <strong>Last 7 days</strong></li>
+<li>Granularity: <strong>Daily</strong></li>
+<li>Group by → <strong>Tag</strong> → <code>Course</code></li>
+<li>Filters: Tag <code>Course = archadv</code></li>
+<li>Save report as <code>archadv-spend-by-course</code>.</li>
+</ul>
+<p>The instructor's account should show a small bar chart with daily
+archadv spend. Your account will be empty (until tomorrow).</p>
+<h2 id="part-d--build-a-budget-with-email-alert-15-min">Part D — Build a
+Budget with email alert (15 min)</h2>
+<p>This is the important part. Do this <strong>in your own Sandbox
+account.</strong></p>
+<h3 id="1-create-the-budget">1. Create the Budget</h3>
+<ul>
+<li><strong>Billing and Cost Management → Budgets → Create a
+budget</strong></li>
+<li><strong>Budget setup: Customize (advanced)</strong> → Next</li>
+<li><strong>Budget type: Cost budget</strong> → Next</li>
+<li>Name: <code>archadv-&lt;you&gt;-budget</code></li>
+<li>Period: <strong>Monthly</strong>, renewal type: <strong>Recurring
+budget</strong></li>
+<li>Budgeted amount: <strong>$5</strong> (intentionally low so it
+triggers during class)</li>
+<li>Budget scope: cost types defaults</li>
+<li>Budget tags filter: <code>Course = archadv</code> (optional — if the
+tag is not yet activated as a cost allocation tag, leave
+unfiltered)</li>
+</ul>
+<h3 id="2-configure-alerts">2. Configure alerts</h3>
+<ul>
+<li>Add an alert at:
+<ul>
+<li><strong>80% of budgeted amount, ACTUAL cost</strong> → email</li>
+<li><strong>100% of budgeted amount, FORECASTED cost</strong> →
+email</li>
+</ul></li>
+<li>Email recipient: your own email address.</li>
+<li>Save.</li>
+</ul>
+<h3 id="3-confirm-delivery">3. Confirm delivery</h3>
+<ul>
+<li><strong>If you used a plain email recipient</strong> (the lab's
+path): there is <strong>no confirmation step</strong>. Budget alerts
+deliver directly via the Budgets service — historic guidance about
+confirming a subscription only applies to SNS topic subscribers.</li>
+<li><strong>If you used an SNS topic instead</strong>: check your inbox
+for <strong>"AWS Notification - Subscription Confirmation"</strong> and
+click the link. Without it, no emails arrive.</li>
+</ul>
+<h3 id="4-force-a-quick-alarm-optional-5-min">4. Force a quick alarm
+(optional, 5 min)</h3>
+<p>If you want to see the alarm fire today rather than waiting:</p>
+<ul>
+<li>Lower the budget to <strong>$0.50</strong> instead of $5.</li>
+<li>Within ~6 hours of class spend, the 80% alarm fires (most archadv
+spend in a Sandbox-N account during class is $1–3).</li>
+<li>Restore to $5 after the demo.</li>
+</ul>
+<h2 id="part-e--review-high-cost-services-3-min-discussion">Part E —
+Review high-cost services (3 min, discussion)</h2>
+<p>In Cost Explorer (or the instructor's demo account):</p>
+<ul>
+<li><strong>Group by → Service</strong>, last 7 days</li>
+<li>Identify the top 3 services. For a typical archadv class day they
+will be:
+<ol type="1">
+<li><strong>NAT Gateway</strong> (often the #1 surprise — $0.045/hr × N
+students × 9 hours)</li>
+<li><strong>EC2</strong> (the bastion / ASG instances)</li>
+<li><strong>Storage Gateway m5.xlarge</strong> (only on Module 4 day;
+expensive if left running)</li>
+</ol></li>
+</ul>
+<p>Discussion: <strong>the most effective cost optimization is
+destroying the resource</strong>. Lab cleanups exist for a reason.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Cost Explorer is
+activated</label></li>
+<li><label><input type="checkbox" /><code>Owner</code> and
+<code>Course</code> cost allocation tags are activated</label></li>
+<li><label><input type="checkbox" />Budget exists at $5/month with 80%
+actual + 100% forecasted alerts</label></li>
+<li><label><input type="checkbox" />Email subscription confirmed (you
+clicked the link)</label></li>
+<li><label><input type="checkbox" />You can name the top 3 cost
+contributors in your Sandbox</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<p>Leave the Budget in place — it's the one thing in this lab you should
+keep. Everything else is just reporting.</p>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Create a <strong>Savings Plan recommendation</strong> report. (Cost
+Explorer → Recommendations → Compute Savings Plans). The recommendations
+need 7+ days of usage data; the instructor demos from the management
+account.</li>
+<li><strong>AWS Cost Anomaly Detection</strong> is auto-enabled when
+Cost Explorer activates and ships with an AWS-services monitor. Inspect
+it. Then add a <strong>customer-managed monitor</strong> scoped to a tag
+value (e.g., <code>Course=archadv</code>) with an SNS action. This is
+the alarm you actually want long-term — Budgets fire on absolute
+thresholds; Anomaly Detection fires on <em>unusual patterns</em>.</li>
+<li>Read the AWS pricing for one of these and quote the per-hour cost:
+NAT Gateway, S3 Standard, an <code>m5.xlarge</code> EC2, KMS request,
+CloudFront request. Surprise yourself.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

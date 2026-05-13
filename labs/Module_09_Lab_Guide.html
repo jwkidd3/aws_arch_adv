@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 9 — KMS + Secrets Manager | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-9--kms--secrets-manager">Lab 9 — KMS + Secrets Manager</h1>
+<h2 id="objective">Objective</h2>
+<p>Create a customer-managed KMS key, encrypt an S3 object with it, then
+store and rotate a database password in Secrets Manager. Practice the
+<strong>key policy as the source of truth</strong> mental model.</p>
+<h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>Open CloudShell.</li>
+</ol>
+<h2 id="part-a--customer-managed-kms-key-15-min">Part A —
+Customer-managed KMS key (15 min)</h2>
+<h3 id="1-create-the-key">1. Create the key</h3>
+<ul>
+<li><strong>AWS KMS → Customer managed keys → Create key</strong></li>
+<li>Type: <strong>Symmetric</strong>, usage: <strong>Encrypt and
+decrypt</strong></li>
+<li>Alias: <code>archadv-&lt;you&gt;-key</code></li>
+<li>Description: <code>archadv lab key</code></li>
+<li>Key administrators: your IAM IdC role (search for
+<code>AWSReservedSSO_AWSAdministratorAccess_</code>)</li>
+<li>Key users: same role</li>
+<li>Review the <strong>key policy</strong> that the wizard generated.
+Note the structure:
+<ul>
+<li><code>Enable IAM User Permissions</code> statement (lets your
+account use IAM policies to authorize access)</li>
+<li><code>Allow access for Key Administrators</code></li>
+<li><code>Allow use of the key</code></li>
+<li><code>Allow attachment of persistent resources</code></li>
+</ul></li>
+<li>Finish.</li>
+</ul>
+<h3 id="2-encrypt-an-s3-object-with-this-key">2. Encrypt an S3 object
+with this key</h3>
+<ul>
+<li><strong>S3 → Create bucket</strong>:
+<code>archadv-&lt;you&gt;-secure</code>. Block public access.</li>
+<li><strong>Properties → Default encryption</strong> → Edit → SSE-KMS →
+choose your CMK (<code>archadv-&lt;you&gt;-key</code>). <strong>Set
+Bucket Key: Disable</strong> for this lab — Bucket Key changes the KMS
+encryption-context shape from object-ARN to bucket-ARN, which would
+interact awkwardly with Step 4. (In production you typically want Bucket
+Key enabled for cost; this is a lab convenience.)</li>
+<li>Create a sample file in CloudShell and upload:</li>
+</ul>
+<pre class="bash"><code>echo &quot;secret-payload-$(date)&quot; &gt; secret.txt
+aws s3 cp secret.txt s3://archadv-&lt;you&gt;-secure/</code></pre>
+<h3 id="3-validate-encryption-usage">3. Validate encryption usage</h3>
+<pre class="bash"><code>aws s3api head-object --bucket archadv-&lt;you&gt;-secure --key secret.txt
+# Look for &quot;ServerSideEncryption&quot;: &quot;aws:kms&quot; and &quot;SSEKMSKeyId&quot;: &quot;arn:...&quot;</code></pre>
+<p>In <strong>CloudTrail → Event history</strong>, find the
+corresponding <code>Decrypt</code> (when you re-read it) or
+<code>GenerateDataKey</code> (when you wrote it) call. Note: the call's
+<code>requestParameters.encryptionContext</code> ties the operation to
+the S3 object — that's the <strong>encryption context</strong> mechanism
+in action.</p>
+<h3 id="4-tighten-the-key-policy-5-min">4. Tighten the key policy (5
+min)</h3>
+<p>Add a statement that <strong>only allows decrypt when the call comes
+via S3</strong> (the <code>kms:ViaService</code> condition is more
+robust than encryption-context conditions, which break with S3 Bucket
+Key enabled):</p>
+<pre class="json"><code>{
+  &quot;Sid&quot;: &quot;DenyDecryptUnlessViaS3&quot;,
+  &quot;Effect&quot;: &quot;Deny&quot;,
+  &quot;Principal&quot;: &quot;*&quot;,
+  &quot;Action&quot;: &quot;kms:Decrypt&quot;,
+  &quot;Resource&quot;: &quot;*&quot;,
+  &quot;Condition&quot;: {
+    &quot;StringNotEquals&quot;: {
+      &quot;kms:ViaService&quot;: &quot;s3.us-east-1.amazonaws.com&quot;
+    }
+  }
+}</code></pre>
+<p>This denies any direct <code>kms:Decrypt</code> call that doesn't
+come <em>via</em> S3 — so a direct <code>aws kms decrypt</code> from
+CloudShell fails, but reading the encrypted S3 object still works.</p>
+<p><strong>Important:</strong> this deny will also break Part B's
+Secrets Manager retrieval if you keep it on the same CMK. <strong>Remove
+this deny statement before starting Part B</strong>, or use a separate
+CMK for Secrets Manager.</p>
+<p>Test from CloudShell:</p>
+<pre class="bash"><code># Encrypt directly via KMS — works (encrypt isn&#39;t denied):
+aws kms encrypt --key-id alias/archadv-&lt;you&gt;-key --plaintext &quot;test&quot; \
+  --query CiphertextBlob --output text &gt; ct.b64
+
+# Decrypt directly via KMS — denied (kms:ViaService is not s3.*):
+aws kms decrypt --ciphertext-blob fileb://&lt;(base64 -d ct.b64)
+# Expected: AccessDenied
+
+# Decrypt via S3 — works (kms:ViaService matches):
+aws s3 cp s3://archadv-&lt;you&gt;-secure/secret.txt -</code></pre>
+<p>Once you've observed both outcomes, <strong>edit the key policy and
+remove this deny statement</strong> before continuing to Part B.</p>
+<h2 id="part-b--secrets-manager-15-min">Part B — Secrets Manager (15
+min)</h2>
+<h3 id="1-create-the-secret">1. Create the secret</h3>
+<ul>
+<li><strong>Secrets Manager → Store a new secret</strong></li>
+<li>Type: <strong>Other type of secret</strong></li>
+<li>Key/value:
+<ul>
+<li><code>username</code> = <code>archadvuser</code></li>
+<li><code>password</code> = (auto-generate, 20 chars, exclude special
+chars)</li>
+</ul></li>
+<li>Encryption key: your CMK from Part A</li>
+<li>Name: <code>archadv-&lt;you&gt;-db-pass</code></li>
+<li>Configure rotation: <strong>Disable</strong> (we'll enable
+manually)</li>
+<li>Store.</li>
+</ul>
+<h3 id="2-read-the-secret">2. Read the secret</h3>
+<pre class="bash"><code>aws secretsmanager get-secret-value --secret-id archadv-&lt;you&gt;-db-pass --query SecretString --output text</code></pre>
+<p>This works because (a) your IAM IdC role allows
+<code>secretsmanager:GetSecretValue</code>, AND (b) the KMS key policy
+allows <code>kms:Decrypt</code> for your role on this encryption
+context.</p>
+<h3 id="3-enable-rotation-5-min">3. Enable rotation (5 min)</h3>
+<p>The one-click "deploy from SAR" flow inside Secrets Manager was
+removed years ago. You now deploy the rotation Lambda first, then attach
+it.</p>
+<p>a. <strong>Lambda → Applications → Create application → Browse
+serverless application repository.</strong> Search for
+<strong>SecretsManagerRotationTemplate</strong> (publisher: AWS). Deploy
+with placeholder parameters (any values are fine — the endpoint won't be
+reachable). Wait ~3 min for the CloudFormation stack to deploy.</p>
+<p>b. <strong>Secrets Manager → your secret → Rotation → Edit
+rotation:</strong></p>
+<ul>
+<li>Automatic rotation: <strong>Enabled</strong>, schedule: every 30
+days</li>
+<li>Rotation function: pick the Lambda you deployed in (a)</li>
+<li>Save.</li>
+</ul>
+<p>c. Click <strong>Rotate secret immediately</strong>. The Lambda will
+fail at the <code>setSecret</code> step (no MySQL to update — that's
+expected and fine). Observe:</p>
+<ul>
+<li>A new secret version with <code>AWSPENDING</code> staging label
+appears</li>
+<li>Lambda execution logs in CloudWatch show the rotation attempt and
+failure point</li>
+</ul>
+<h3 id="4-manually-rotate-the-secret-3-min">4. Manually rotate the
+secret (3 min)</h3>
+<ul>
+<li>Secret → <strong>Retrieve secret value → Edit</strong></li>
+<li>Change the password to a new value</li>
+<li>Save.</li>
+<li>Re-run <code>aws secretsmanager get-secret-value</code>. New value
+appears.</li>
+<li>Inspect: under <code>Versions</code> you can see both
+<code>AWSCURRENT</code> (new) and <code>AWSPREVIOUS</code> (old) —
+that's the staging label rotation.</li>
+</ul>
+<h2 id="part-c--cross-account-access-concept-5-min-instructor-led">Part
+C — Cross-account access concept (5 min, instructor-led)</h2>
+<p>Discussion only — students will not implement.</p>
+<p>In a real shared Org:</p>
+<ul>
+<li>A workload in <code>Prod</code> account needs the secret stored in
+<code>Security</code> account.</li>
+<li>The KMS key in <code>Security</code> must:
+<ul>
+<li>Allow the <strong>Prod role</strong> to call
+<code>kms:Decrypt</code> (resource-based key policy)</li>
+<li>Have its grants visible from the Prod side (via IAM policy on the
+Prod role)</li>
+</ul></li>
+<li>The Secrets Manager <strong>resource policy</strong> must allow the
+Prod role to call <code>GetSecretValue</code>.</li>
+<li>This is two policies — at the secret AND at the key. Forgetting
+either side is the most common mistake.</li>
+</ul>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />CMK created with alias and
+reasonable key policy</label></li>
+<li><label><input type="checkbox" />S3 object encrypted via CMK; HEAD
+shows <code>aws:kms</code> SSE</label></li>
+<li><label><input type="checkbox" />You located the
+<code>GenerateDataKey</code> event in CloudTrail</label></li>
+<li><label><input type="checkbox" />Tightened key policy denies non-S3
+decrypts</label></li>
+<li><label><input type="checkbox" />Secrets Manager secret retrievable
+via CLI</label></li>
+<li><label><input type="checkbox" />Secret rotation triggers a new
+version (even if rotation Lambda fails)</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<ol type="1">
+<li>Delete the secret (use <code>--force-delete-without-recovery</code>
+only if you understand the risk).</li>
+<li>Delete the rotation Lambda (CloudFormation stack created by the
+SAR).</li>
+<li>Schedule the KMS key for deletion (7-day waiting period — that's by
+design).</li>
+<li>Empty and delete the S3 bucket.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add a <strong>CloudHSM cluster</strong> to the discussion. When
+would you use HSM-backed keys vs KMS? (Answer: regulated workloads
+requiring FIPS 140-2 Level 3, or "single-tenant" key custody.)</li>
+<li>Configure <strong>automatic key rotation</strong> on the CMK
+(annual, AWS-managed). Note: AWS rotates the <em>key material</em> but
+the key ARN stays the same — applications never change.</li>
+<li>Set up <strong>Secrets Manager replica secrets</strong> in another
+region for DR. Walk through what fails over if the primary region is
+down.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

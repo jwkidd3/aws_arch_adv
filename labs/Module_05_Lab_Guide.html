@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 5 — Transit Gateway with prod/non-prod isolation + S3 VPC endpoint | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1
+id="lab-5--transit-gateway-with-prodnon-prod-isolation--s3-vpc-endpoint">Lab
+5 — Transit Gateway with prod/non-prod isolation + S3 VPC endpoint</h1>
+<h2 id="objective">Objective</h2>
+<p>Wire three VPCs to a Transit Gateway using <strong>two TGW route
+tables</strong> (prod vs non-prod) so prod and shared-services can talk
+and non-prod is isolated from prod. Then attach an <strong>S3 gateway
+VPC endpoint</strong> with a restrictive endpoint policy so workloads
+reach S3 privately and only the buckets you allow.</p>
+<h2
+id="time-budget-75-minutes-was-50--three-vpcs-three-ec2s-tgw--2-rts--3-attachments--endpoint">Time
+budget: 75 minutes (was 50 — three VPCs, three EC2s, TGW + 2 RTs + 3
+attachments + endpoint)</h2>
+<h2 id="topology">Topology</h2>
+<pre><code>              +---------------------+
+              |  Shared-Services    |
+              |  VPC (10.10.0.0/16) |
+              +----------+----------+
+                         |
+                  +------+------+
+                  |     TGW     |
+                  +------+------+
+                  prod-rt   nonprod-rt
+                    |             |
+        +-----------+--+        +-+-----------+
+        | Prod VPC     |        | NonProd VPC |
+        | 10.20.0.0/16 |        | 10.30.0.0/16|
+        +--------------+        +-------------+</code></pre>
+<p><code>prod-rt</code> propagates Prod-VPC + Shared-Services-VPC.
+<code>nonprod-rt</code> propagates NonProd-VPC + Shared-Services-VPC.
+<strong>Prod-VPC and NonProd-VPC must NOT reach each other.</strong></p>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li><strong>Check VPC quota.</strong> This lab creates <strong>3 new
+VPCs</strong>. With the default 5 VPCs/region and the default VPC + your
+Lab 1 VPC already present, you'll be at the cap. If the instructor
+pre-raised the quota to 15, you're fine. If not: either ensure all
+prior-lab VPCs are cleaned up before starting (verify in <strong>VPC →
+Your VPCs</strong>), or request an increase via <strong>Service Quotas →
+AWS services → Amazon VPC → VPCs per Region</strong> (auto-approves in
+minutes).</li>
+</ol>
+<h2 id="part-a--build-the-three-vpcs-10-min">Part A — Build the three
+VPCs (10 min)</h2>
+<p>For each of three VPCs, use <strong>VPC → Create VPC → VPC and
+more</strong> with these settings:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>CIDR</th>
+<th>Public subnets</th>
+<th>Private subnets</th>
+<th>NAT</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>archadv-&lt;you&gt;-prod</code></td>
+<td><code>10.20.0.0/16</code></td>
+<td>2 (across 2 AZs)</td>
+<td>2 (across 2 AZs)</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>archadv-&lt;you&gt;-nonprod</code></td>
+<td><code>10.30.0.0/16</code></td>
+<td>2</td>
+<td>2</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>archadv-&lt;you&gt;-shared</code></td>
+<td><code>10.10.0.0/16</code></td>
+<td>2</td>
+<td>2</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p>Skip NAT in all three to save cost — we're testing TGW reachability,
+not internet egress.</p>
+<p>Launch one <strong><code>t3.micro</code> EC2 in each VPC's public
+subnet</strong>, with a public IP. We use public subnets so SSM Agent
+can reach the SSM service via the IGW (no NAT, no interface endpoints
+needed).</p>
+<ul>
+<li>Instance profile: create role
+<code>archadv-&lt;you&gt;-ssm-ec2</code> with
+<code>AmazonSSMManagedInstanceCore</code>. Attach during launch.</li>
+<li>Security group: allow <strong>All ICMP - IPv4</strong> from
+<code>10.0.0.0/8</code> (so cross-VPC ping works), allow all traffic
+from same SG. <strong>Do not</strong> open any port to
+<code>0.0.0.0/0</code> — we connect via Session Manager only.</li>
+<li>Auto-assign public IP: <strong>Enable</strong>.</li>
+<li>Name tags: <code>prod-ec2</code>, <code>nonprod-ec2</code>,
+<code>shared-ec2</code>.</li>
+</ul>
+<p>Wait ~2 min for SSM Agent to register each instance — they appear
+under <strong>Systems Manager → Session Manager → Start session</strong>
+once registered.</p>
+<h2 id="part-b--transit-gateway-10-min">Part B — Transit Gateway (10
+min)</h2>
+<h3 id="1-create-the-tgw">1. Create the TGW</h3>
+<ul>
+<li><strong>VPC → Transit Gateways → Create transit
+gateway</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-tgw</code></li>
+<li>Default association route table: <strong>Disable</strong></li>
+<li>Default propagation route table: <strong>Disable</strong> (we want
+manual control)</li>
+<li>Create. Wait ~2 min until <code>available</code>.</li>
+</ul>
+<h3 id="2-create-two-tgw-route-tables">2. Create two TGW route
+tables</h3>
+<ul>
+<li><strong>VPC → Transit Gateway Route Tables → Create</strong></li>
+<li>Name 1: <code>prod-rt</code> — pick your TGW</li>
+<li>Name 2: <code>nonprod-rt</code> — pick your TGW</li>
+</ul>
+<h3 id="3-attach-all-three-vpcs-to-the-tgw">3. Attach all three VPCs to
+the TGW</h3>
+<p>For each VPC: <strong>VPC → Transit Gateway Attachments →
+Create</strong></p>
+<ul>
+<li>Attachment type: VPC</li>
+<li>Transit Gateway: yours</li>
+<li>VPC: choose</li>
+<li>Subnets: the <strong>private</strong> subnet in each AZ</li>
+<li>Name tag: <code>prod-attach</code>, <code>nonprod-attach</code>,
+<code>shared-attach</code></li>
+</ul>
+<p>Wait ~3 min until each is <code>available</code>.</p>
+<h3 id="4-wire-the-route-tables">4. Wire the route tables</h3>
+<p>In <strong>TGW Route Tables → prod-rt</strong>:</p>
+<ul>
+<li><strong>Associations</strong> tab → Create association →
+<code>prod-attach</code>. (Each attachment can only associate with one
+route table.)</li>
+<li><strong>Propagations</strong> tab → Create propagation →
+<code>prod-attach</code> AND <code>shared-attach</code>.</li>
+</ul>
+<p>In <strong>TGW Route Tables → nonprod-rt</strong>:</p>
+<ul>
+<li><strong>Associations</strong> tab → Create association →
+<code>nonprod-attach</code>.</li>
+<li><strong>Propagations</strong> tab → Create propagation →
+<code>nonprod-attach</code> AND <code>shared-attach</code>.</li>
+</ul>
+<p>(<code>shared-attach</code> itself only needs to be associated with
+one route table — choose <code>prod-rt</code>.)</p>
+<h3 id="5-add-static-routes-in-each-vpcs-route-table">5. Add static
+routes in each VPC's route table</h3>
+<p>In each of the <strong>three VPCs' private route tables</strong>,
+add:</p>
+<table>
+<thead>
+<tr>
+<th>VPC</th>
+<th>Destination</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prod</td>
+<td><code>10.10.0.0/16</code> (shared)</td>
+<td>TGW</td>
+</tr>
+<tr>
+<td>Prod</td>
+<td><code>10.30.0.0/16</code> (nonprod)</td>
+<td>TGW (so the test packet leaves the VPC and reaches the TGW, where
+prod-rt black-holes it — proving TGW-level isolation, not just
+VPC-level)</td>
+</tr>
+<tr>
+<td>NonProd</td>
+<td><code>10.10.0.0/16</code></td>
+<td>TGW</td>
+</tr>
+<tr>
+<td>NonProd</td>
+<td><code>10.20.0.0/16</code></td>
+<td>TGW</td>
+</tr>
+<tr>
+<td>Shared</td>
+<td><code>10.20.0.0/16</code></td>
+<td>TGW</td>
+</tr>
+<tr>
+<td>Shared</td>
+<td><code>10.30.0.0/16</code></td>
+<td>TGW</td>
+</tr>
+</tbody>
+</table>
+<h2 id="part-c--validate-isolation-5-min">Part C — Validate isolation (5
+min)</h2>
+<p>Open <strong>Systems Manager → Session Manager → Start
+session</strong>, choose each EC2 in turn, and ping:</p>
+<pre class="bash"><code># From shared-ec2:
+ping -c 3 &lt;prod-ec2-private-ip&gt;     # works
+ping -c 3 &lt;nonprod-ec2-private-ip&gt;  # works
+
+# From prod-ec2:
+ping -c 3 &lt;shared-ec2-private-ip&gt;   # works
+ping -c 3 &lt;nonprod-ec2-private-ip&gt;  # MUST FAIL — that&#39;s the validation
+
+# From nonprod-ec2:
+ping -c 3 &lt;shared-ec2-private-ip&gt;   # works
+ping -c 3 &lt;prod-ec2-private-ip&gt;     # MUST FAIL</code></pre>
+<p>If both prod ↔︎ nonprod directions work, your TGW route tables aren't
+isolating. The most common cause: you propagated
+<code>nonprod-attach</code> into <code>prod-rt</code> (or vice-versa).
+Fix the propagations.</p>
+<h2 id="part-d--s3-gateway-vpc-endpoint-15-min">Part D — S3 Gateway VPC
+Endpoint (15 min)</h2>
+<h3 id="1-create-a-private-bucket">1. Create a private bucket</h3>
+<ul>
+<li><strong>S3 → Create bucket</strong>:
+<code>archadv-&lt;you&gt;-lab</code>. Block all public access. Tag.</li>
+<li>Upload one file: <code>lab-object.txt</code>.</li>
+</ul>
+<h3 id="2-create-the-gateway-endpoint-in-prod-vpc">2. Create the gateway
+endpoint in Prod VPC</h3>
+<ul>
+<li><strong>VPC → Endpoints → Create endpoint</strong></li>
+<li>Service category: AWS services</li>
+<li>Service name: <code>com.amazonaws.us-east-1.s3</code> —
+<strong>type: Gateway</strong></li>
+<li>VPC: prod</li>
+<li>Route tables: select <strong>all private route tables in
+prod</strong></li>
+<li>Policy: <strong>Custom</strong>, paste:</li>
+</ul>
+<pre class="json"><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;AllowLabBucket&quot;,
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Principal&quot;: &quot;*&quot;,
+      &quot;Action&quot;: [&quot;s3:GetObject&quot;, &quot;s3:ListBucket&quot;, &quot;s3:PutObject&quot;],
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::archadv-&lt;you&gt;-lab&quot;,
+        &quot;arn:aws:s3:::archadv-&lt;you&gt;-lab/*&quot;
+      ]
+    },
+    {
+      &quot;Sid&quot;: &quot;DenyEverythingElse&quot;,
+      &quot;Effect&quot;: &quot;Deny&quot;,
+      &quot;Principal&quot;: &quot;*&quot;,
+      &quot;Action&quot;: &quot;s3:*&quot;,
+      &quot;NotResource&quot;: [
+        &quot;arn:aws:s3:::archadv-&lt;you&gt;-lab&quot;,
+        &quot;arn:aws:s3:::archadv-&lt;you&gt;-lab/*&quot;
+      ]
+    }
+  ]
+}</code></pre>
+<p>Replace <code>&lt;you&gt;</code> with your name. Create.</p>
+<h3 id="3-verify-route-table">3. Verify route table</h3>
+<p>In each prod private route table you selected, confirm a route
+appears:</p>
+<pre><code>pl-xxxx (com.amazonaws.us-east-1.s3) → vpce-xxxx</code></pre>
+<p>Without that route, traffic still leaves via the public path and the
+endpoint policy never sees it. (No NAT in this VPC, so without the
+endpoint route the call would fail with a timeout — that's actually a
+useful diagnostic.)</p>
+<h3 id="4-test-from-prod-ec2">4. Test from <code>prod-ec2</code></h3>
+<p>In <strong>Systems Manager → Session Manager</strong> on
+<code>prod-ec2</code>:</p>
+<pre class="bash"><code># Allowed:
+aws s3 ls s3://archadv-&lt;you&gt;-lab/
+aws s3 cp s3://archadv-&lt;you&gt;-lab/lab-object.txt -
+
+# Denied by endpoint policy:
+aws s3 ls s3://nyc-tlc/
+# Expected: An error occurred (AccessDenied) when calling the ListObjectsV2 operation</code></pre>
+<p>The first command works because the endpoint policy permits it. The
+second is denied <strong>at the endpoint</strong>, not at IAM — your
+role has <code>AdministratorAccess</code> and could in theory list any
+bucket, but it can't reach S3 except via this endpoint, and the endpoint
+denies it.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Prod EC2 ↔︎ Shared EC2:
+works</label></li>
+<li><label><input type="checkbox" />NonProd EC2 ↔︎ Shared EC2:
+works</label></li>
+<li><label><input type="checkbox" />Prod EC2 → NonProd EC2: <strong>does
+not</strong> work</label></li>
+<li><label><input type="checkbox" />NonProd EC2 → Prod EC2: <strong>does
+not</strong> work</label></li>
+<li><label><input type="checkbox" />Prod EC2 →
+<code>s3://archadv-&lt;you&gt;-lab/</code>: works (via VPC
+endpoint)</label></li>
+<li><label><input type="checkbox" />Prod EC2 → any other S3 bucket:
+blocked by endpoint policy</label></li>
+<li><label><input type="checkbox" />Endpoint route present in private
+subnet route table</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<p>In this order to avoid <code>DependencyViolation</code> errors:</p>
+<ol type="1">
+<li>Terminate the three EC2s.</li>
+<li>Delete the S3 bucket (empty first).</li>
+<li>Delete the S3 VPC endpoint.</li>
+<li>On each TGW route table, <strong>delete its associations and
+propagations</strong> first (otherwise attachments can't be
+deleted).</li>
+<li>Delete the three TGW VPC attachments.</li>
+<li>Delete the two TGW route tables.</li>
+<li>Delete the TGW.</li>
+<li>Delete the three VPCs (use <strong>Delete VPC</strong> to remove
+subnets/route tables in one shot).</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add an <strong>interface VPC endpoint for SSM</strong> in the prod
+VPC. Detach the public path entirely (delete the IGW from prod) and
+confirm Session Manager still works through the SSM endpoints.</li>
+<li>Tighten the endpoint policy with <code>aws:PrincipalOrgID</code> so
+only callers from your AWS Organization can use it (look up your Org ID
+with the instructor — you can read it from the Sandbox account but not
+change it).</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

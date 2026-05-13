@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 8 — ALB + ASG + WAF | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-8--alb--asg--waf">Lab 8 — ALB + ASG + WAF</h1>
+<h2 id="objective">Objective</h2>
+<p>Build a horizontally-scaled web tier (ALB + ASG) and protect it with
+<strong>AWS WAF</strong> using AWS-managed rule groups + a custom
+rate-based rule. Then validate by triggering a SQLi-shape request and a
+brute-force loop.</p>
+<h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>Reuse the VPC from Lab 1, or use the default VPC.</li>
+</ol>
+<h2 id="steps">Steps</h2>
+<h3 id="1-launch-template-5-min">1. Launch template (5 min)</h3>
+<ul>
+<li><strong>EC2 → Launch templates → Create launch
+template</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-lt</code></li>
+<li>AMI: Amazon Linux 2023</li>
+<li>Instance type: <code>t3.micro</code></li>
+<li>Key pair: don't include — we'll use SSM</li>
+<li>Security group: create new — allow <code>80/tcp</code> from the
+soon-to-be-created <strong>ALB's security group</strong> (you can attach
+this in step 3 after the ALB SG exists)</li>
+<li>IAM instance profile: a role with
+<code>AmazonSSMManagedInstanceCore</code></li>
+<li>User data:</li>
+</ul>
+<pre class="bash"><code>#!/bin/bash
+dnf install -y httpd
+systemctl enable --now httpd
+TOKEN=$(curl -s -X PUT &quot;http://169.254.169.254/latest/api/token&quot; -H &quot;X-aws-ec2-metadata-token-ttl-seconds: 60&quot;)
+HOST=$(curl -s -H &quot;X-aws-ec2-metadata-token: $TOKEN&quot; http://169.254.169.254/latest/meta-data/instance-id)
+echo &quot;&lt;h1&gt;archadv $HOST&lt;/h1&gt;&quot; &gt; /var/www/html/index.html</code></pre>
+<ul>
+<li>Create.</li>
+</ul>
+<h3 id="2-application-load-balancer-5-min">2. Application Load Balancer
+(5 min)</h3>
+<ul>
+<li><strong>EC2 → Load Balancers → Create → Application</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-alb</code></li>
+<li>Scheme: internet-facing</li>
+<li>VPC: yours; mappings: 2 public subnets across 2 AZs</li>
+<li>Security group: new — <code>80/tcp</code> from
+<code>0.0.0.0/0</code></li>
+<li>Listener: HTTP:80</li>
+<li>Target group: create a new target group for
+<strong>instances</strong>, port 80, health check <code>/</code></li>
+<li>Create. Wait until <code>Active</code> (~2 min).</li>
+</ul>
+<p>Now go back to your launch template's security group and allow
+<code>80/tcp</code> from the ALB SG.</p>
+<h3 id="3-auto-scaling-group-5-min">3. Auto Scaling Group (5 min)</h3>
+<ul>
+<li><strong>EC2 → Auto Scaling Groups → Create</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-asg</code></li>
+<li>Launch template: yours, latest version</li>
+<li>VPC: yours; subnets: 2 <strong>private</strong> subnets across 2
+AZs</li>
+<li>Attach to the load balancer's target group from step 2</li>
+<li>Health check type: <strong>ELB</strong></li>
+<li>Group size: desired 2, min 2, max 4</li>
+<li>Scaling policy: target tracking, average CPU 50%</li>
+<li>Create. Wait ~3 min until 2 instances are <code>InService</code> in
+the target group.</li>
+</ul>
+<h3 id="4-validate-the-baseline">4. Validate the baseline</h3>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+for i in 1 2 3 4 5; do curl -s http://$ALB; done</code></pre>
+<p>You should see two different instance IDs alternating — that's the
+ALB round-robin.</p>
+<h3 id="5-aws-waf-web-acl-10-min">5. AWS WAF web ACL (10 min)</h3>
+<ul>
+<li><strong>AWS WAF &amp; Shield → Web ACLs → Create web
+ACL</strong></li>
+<li>Region: us-east-1</li>
+<li>Name: <code>archadv-&lt;you&gt;-waf</code></li>
+<li>Resource type: regional resources</li>
+<li>Add the existing ALB as an associated resource</li>
+<li>Add managed rule groups (in this order — WAF evaluates rules
+top-down):
+<ol type="1">
+<li><strong>AWS managed rules → Core rule set</strong>
+(AWSManagedRulesCommonRuleSet)</li>
+<li><strong>AWS managed rules → Known bad inputs</strong>
+(AWSManagedRulesKnownBadInputsRuleSet)</li>
+<li><strong>AWS managed rules → SQL database</strong>
+(AWSManagedRulesSQLiRuleSet)</li>
+</ol></li>
+<li>For each rule group, expand it and set <strong>"Override all rule
+actions to" → Block</strong>. (Several CRS rules default to
+<code>Count</code>, not <code>Block</code>. Without this override, the
+SQLi probe in step 6 may return 200.)</li>
+<li>Default action: <strong>Allow</strong></li>
+<li>Create.</li>
+</ul>
+<h3 id="6-trigger-a-managed-rule-block-3-min">6. Trigger a managed-rule
+block (3 min)</h3>
+<pre class="bash"><code>curl &quot;http://$ALB/?id=1&#39; OR &#39;1&#39;=&#39;1&quot;
+# Expected: 403 Forbidden — blocked by SQLi rule group</code></pre>
+<p>In <strong>AWS WAF → Web ACLs → archadv-<you>-waf → Sampled
+requests</strong> within ~2 min: the request appears with
+<code>BLOCK</code> and the matched rule.</p>
+<h3 id="7-custom-rate-based-rule-10-min">7. Custom rate-based rule (10
+min)</h3>
+<p>Add a rule to the same web ACL:</p>
+<ul>
+<li>Add rule → <strong>Rate-based rule</strong></li>
+<li>Name: <code>archadv-rate-limit</code></li>
+<li>Rate limit: <code>100</code>; <strong>Evaluation window:</strong> 5
+min; <strong>Request aggregation:</strong> Source IP</li>
+<li>Action: <strong>Block</strong></li>
+<li>Save.</li>
+</ul>
+<p>Trigger it from CloudShell:</p>
+<pre class="bash"><code>for i in $(seq 1 200); do curl -s -o /dev/null -w &quot;%{http_code}\n&quot; http://$ALB/; done | sort | uniq -c</code></pre>
+<p>After ~100 requests in quick succession, you should see many
+<code>403</code>s — the rate-based rule kicked in.</p>
+<p>In <strong>CloudWatch → Metrics → AWS/WAFV2</strong> find the
+<code>BlockedRequests</code> metric for your web ACL and confirm the
+spike.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />ALB serves traffic from 2 ASG
+instances (round-robin)</label></li>
+<li><label><input type="checkbox" />SQLi-shape request returns
+403</label></li>
+<li><label><input type="checkbox" />WAF Sampled requests shows the BLOCK
+with matched rule</label></li>
+<li><label><input type="checkbox" />Rate-based rule blocks traffic above
+100/5min</label></li>
+<li><label><input type="checkbox" />CloudWatch
+<code>BlockedRequests</code> ticks up</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<ol type="1">
+<li>WAF web ACL → disassociate ALB → delete web ACL.</li>
+<li>ASG → set desired/min to 0, then delete.</li>
+<li>Launch template → delete.</li>
+<li>ALB → delete; target group → delete.</li>
+<li>Security groups → delete.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add an <strong>AWS Shield Advanced</strong> subscription discussion
+(do NOT enable it — $3,000/mo). Look at the Shield protections summary
+page.</li>
+<li>Add a CloudFront distribution in front of the ALB and re-test. WAF
+should now be associated with the CloudFront distribution (global)
+instead of the ALB (regional).</li>
+<li>Set the WAF rules to <code>Count</code> instead of
+<code>Block</code> for one day in production. Why? (Answer: you observe
+what <em>would</em> be blocked before going hot. Most teams skip this
+and regret it.)</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

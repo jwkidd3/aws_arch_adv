@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 11 — ASG with custom CloudWatch metric scaling | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-11--asg-with-custom-cloudwatch-metric-scaling">Lab 11 — ASG
+with custom CloudWatch metric scaling</h1>
+<h2 id="objective">Objective</h2>
+<p>Build an ALB + ASG that scales on
+<strong>request-count-per-target</strong> (not CPU). Generate load and
+watch the ASG add instances. The point is to internalize the durable
+lesson: <strong>the scaling metric must be the leading indicator of
+saturation</strong>, not a lagging one. A queue-driven workload that
+scales on CPU will never scale up; a request-driven workload that scales
+on request count will.</p>
+<h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
+<p>This replaces the prior paper exercise. The design-thinking still
+happens — discussion at the end (5 min) walks through the same scenario
+cards (spiky news site, internal HR app, real-time game backend, batch
+image, IoT) and asks "would this trigger work for that workload?
+Why?".</p>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>You need a VPC with public + private subnets — reuse Lab 1's, or
+rebuild via the VPC wizard.</li>
+<li>Open CloudShell (used for load generation in Step 5).</li>
+</ol>
+<h2 id="steps">Steps</h2>
+<h3 id="1-launch-template-3-min">1. Launch template (3 min)</h3>
+<ul>
+<li><strong>EC2 → Launch templates → Create launch
+template</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-lab11-lt</code></li>
+<li>AMI: Amazon Linux 2023</li>
+<li>Instance type: <code>t3.small</code> (<code>t3.micro</code> is
+unsupported in <code>us-east-1b</code>)</li>
+<li>Key pair: skip — we'll use SSM if needed</li>
+<li>Security group: create new — allow <code>80/tcp</code> from the
+soon-to-be-created ALB SG (we'll wire this in step 2)</li>
+<li>IAM instance profile: any role with
+<code>AmazonSSMManagedInstanceCore</code></li>
+<li>User data:</li>
+</ul>
+<pre class="bash"><code>#!/bin/bash
+dnf install -y httpd
+systemctl enable --now httpd
+TOKEN=$(curl -s -X PUT &quot;http://169.254.169.254/latest/api/token&quot; -H &quot;X-aws-ec2-metadata-token-ttl-seconds: 60&quot;)
+HOST=$(curl -s -H &quot;X-aws-ec2-metadata-token: $TOKEN&quot; http://169.254.169.254/latest/meta-data/instance-id)
+echo &quot;&lt;h1&gt;archadv $HOST&lt;/h1&gt;&quot; &gt; /var/www/html/index.html</code></pre>
+<ul>
+<li>Create.</li>
+</ul>
+<h3 id="2-alb--target-group-5-min">2. ALB + target group (5 min)</h3>
+<ul>
+<li><strong>EC2 → Load Balancers → Create → Application</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-lab11-alb</code></li>
+<li>Scheme: internet-facing</li>
+<li>VPC: yours; mappings: 2 public subnets across 2 AZs (avoid
+<code>us-east-1b</code>)</li>
+<li>Security group: new — <code>80/tcp</code> from
+<code>0.0.0.0/0</code></li>
+<li>Listener: HTTP:80</li>
+<li>Target group: create new (instances type, port 80, health check
+<code>/</code>)</li>
+<li>Create. Wait until <code>Active</code>.</li>
+</ul>
+<p>Now go back to the launch template's security group and allow
+<code>80/tcp</code> from the ALB SG.</p>
+<h3 id="3-auto-scaling-group-with-custom-metric-scaling-7-min">3. Auto
+Scaling Group with custom-metric scaling (7 min)</h3>
+<ul>
+<li><strong>EC2 → Auto Scaling Groups → Create</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-lab11-asg</code></li>
+<li>Launch template: yours, latest version</li>
+<li>VPC: yours; subnets: 2 <strong>private</strong> subnets across 2 AZs
+(avoid <code>us-east-1b</code>)</li>
+<li>Attach to the load balancer's target group from step 2</li>
+<li>Health check type: <strong>ELB</strong></li>
+<li>Group size: <strong>min 2, desired 2, max 6</strong></li>
+<li><strong>Scaling policy: Target tracking scaling policy</strong>
+<ul>
+<li>Metric type: <strong>Application Load Balancer request count per
+target</strong></li>
+<li>Target value: <strong><code>10</code></strong> (10
+requests/min/instance — intentionally low so we can trigger it from
+CloudShell)</li>
+<li>Target group: pick the one from step 2</li>
+<li>Instance warmup: 60 sec</li>
+</ul></li>
+<li>Create. Wait ~3 min until 2 instances are <code>InService</code> in
+the target group.</li>
+</ul>
+<h3 id="4-validate-the-baseline-2-min">4. Validate the baseline (2
+min)</h3>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-lab11-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+for i in 1 2 3 4 5; do curl -s http://$ALB; done</code></pre>
+<p>You should see two instance IDs alternating — round-robin across the
+2 ASG instances.</p>
+<h3 id="5-generate-load-and-watch-the-asg-scale-up-10-min">5. Generate
+load and watch the ASG scale up (10 min)</h3>
+<p>In CloudShell:</p>
+<pre class="bash"><code># Apache Bench is pre-installed on AL2023; CloudShell uses AL2023 too
+sudo dnf install -y httpd-tools 2&gt;/dev/null || true
+
+# Send 10,000 requests with 50 concurrent connections
+ab -n 10000 -c 50 http://$ALB/</code></pre>
+<p>While <code>ab</code> runs (~2-3 min), open another browser tab to
+<strong>CloudWatch → Metrics → AWS/ApplicationELB → Per AppELB, per TG
+Metrics → RequestCountPerTarget</strong>. You'll see it spike well above
+10.</p>
+<p>Then in the <strong>EC2 → Auto Scaling Groups →
+archadv-<you>-lab11-asg → Activity</strong> tab: a new scaling activity
+appears within ~1 min:</p>
+<pre><code>&quot;Launching a new EC2 instance&quot; — Cause: At &lt;time&gt;, a monitor alarm
+TargetTracking-archadv-&lt;you&gt;-lab11-asg-AlarmHigh-... in state ALARM triggered
+policy archadv-&lt;you&gt;-lab11-asg-target-tracking..., changing the desired
+capacity from 2 to 3.</code></pre>
+<p>Refresh until you see the new instance go <code>InService</code> (~3
+min total).</p>
+<h3 id="6-watch-it-scale-back-down-5-min--optional-can-skip">6. Watch it
+scale back down (5 min — optional, can skip)</h3>
+<p>After <code>ab</code> finishes, RequestCountPerTarget drops. Within
+15 min, the ASG scales back down to 2. You may not have time to wait —
+note the behavior and move on.</p>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />ASG has 2 instances
+<code>InService</code> initially</label></li>
+<li><label><input type="checkbox" />Target tracking scaling policy on
+<code>ALBRequestCountPerTarget</code>, target value
+<code>10</code></label></li>
+<li><label><input type="checkbox" />Under load, ASG scaling activity
+shows "changing the desired capacity from 2 to 3" (or
+higher)</label></li>
+<li><label><input type="checkbox" />CloudWatch metric
+<code>RequestCountPerTarget</code> exceeds 10 during load</label></li>
+<li><label><input type="checkbox" />After load stops, ASG scales back to
+2 (eventually)</label></li>
+</ul>
+<h2 id="discussion-5-min--instructor-led">Discussion (5 min —
+instructor-led)</h2>
+<p>Hand out the scenario cards from the original Module 11 exercise. For
+each scenario, ask the room:</p>
+<ol type="1">
+<li><strong>Spiky news site (90% reads, 50× spikes)</strong> — would
+<code>RequestCountPerTarget</code> work? <em>Yes — request count IS the
+saturation indicator.</em></li>
+<li><strong>Internal HR app (CPU-bound at peak, idle off-hours)</strong>
+— would request count work? <em>Maybe, but <strong>scheduled
+scaling</strong> (<code>0 8 * * MON-FRI</code> up,
+<code>0 18 * * MON-FRI</code> down) is cheaper and simpler.</em></li>
+<li><strong>Real-time game backend (10K concurrent connections)</strong>
+— request count? <em>No — connections, not requests, are the bottleneck.
+Need a custom metric for active connections.</em></li>
+<li><strong>Batch image processing (queue-driven)</strong> — request
+count? <em>No — there's no ALB. The right metric is <strong>SQS queue
+depth</strong> (or
+<code>ApproximateNumberOfMessagesVisible</code>).</em></li>
+<li><strong>IoT telemetry ingestion (1M events/sec)</strong> — request
+count? <em>No — for Kinesis, use <code>IncomingRecords</code> or
+<code>IncomingBytes</code>. For Lambda fronting Kinesis,
+<strong>iterator age</strong>.</em></li>
+</ol>
+<p>The durable lesson: scale on the metric that <strong>leads</strong>
+saturation, not the one that <strong>lags</strong> it. CPU is the
+lagging indicator for memory-bound or queue-bound workloads.</p>
+<h2 id="cleanup">Cleanup</h2>
+<ol type="1">
+<li>ASG → Update → desired/min = 0, then <strong>Delete</strong>.</li>
+<li>ALB → Delete; target group → Delete.</li>
+<li>Launch template → Delete.</li>
+<li>Security groups → Delete.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add a <strong>second</strong> scaling policy: target tracking on
+average CPU 50%. With nginx serving static content, CPU stays low even
+under load — show that the CPU policy doesn't fire while the
+request-count policy does.</li>
+<li>Add a <strong>predictive scaling</strong> policy. AWS analyzes 14
+days of metric data to forecast and pre-scale. Not useful in a 30-min
+lab, but the configuration is illustrative.</li>
+<li>Set up the same workload on <strong>EC2 + Lambda</strong> in
+parallel and compare the cost of the same load served by ASG vs
+Lambda.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

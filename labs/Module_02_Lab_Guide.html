@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 2 — Organizations, SCPs, and IAM Identity Center | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-2--organizations-scps-and-iam-identity-center">Lab 2 —
+Organizations, SCPs, and IAM Identity Center</h1>
+<h2 id="objective">Objective</h2>
+<p>Experience the <strong>multi-account Org from inside a member
+account</strong>. Watch a Service Control Policy attach and propagate
+without you doing anything in your own account — that's the durable
+lesson. Then explore IAM Identity Center as the front door.</p>
+<h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in via the AWS access portal → <code>Sandbox&lt;N&gt;</code> →
+<code>AWSAdministratorAccess</code>.</li>
+<li>Region selector: <code>us-east-1</code>.</li>
+</ol>
+<h2 id="part-a--confirm-your-starting-state-5-min">Part A — Confirm your
+starting state (5 min)</h2>
+<ol type="1">
+<li><strong>AWS Organizations</strong> from a Sandbox account shows a
+<strong>read-only summary</strong> — you can confirm you're part of the
+org and see the management account ID, but you can't see other accounts,
+OUs, or policies. That's expected — only the management account owns the
+Org.</li>
+<li><strong>IAM Identity Center</strong> is also managed centrally. From
+your access portal page, note:
+<ul>
+<li>The portal URL itself
+(<code>d-xxxxxxxxxx.awsapps.com/start</code>)</li>
+<li>That you only see <code>Sandbox&lt;N&gt;</code> listed (no other
+student's account)</li>
+<li>The <code>AWSAdministratorAccess</code> permission set the
+instructor assigned</li>
+</ul></li>
+<li>Inside your Sandbox, open <strong>IAM</strong> and confirm there is
+a small set of identity-center-managed roles (named
+<code>AWSReservedSSO_AWSAdministratorAccess_*</code>). Do not modify
+these — they are managed from the management account.</li>
+</ol>
+<h2 id="part-b--region-restriction-scp-live-demo-25-min">Part B — Region
+restriction SCP (live demo, 25 min)</h2>
+<p>This part runs as a <strong>synchronized class demo</strong>. The
+instructor drives from the management account; you drive from your
+Sandbox.</p>
+<ol type="1">
+<li><strong>Step 1 (you):</strong> Open <strong>EC2</strong> and switch
+the region selector to <strong><code>eu-west-1</code></strong>.</li>
+<li>Click <strong>Launch instance</strong>. Name
+<code>archadv-&lt;your-name&gt;-region-test</code>. AMI: Amazon Linux
+2023, <code>t3.micro</code>. <strong>Launch.</strong> It should
+succeed.</li>
+<li>Terminate that instance.</li>
+<li><strong>Step 2 (instructor):</strong> Attaches the staged
+<code>DenyNonApprovedRegions</code> SCP to the Sandbox OU. Counts down
+"3, 2, 1, attached" — wait for the cue.</li>
+<li><strong>Step 3 (you):</strong> Repeat the launch in
+<code>eu-west-1</code>. It fails with <code>UnauthorizedOperation</code>
+(the underlying reason — visible in the encoded auth-failure message and
+in CloudTrail — is an explicit deny from the SCP). If the first retry
+still succeeds, wait ~10–30 sec and retry: SCP propagation is documented
+as immediate but can take a few seconds in practice.</li>
+<li>Switch the region selector to <code>us-east-1</code>. Launch the
+same instance type. <strong>Succeeds</strong> — the SCP only denies
+non-approved regions.</li>
+<li>Terminate the <code>us-east-1</code> instance.</li>
+<li><strong>Step 4 (instructor):</strong> Detaches the SCP. Counts down
+"3, 2, 1, detached".</li>
+<li><strong>Step 5 (you):</strong> Switch back to <code>eu-west-1</code>
+and launch again. Succeeds.</li>
+</ol>
+<h2 id="part-c--inspect-iam-identity-center-attribution-5-min">Part C —
+Inspect IAM Identity Center attribution (5 min)</h2>
+<ol type="1">
+<li>In your Sandbox, open <strong>CloudTrail → Event history</strong>.
+Filter for <strong>Event name = RunInstances</strong> (the User name
+filter is exact-match on your IdC session name — easier to filter by
+event).</li>
+<li>Find the <code>RunInstances</code> events from Part B. Note the
+<code>userIdentity.arn</code> — it ends in
+<code>AWSReservedSSO_AWSAdministratorAccess_&lt;id&gt;/&lt;your-username&gt;</code>.
+That's how Org-level audit attributes actions back to the IAM IdC user,
+even though the call ran in your member account.</li>
+</ol>
+<h2 id="part-d--tag-required-scp-stretch-10-min">Part D — Tag-required
+SCP (stretch, 10 min)</h2>
+<p>Time permitting, the instructor attaches a second SCP requiring
+<code>Owner</code> tag on EC2 launches:</p>
+<ol type="1">
+<li>Try to launch an EC2 with no tags → denied.</li>
+<li>Add <code>Owner=&lt;your-name&gt;</code> and
+<code>Course=archadv</code> tags during launch → succeeds.</li>
+<li>Instructor detaches the SCP.</li>
+</ol>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />You experienced the
+<code>eu-west-1</code> launch succeeding, then failing under SCP, then
+succeeding after detach</label></li>
+<li><label><input type="checkbox" />You can locate the failed
+<code>RunInstances</code> event in CloudTrail</label></li>
+<li><label><input type="checkbox" />You can describe in one sentence the
+difference between an <strong>IAM policy</strong> and an
+<strong>SCP</strong></label></li>
+<li><label><input type="checkbox" />You can describe in one sentence the
+difference between <strong>IAM Identity Center</strong> and standalone
+<strong>IAM users</strong></label></li>
+</ul>
+<h2 id="discussion-prompts">Discussion prompts</h2>
+<ul>
+<li>Where would the deny-non-approved-regions SCP belong in
+<em>your</em> org — at the root, at an OU, or per-account? Why?</li>
+<li>What goes in a Sandbox OU vs a Prod OU vs a Security OU? What SCPs
+differ?</li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<p>Nothing to clean up — the demo instances were already terminated.</p>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>From the access portal, switch into <strong>a different IAM IdC
+permission set</strong> if your user has more than one assigned (some
+orgs split admin / read-only).</li>
+<li>Read the <strong>AWS Organizations service authorization
+reference</strong> and find one action you would deny at the Org root
+regardless of OU.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

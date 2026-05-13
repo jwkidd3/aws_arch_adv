@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 7 — CodePipeline → CodeBuild → CodeDeploy | Advanced Architecting on AWS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/atom-one-light.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/index.min.js"></script>
+  <style>
+    :root {
+      --heading: #232f3e;
+      --accent: #ff9900;
+      --success: #2f855a;
+      --warning: #c05621;
+      --text: #2d3748;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --code-bg: #f7fafc;
+      --quote-bg: #fff7ed;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .lab-header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 8px;
+    }
+    .lab-header .course-tag {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.8em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4 { color: var(--heading); font-weight: 700; margin-top: 1.8em; margin-bottom: 0.5em; line-height: 1.25; }
+    h1 { font-size: 2.0em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.2em; }
+    h4 { font-size: 1.05em; color: var(--accent); }
+    p { margin: 0.6em 0; }
+    ul, ol { padding-left: 1.6em; margin: 0.6em 0; }
+    li { margin-bottom: 0.35em; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--heading); }
+    code {
+      font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #c05621;
+    }
+    pre {
+      background: var(--code-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 1em 0;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    pre code { background: transparent; padding: 0; color: var(--text); }
+    blockquote {
+      background: var(--quote-bg);
+      border-left: 4px solid var(--accent);
+      margin: 1em 0;
+      padding: 14px 22px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    blockquote p:first-child { margin-top: 0; }
+    blockquote p:last-child { margin-bottom: 0; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+      font-size: 0.95em;
+    }
+    table th {
+      background: var(--heading);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table tr:nth-child(even) { background: var(--code-bg); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    input[type="checkbox"] { margin-right: 0.4em; transform: scale(1.15); accent-color: var(--accent); }
+    .nav-footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85em;
+      text-align: center;
+    }
+    .nav-footer a { color: var(--muted); margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="lab-header">
+    <div class="course-tag">Advanced Architecting on AWS</div>
+  </div>
+<h1 id="lab-7--codepipeline--codebuild--codedeploy">Lab 7 — CodePipeline
+→ CodeBuild → CodeDeploy</h1>
+<h2 id="objective">Objective</h2>
+<p>Wire an AWS-native CI/CD pipeline that builds a new container image
+and deploys it to the ECS service from Lab 6. Then switch the deploy
+strategy from rolling to <strong>canary</strong> and watch traffic
+split.</p>
+<h2 id="time-budget-65-minutes">Time budget: 65 minutes</h2>
+<h2 id="pre-flight">Pre-flight</h2>
+<ol type="1">
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
+<code>us-east-1</code>.</li>
+<li>The ECS service <code>archadv-&lt;you&gt;-hello-svc</code> from Lab
+6 must still be running. If you cleaned it up, redo Lab 6 quickly
+first.</li>
+<li>Open CloudShell.</li>
+</ol>
+<h2 id="steps">Steps</h2>
+<h3 id="1-create-the-codecommit-repository-3-min">1. Create the
+CodeCommit repository (3 min)</h3>
+<ul>
+<li><strong>CodeCommit → Repositories → Create repository</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-hello</code></li>
+<li>Create.</li>
+</ul>
+<p>In CloudShell:</p>
+<pre class="bash"><code>git config --global user.name &quot;&lt;you&gt;&quot;
+git config --global user.email &quot;&lt;you&gt;@example.com&quot;
+
+# IAM Identity Center sessions use rotating credentials. The codecommit-credential-helper
+# does not support these. Use git-remote-codecommit instead.
+pip3 install --user git-remote-codecommit
+
+git clone codecommit::us-east-1://archadv-&lt;you&gt;-hello
+cd archadv-&lt;you&gt;-hello
+
+cat &gt; Dockerfile &lt;&lt;&#39;EOF&#39;
+FROM public.ecr.aws/docker/library/nginx:1.27-alpine
+RUN echo &#39;&lt;h1&gt;archadv hello pipeline v3&lt;/h1&gt;&#39; &gt; /usr/share/nginx/html/index.html
+EOF
+
+cat &gt; buildspec.yml &lt;&lt;&#39;EOF&#39;
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - REPO=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_REPO
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  build:
+    commands:
+      - docker build -t $IMAGE_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION .
+      - docker tag $IMAGE_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION $REPO:latest
+      - docker push $REPO:latest
+  post_build:
+    commands:
+      - printf &#39;[{&quot;name&quot;:&quot;web&quot;,&quot;imageUri&quot;:&quot;%s&quot;}]&#39; $REPO:latest &gt; imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
+EOF
+
+git add . &amp;&amp; git commit -m &quot;init&quot;
+git push</code></pre>
+<h3 id="2-create-the-codebuild-project-5-min">2. Create the CodeBuild
+project (5 min)</h3>
+<ul>
+<li><strong>CodeBuild → Build projects → Create project</strong></li>
+<li>Name: <code>archadv-&lt;you&gt;-build</code></li>
+<li>Source: AWS CodeCommit, repository
+<code>archadv-&lt;you&gt;-hello</code>, branch <code>main</code></li>
+<li>Environment: Managed image, Amazon Linux 2,
+<code>aws/codebuild/amazonlinux2-x86_64-standard:5.0</code></li>
+<li><strong>Privileged: enable</strong> (needed for Docker)</li>
+<li>Service role: <strong>Create new</strong></li>
+<li>Environment variables:
+<ul>
+<li><code>AWS_ACCOUNT_ID</code> = your account number</li>
+<li><code>AWS_REGION</code> = us-east-1</li>
+<li><code>IMAGE_REPO</code> =
+<code>archadv-&lt;you&gt;-hello</code></li>
+</ul></li>
+<li>Buildspec: use the buildspec.yml in the source</li>
+<li>Create.</li>
+</ul>
+<p>After creation, attach the inline policy
+<code>AmazonEC2ContainerRegistryPowerUser</code> to the build role (find
+the role in IAM, attach
+<code>AmazonEC2ContainerRegistryPowerUser</code>).</p>
+<h3 id="3-smoke-test-the-build-3-min">3. Smoke-test the build (3
+min)</h3>
+<ul>
+<li>CodeBuild → <code>archadv-&lt;you&gt;-build</code> → <strong>Start
+build</strong>.</li>
+<li>Watch <strong>Build log</strong>. Should succeed in ~3 min.</li>
+<li>Confirm a new <code>:latest</code> image in ECR.</li>
+</ul>
+<h3 id="4-create-the-artifact-bucket-1-min">4. Create the artifact
+bucket (1 min)</h3>
+<ul>
+<li><strong>S3 → Create bucket</strong>:
+<code>archadv-&lt;you&gt;-pipeline-artifacts</code>. Block public
+access. Tag.</li>
+</ul>
+<h3 id="5-create-the-codepipeline-5-min">5. Create the CodePipeline (5
+min)</h3>
+<ul>
+<li><strong>CodePipeline → Pipelines → Create pipeline</strong></li>
+<li>Pipeline name: <code>archadv-&lt;you&gt;-pipeline</code></li>
+<li>Service role: <strong>New</strong>, name auto</li>
+<li>Artifact store: custom location, the bucket from step 4</li>
+<li>Source provider: AWS CodeCommit, repository
+<code>archadv-&lt;you&gt;-hello</code>, branch <code>main</code>, change
+detection: CloudWatch Events</li>
+<li>Build provider: AWS CodeBuild, project
+<code>archadv-&lt;you&gt;-build</code></li>
+<li>Deploy provider: <strong>Amazon ECS</strong> (standard, not
+blue/green for now)
+<ul>
+<li>Cluster: <code>archadv-&lt;you&gt;-cluster</code></li>
+<li>Service: <code>archadv-&lt;you&gt;-hello-svc</code></li>
+<li>Image definitions file: <code>imagedefinitions.json</code></li>
+</ul></li>
+<li>Create.</li>
+</ul>
+<p>The pipeline starts immediately. End-to-end first run: 4–6 min.</p>
+<h3 id="6-validate">6. Validate</h3>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+curl http://$ALB
+# After pipeline completes: &lt;h1&gt;archadv hello pipeline v3&lt;/h1&gt;</code></pre>
+<h3 id="7-trigger-a-re-deploy-from-a-commit-5-min">7. Trigger a
+re-deploy from a commit (5 min)</h3>
+<p>In CloudShell, in your repo:</p>
+<pre class="bash"><code>sed -i &#39;s/v3/v4/&#39; Dockerfile
+git add Dockerfile &amp;&amp; git commit -m &quot;v4&quot;
+git push</code></pre>
+<p>Watch the pipeline kick off automatically. After ~4 min,
+<code>curl</code> returns <code>v4</code>.</p>
+<h3
+id="8-switch-to-bluegreen-canary-deploy-10-min-optional-but-high-value">8.
+Switch to blue/green canary deploy (10 min, optional but
+high-value)</h3>
+<ul>
+<li><strong>CodeDeploy → Applications → Create application</strong>:
+type ECS.</li>
+<li><strong>Deployment group</strong>: type ECS, blue/green deployment,
+target group pair = your existing TG + a new TG2 (create one — same
+settings as Lab 6).</li>
+<li>Configure traffic shifting:
+<strong>CodeDeployDefault.ECSCanary10Percent5Minutes</strong> (10% to
+canary for 5 min, then 100%).</li>
+<li>Update the ECS service to use <strong>CODE_DEPLOY</strong> as the
+deployment controller (this requires re-creating the service — the
+console will guide you).</li>
+<li>Re-run the pipeline. Watch the deploy stage:
+<ul>
+<li>10% of traffic shifts to TG2 for 5 min</li>
+<li>Curl in a loop — you should see ~10% <code>v5</code> responses for
+the first 5 min</li>
+<li>Then 100% shift</li>
+</ul></li>
+</ul>
+<h2 id="validation-checklist">Validation checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />CodeCommit repo has buildspec.yml
+and Dockerfile</label></li>
+<li><label><input type="checkbox" />CodeBuild project succeeds in
+standalone build</label></li>
+<li><label><input type="checkbox" />Pipeline runs end-to-end on a
+commit</label></li>
+<li><label><input type="checkbox" />Pipeline-deployed image visible in
+ECS service revision history</label></li>
+<li><label><input type="checkbox" />(Optional) Canary deploy splits
+traffic 10/90 for 5 min before full shift</label></li>
+</ul>
+<h2 id="cleanup">Cleanup</h2>
+<ol type="1">
+<li>Delete the pipeline. Delete CodeBuild project.</li>
+<li>Delete the CodeCommit repository.</li>
+<li>Delete the CodeDeploy application (if you did step 8).</li>
+<li>Empty and delete the artifact bucket.</li>
+<li>Leave ECS for the rest of the day or clean up via Lab 6's cleanup
+steps.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals</h2>
+<ul>
+<li>Add a <strong>manual approval action</strong> between the build and
+deploy stages.</li>
+<li>Replace CodeCommit with a <strong>GitHub source action</strong>
+using an <strong>AWS CodeConnections</strong> connection (formerly
+CodeStar Connections — renamed in 2024). This is what most teams use
+today.</li>
+<li>Add a CloudWatch alarm on ECS task health and configure CodeDeploy
+to <strong>auto-rollback</strong> if it fires during the canary
+window.</li>
+</ul>
+  <div class="nav-footer">
+    <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
+  </div>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>
