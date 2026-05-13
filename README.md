@@ -100,7 +100,7 @@ aws_arch_adv/
 ├── Module_00/        Instructor reference — multi-account scaffolding (instructor-only)
 ├── Module_01/ … Module_13/
 │   ├── slides/       Module slide deck (Reveal.js HTML)
-│   └── labs/         Lab guide (md + pdf) — console-driven steps
+│   └── labs/         Lab guide (markdown) — console-driven steps
 ├── Module_14/        Capstone — slides + lab guide + optional Terraform reference
 ├── README.md         This file
 └── INSTRUCTOR.md     Instructor-only — pacing notes, lab solutions, gotchas
