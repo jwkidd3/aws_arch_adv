@@ -233,60 +233,65 @@ finish.</li>
 <li><code>Owner=&lt;your-name&gt;</code></li>
 <li><code>Course=archadv</code></li>
 </ul>
-<h3 id="3-launch-a-public-subnet-ec2-the-bastion">3. Launch a
-public-subnet EC2 (the bastion)</h3>
+<h3 id="3-launch-an-ec2-in-the-private-subnet">3. Launch an EC2 in the
+private subnet</h3>
 <ul>
 <li><strong>EC2 → Launch instance</strong></li>
-<li>Name: <code>archadv-&lt;your-name&gt;-bastion</code></li>
+<li>Name: <code>archadv-&lt;your-name&gt;-workload</code></li>
 <li>AMI: latest <strong>Amazon Linux 2023</strong></li>
-<li>Instance type: <code>t3.micro</code></li>
-<li>Key pair: create a new one named
-<code>archadv-&lt;your-name&gt;</code> (download the .pem)</li>
+<li>Instance type: <code>t3.small</code> (some AZs in this account block
+<code>t3.micro</code>)</li>
+<li><strong>Key pair: skip / proceed without a key pair</strong> — we
+connect via AWS Systems Manager, not SSH</li>
 <li>Network: your new VPC</li>
-<li>Subnet: one of the <strong>public</strong> subnets</li>
-<li>Auto-assign public IP: <strong>Enable</strong></li>
-<li>Security group: create new — allow SSH (22) from <strong>My
-IP</strong></li>
+<li>Subnet: one of the <strong>private</strong> subnets</li>
+<li>Auto-assign public IP: <strong>Disable</strong></li>
+<li>Security group: create new — <strong>no inbound rules</strong>
+(SSM works outbound only)</li>
+<li><strong>Advanced → IAM instance profile</strong>: create a new role
+with the AWS-managed policy
+<code>AmazonSSMManagedInstanceCore</code> attached (or pick an existing
+one if you have it). This is what lets SSM Agent on the instance
+authenticate back to AWS.</li>
 <li>Launch.</li>
 </ul>
-<h3 id="4-launch-a-private-subnet-ec2-the-workload">4. Launch a
-private-subnet EC2 (the workload)</h3>
+<p>Wait ~2 minutes after the instance reaches <strong>Running</strong>
+for SSM Agent to register. You can confirm by going to
+<strong>Systems Manager → Fleet Manager</strong> — the instance shows
+<code>Online</code> once registered.</p>
+<h3 id="4-validate-connectivity-via-session-manager">4. Validate
+connectivity via Session Manager</h3>
+<p>Why Session Manager and not SSH? Most corporate networks block
+outbound TCP/22. Session Manager uses HTTPS to AWS-side SSM endpoints
+through your laptop's existing internet access — same firewall-friendly
+path your browser uses. It also means the instance needs no public IP,
+no inbound port 22, and no SSH key pair.</p>
 <ul>
-<li>Same flow as above. Name:
-<code>archadv-&lt;your-name&gt;-workload</code>.</li>
-<li>Subnet: one of the <strong>private</strong> subnets.</li>
-<li>Auto-assign public IP: <strong>Disable</strong>.</li>
-<li>Security group: new — allow SSH (22) from the <strong>bastion's
-security group ID</strong> (not from <code>0.0.0.0/0</code>).</li>
-<li>Launch.</li>
+<li><strong>EC2 → Instances</strong> → select your workload →
+<strong>Connect</strong> → <strong>Session Manager</strong> tab →
+<strong>Connect</strong>. A browser-based shell opens as
+<code>ssm-user</code>.</li>
+<li>From inside the shell, confirm internet egress works through the
+NAT:</li>
 </ul>
-<h3 id="5-validate-connectivity">5. Validate connectivity</h3>
-<p>From your laptop:</p>
-<pre class="bash"><code>chmod 400 archadv-&lt;your-name&gt;.pem
-ssh -i archadv-&lt;your-name&gt;.pem ec2-user@&lt;bastion-public-ip&gt;</code></pre>
-<p>From inside the bastion, SSH to the workload's private IP:</p>
-<pre class="bash"><code>ssh -i archadv-&lt;your-name&gt;.pem ec2-user@&lt;workload-private-ip&gt;</code></pre>
-<p>From the workload, confirm internet egress works through the NAT:</p>
-<pre class="bash"><code>curl -s https://checkip.amazonaws.com</code></pre>
+<pre><code class="language-bash">curl -s https://checkip.amazonaws.com
+</code></pre>
 <p>You should see the <strong>NAT Gateway's</strong> public IP, not the
-workload's private IP.</p>
+instance's private IP. That proves: private subnet → NAT Gateway →
+Internet Gateway → upstream.</p>
 <h2 id="validation-checklist">Validation checklist</h2>
-<ul class="task-list">
-<li><label><input type="checkbox" />VPC exists with
-<code>10.0.0.0/16</code> and 2 public + 2 private subnets across 2
-AZs</label></li>
-<li><label><input type="checkbox" />Public subnets have a route
-<code>0.0.0.0/0 → igw-...</code></label></li>
-<li><label><input type="checkbox" />Private subnets have a route
-<code>0.0.0.0/0 → nat-...</code></label></li>
-<li><label><input type="checkbox" />Bastion is reachable from your
-laptop on port 22</label></li>
-<li><label><input type="checkbox" />Workload is reachable <strong>only
-via the bastion</strong> (not from the public internet)</label></li>
-<li><label><input type="checkbox" />Workload can <code>curl</code> an
-HTTPS URL through the NAT</label></li>
-<li><label><input type="checkbox" />Every resource is tagged
-<code>Owner</code> + <code>Course=archadv</code></label></li>
+<ul>
+<li>VPC exists with <code>10.0.0.0/16</code> and 2 public + 2 private
+subnets across 2 AZs</li>
+<li>Public subnets have a route <code>0.0.0.0/0 → igw-...</code></li>
+<li>Private subnets have a route <code>0.0.0.0/0 → nat-...</code></li>
+<li>Workload EC2 is in a <strong>private</strong> subnet with
+<strong>no public IP</strong></li>
+<li>Session Manager connection to the workload succeeds</li>
+<li><code>curl https://checkip.amazonaws.com</code> from the workload
+returns the <strong>NAT Gateway's</strong> public IP</li>
+<li>Every resource is tagged <code>Owner</code> +
+<code>Course=archadv</code></li>
 </ul>
 <h2 id="wafr-self-review">WAFR self-review</h2>
 <p>In <strong>AWS Well-Architected Tool</strong>, define a workload for
@@ -302,9 +307,7 @@ instructor will clean up VPCs centrally after the course ends.</p>
 </blockquote>
 <p>Lab-1-specific cleanup:</p>
 <ul>
-<li>Terminate the <strong>bastion</strong> and <strong>workload</strong>
-EC2s — they're not needed for any other lab.</li>
-<li>Delete the key pair you created for the bastion.</li>
+<li>Terminate the <strong>workload</strong> EC2 — not needed for any other lab.</li>
 </ul>
 <p>Leave everything else (VPC, subnets, IGW, NAT, route tables, Elastic
 IP) in place.</p>
@@ -313,9 +316,7 @@ IP) in place.</p>
 <li>Add a <strong>VPC flow log</strong> to the VPC, sending to a new
 CloudWatch log group. Generate traffic and inspect a few flow
 records.</li>
-<li>Replace the SSH bastion with <strong>EC2 Instance Connect</strong>
-or <strong>Session Manager</strong> — SSM is the production answer;
-bastions are legacy.</li>
+<li>Add a <strong>VPC flow log</strong> on the VPC, sending to a new CloudWatch log group. Generate traffic from the workload and inspect a few flow records.</li>
 </ul>
   <div class="nav-footer">
     <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>

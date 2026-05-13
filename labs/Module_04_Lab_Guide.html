@@ -161,7 +161,7 @@ instance</strong></li>
 <li>Instance: <code>m5.xlarge</code> (the minimum supported size — this
 is real money during the lab; we cap the lab at 25 min for this
 part)</li>
-<li>Key pair: <code>archadv-&lt;your-name&gt;</code> (from Lab 1)</li>
+<li>Key pair: skip / proceed without a key pair — we use SSM Session Manager</li>
 <li>Network: your VPC, <strong>public subnet</strong></li>
 <li>Auto-assign public IP: enable</li>
 <li>Security group: new — allow <code>80/tcp</code> from <strong>My
@@ -205,7 +205,7 @@ in production)</li>
 <li>Create.</li>
 </ul>
 <h3 id="5-mount-and-write-5-min">5. Mount and write (5 min)</h3>
-<p>SSH into your bastion EC2 (Lab 1). From the bastion:</p>
+<p>Launch a small temporary test EC2 in your VPC's <strong>public</strong> subnet (Amazon Linux 2023, <code>t3.small</code>, IAM instance profile with <code>AmazonSSMManagedInstanceCore</code>, no inbound rules — same recipe as Lab 1's workload). Wait ~2 min for SSM Agent to register, then <strong>EC2 → Connect → Session Manager</strong> to open a shell. From inside the Session Manager shell:</p>
 <pre class="bash"><code>sudo dnf install -y nfs-utils
 sudo mkdir -p /mnt/fgw
 sudo mount -t nfs -o nolock,hard &lt;gateway-public-ip&gt;:/archadv-&lt;your-name&gt;-filegw /mnt/fgw
@@ -220,7 +220,7 @@ min)</h3>
 <ul>
 <li>From the S3 console, upload a second object directly to the bucket:
 <code>cloud-side.txt</code>.</li>
-<li>On the bastion, <code>ls /mnt/fgw/</code>. The new object should
+<li>In the Session Manager shell, <code>sudo ls /mnt/fgw/</code>. The new object should
 appear within ~30 sec via the gateway's cache refresh.</li>
 </ul>
 <h2 id="part-b--datasync-15-min">Part B — DataSync (15 min)</h2>
@@ -241,7 +241,7 @@ For &gt;20M files in production, scale to <code>m5.4xlarge</code>.</li>
 <li>Activation: same flow as Storage Gateway (use the agent's public
 IP)</li>
 <li>After agent is <code>Online</code>: NFS server
-<code>&lt;bastion-private-ip&gt;</code>, mount path
+<code>&lt;gateway-public-ip&gt;</code>, mount path
 <code>/home/ec2-user</code></li>
 <li>Create location.</li>
 </ul>
@@ -270,7 +270,7 @@ CloudWatch)</li>
 <li><strong>Start with defaults.</strong> Wait ~1 min. Confirm files
 from <code>/home/ec2-user</code> appear in
 <code>s3://archadv-&lt;your-name&gt;-filegw/datasync/</code>.</li>
-<li>Add a new file on the bastion:
+<li>Add a new file from the test EC2:
 <code>echo new &gt; /home/ec2-user/delta.txt</code>.</li>
 <li><strong>Run the task again.</strong> This time DataSync should
 report <strong>only <code>delta.txt</code> transferred</strong> — that's
