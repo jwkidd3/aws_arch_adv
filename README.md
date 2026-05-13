@@ -97,10 +97,10 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 
 ```
 aws_arch_adv/
-├── labs/                   Module_01..13 lab guides (markdown, console-driven)
+├── labs/                   Module_01..13 lab guides (single-file HTML, console-driven)
 ├── presentations/          Reveal.js slide decks for Modules 1–13 (single-file HTML)
 ├── Module_14/              Capstone — kept as a folder because it includes a Terraform reference
-│   ├── labs/Module_14_Lab_Guide.md
+│   ├── labs/Module_14_Lab_Guide.html
 │   ├── slides/module-14-capstone.html
 │   └── terraform/main.tf   optional Day-3 IaC reference for students from the Terraform course
 ├── extras/                 Inherited Terraform reference material — not part of the course
