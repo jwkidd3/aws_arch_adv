@@ -35,6 +35,13 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] **Per-student starter credential** in the mgmt account `001613358280` — gives the student enough access to create their own IAM Identity Center user (Lab 1 Part A). Easiest: an IAM user per student with `AWSSSOMemberAccountAdministrator` (managed policy) + an inline policy permitting `sso:CreateUser` and `sso:CreateAccountAssignment` on the student's assigned Sandbox. Hand out username + initial password.
 - [ ] **`AdministratorAccess` permission set exists** in IAM Identity Center (this is the AWS-managed predefined permission set; Lab 1 Part A assigns it to the student's Sandbox)
 - [ ] **`DenyOutsideApprovedRegions` SCP is attached to the Sandbox OU before class** (it's the steady state students observe in Lab 2). The optional detach/re-attach demo is instructor-led if time allows.
+- [ ] **Tag policy created and attached** to the Sandbox OU (advisory-only). Standardizes `Course=archadv` and the `Owner` key. Students view its compliance report in Lab 2 Part D — they can't see anything without it being attached.
+- [ ] **Tag Policies trusted access enabled at the Org level.** Required for `aws resourcegroupstaggingapi get-compliance-summary` / `get-resources --include-compliance-details` to work. One-time:
+  ```bash
+  aws organizations enable-aws-service-access --service-principal tagpolicies.tag.amazonaws.com
+  ROOT_ID=$(aws organizations list-roots --query 'Roots[0].Id' --output text)
+  aws organizations enable-policy-type --root-id "$ROOT_ID" --policy-type TAG_POLICY
+  ```
 - [x] Module 3 simulator: **NOT NEEDED** — Lab 3 was pivoted to configure-only on 2026-05-12. Students build all AWS-side hybrid resources and observe the `DOWN` state; no IPsec responder required. See updated Module 3 lab guide.
 - [ ] Per-account Budget alarm in each Sandbox at $10/day; instructor email subscribed
 - [ ] **VPC quota — recommended raise to 15 in each Sandbox.** The default 5/region *technically fits* the course (Lab 5 peak = default + Lab-1-style VPC + 3 Lab-5 VPCs = exactly 5) but only with perfect cleanup discipline; one stale VPC from Module 4 troubleshooting and Lab 5 fails at apply with `VpcLimitExceeded`. Raising to 15 via Service Quotas → "VPCs per Region" is free, auto-approves in minutes, and removes the class-blocker risk. Skip it only if you trust your students' cleanup discipline. Optional: delete the default VPC in each Sandbox to free another slot.
