@@ -159,36 +159,52 @@ a small set of identity-center-managed roles (named
 <code>AWSReservedSSO_AWSAdministratorAccess_*</code>). Do not modify
 these — they are managed from the management account.</li>
 </ol>
-<h2 id="part-b--region-restriction-scp-live-demo-25-min">Part B — Region
-restriction SCP (live demo, 25 min)</h2>
-<p>This part runs as a <strong>synchronized class demo</strong>. The
-instructor drives from the management account; you drive from your
-Sandbox.</p>
+<h2 id="part-b--observe-the-region-restriction-scp-25-min">Part B —
+Observe the region-restriction SCP (25 min)</h2>
+<p>The <code>DenyOutsideApprovedRegions</code> SCP is <strong>already
+attached</strong> to the Sandbox OU before this lab starts. It denies
+everything outside the approved-region list (<code>us-east-1</code> and
+<code>us-east-2</code>) for non-global services. Your job is to observe
+its behavior from inside your Sandbox.</p>
 <ol type="1">
-<li><strong>Step 1 (you):</strong> Open <strong>EC2</strong> and switch
-the region selector to <strong><code>eu-west-1</code></strong>.</li>
-<li>Click <strong>Launch instance</strong>. Name
+<li><strong>See the deny.</strong> Open <strong>EC2</strong> and switch
+the region selector to <strong><code>eu-west-1</code></strong>. Click
+<strong>Launch instance</strong>. Name
 <code>archadv-&lt;your-name&gt;-region-test</code>. AMI: Amazon Linux
-2023, <code>t3.micro</code>. <strong>Launch.</strong> It should
-succeed.</li>
-<li>Terminate that instance.</li>
-<li><strong>Step 2 (instructor):</strong> Attaches the staged
-<code>DenyOutsideApprovedRegions</code> SCP to the Sandbox OU. Counts down
-"3, 2, 1, attached" — wait for the cue.</li>
-<li><strong>Step 3 (you):</strong> Repeat the launch in
-<code>eu-west-1</code>. It fails with <code>UnauthorizedOperation</code>
-(the underlying reason — visible in the encoded auth-failure message and
-in CloudTrail — is an explicit deny from the SCP). If the first retry
-still succeeds, wait ~10–30 sec and retry: SCP propagation is documented
-as immediate but can take a few seconds in practice.</li>
-<li>Switch the region selector to <code>us-east-1</code>. Launch the
-same instance type. <strong>Succeeds</strong> — the SCP only denies
-non-approved regions.</li>
+2023. <code>t3.small</code>. <strong>Launch.</strong> It fails with
+<code>UnauthorizedOperation</code>. The underlying reason — visible if
+you decode the encoded auth-failure message or check CloudTrail — is an
+explicit deny from the SCP.</li>
+<li><strong>See the allow.</strong> Switch the region selector to
+<strong><code>us-east-1</code></strong>. Launch the same instance type.
+It <strong>succeeds</strong> — the SCP only denies regions outside the
+approved list.</li>
 <li>Terminate the <code>us-east-1</code> instance.</li>
-<li><strong>Step 4 (instructor):</strong> Detaches the SCP. Counts down
-"3, 2, 1, detached".</li>
-<li><strong>Step 5 (you):</strong> Switch back to <code>eu-west-1</code>
-and launch again. Succeeds.</li>
+<li><strong>Confirm the multi-region allow list.</strong> Switch to
+<strong><code>us-east-2</code></strong> and launch. <strong>Also
+succeeds.</strong> The SCP allows the entire approved-region list, not
+just one region. Terminate.</li>
+<li><strong>Probe a third region.</strong> Switch to
+<strong><code>ca-central-1</code></strong> and try to launch.
+<strong>Fails</strong> — same deny as <code>eu-west-1</code>.</li>
+</ol>
+<h3 id="optional--instructor-led-detach-and-re-attach">Optional —
+instructor-led detach and re-attach</h3>
+<p>If time allows, the instructor demonstrates removing the SCP and
+adding it back so students see the deny disappear and return:</p>
+<ol type="1">
+<li><strong>Instructor (in management account)</strong> detaches the
+<code>DenyOutsideApprovedRegions</code> SCP from the Sandbox OU. Counts
+down "3, 2, 1, detached."</li>
+<li><strong>Students:</strong> retry the <code>eu-west-1</code> launch.
+It now <strong>succeeds</strong> — the deny is gone instantly across
+every Sandbox without anyone changing anything in their own account.
+That's the "aha" moment: Org-level controls propagate.</li>
+<li><strong>Terminate</strong> the test instance.</li>
+<li><strong>Instructor</strong> re-attaches the SCP. Counts down "3, 2,
+1, attached."</li>
+<li><strong>Students:</strong> retry <code>eu-west-1</code>. Back to
+<code>UnauthorizedOperation</code>.</li>
 </ol>
 <h2 id="part-c--inspect-iam-identity-center-attribution-5-min">Part C —
 Inspect IAM Identity Center attribution (5 min)</h2>

@@ -34,7 +34,7 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] One Sandbox member account per student (`Sandbox1` … `SandboxN`) exists under the Sandbox OU
 - [ ] **Per-student starter credential** in the mgmt account `001613358280` — gives the student enough access to create their own IAM Identity Center user (Lab 1 Part A). Easiest: an IAM user per student with `AWSSSOMemberAccountAdministrator` (managed policy) + an inline policy permitting `sso:CreateUser` and `sso:CreateAccountAssignment` on the student's assigned Sandbox. Hand out username + initial password.
 - [ ] **`AdministratorAccess` permission set exists** in IAM Identity Center (this is the AWS-managed predefined permission set; Lab 1 Part A assigns it to the student's Sandbox)
-- [ ] Deny-non-approved-regions SCP is staged on the Sandbox OU **detached** (Module 2 lab attaches/detaches it live)
+- [ ] **`DenyOutsideApprovedRegions` SCP is attached to the Sandbox OU before class** (it's the steady state students observe in Lab 2). The optional detach/re-attach demo is instructor-led if time allows.
 - [x] Module 3 simulator: **NOT NEEDED** — Lab 3 was pivoted to configure-only on 2026-05-12. Students build all AWS-side hybrid resources and observe the `DOWN` state; no IPsec responder required. See updated Module 3 lab guide.
 - [ ] Per-account Budget alarm in each Sandbox at $10/day; instructor email subscribed
 - [ ] **VPC quota — recommended raise to 15 in each Sandbox.** The default 5/region *technically fits* the course (Lab 5 peak = default + Lab-1-style VPC + 3 Lab-5 VPCs = exactly 5) but only with perfect cleanup discipline; one stale VPC from Module 4 troubleshooting and Lab 5 fails at apply with `VpcLimitExceeded`. Raising to 15 via Service Quotas → "VPCs per Region" is free, auto-approves in minutes, and removes the class-blocker risk. Skip it only if you trust your students' cleanup discipline. Optional: delete the default VPC in each Sandbox to free another slot.
@@ -64,7 +64,7 @@ Module 2's lab cannot have students create new top-level Org structure (only the
 2. Instructor (live in management account) attaches the staged region-restriction SCP to the Sandbox OU.
 3. Students retry — gets `AccessDenied`. Instructor detaches the SCP. Students retry again — succeeds.
 
-The "aha" moment is the deny propagating across all student accounts simultaneously without any student doing anything in their own account. Pre-stage the SCP **detached** so attaching it live is the demo.
+The "aha" moment is the deny propagating across all student accounts simultaneously without any student doing anything in their own account. Attach the SCP **before class starts** — it's the steady state students experience. The optional detach demo (run it live to show the deny disappearing) is instructor-led if time allows.
 
 #### The exact SCP staged in this Org
 
