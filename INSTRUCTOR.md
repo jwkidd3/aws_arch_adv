@@ -80,7 +80,7 @@ If you want to restore the original simulator-based flow (instructor running lib
 
 > **Course-wide ratio target: 30% lecture, 70% lab.** Every module slot is timed at roughly that split. The "lecture" minutes are the absolute maximum — if you finish slides early, hand back the time to the lab. Never the other way around.
 
-### Module 1 — Reviewing Architecting Concepts (20 min teach + 55 min lab)
+### Module 1 — Reviewing Architecting Concepts (15 min teach + 60 min lab)
 
 - WAFR is review for this audience. **25 minutes is enough.** Survey by show-of-hands which pillars learners use today, anchor on the two least-used pillars and the design-principles slide. Skip the per-pillar service-list slides if the room is sharp.
 - **Lab 1** is a console-only Well-Architected VPC build. With 50 min, students can complete the full multi-AZ public/private build, NAT, route tables, and validate via SSH from a public-subnet EC2. Walk the room — common mistakes are missing IGW route in the public route table and NAT in the public subnet (not the private subnet).

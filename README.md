@@ -55,11 +55,11 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | Time | Slot |
 |---|---|
 | 9:00 – 9:15 | Welcome, intros, AWS access portal sign-in to assigned Sandbox account |
-| 9:15 – 10:30 | **Module 1** *Reviewing Architecting Concepts* (20) + **Lab 1** Identity Center user + Well-Architected VPC (55) |
+| 9:15 – 10:30 | **Module 1** *Reviewing Architecting Concepts* (15) + **Lab 1** Identity Center user + Well-Architected VPC (60) |
 | 10:30 – 10:45 | Break |
 | 10:45 – 12:00 | **Module 2** *Single to Multiple Accounts* (20) + **Lab 2** Organizations / SCP / IAM Identity Center (55) |
 | 12:00 – 1:00 | **Lunch** |
-| 1:00 – 2:30 | **Module 3** *Hybrid Connectivity* (25) + **Lab 3** Site-to-Site VPN + Route 53 Resolver (65) |
+| 1:00 – 2:30 | **Module 3** *Hybrid Connectivity* (25) + **Lab 3** Site-to-Site VPN + Route 53 Resolver (50) |
 | 2:30 – 2:45 | Break |
 | 2:45 – 4:00 | **Module 4** *Specialized Infrastructure* (25) + **Lab 4** Storage Gateway + DataSync (50) |
 
@@ -91,7 +91,7 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 2:30 – 2:45 | Break |
 | 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (20) + design + build + walkthrough (55) |
 
-> **Lecture / lab split:** every module is paced at **30% lecture, 70% lab**. Across the course this works out to ~285 min lecture and ~660 min lab (≈ 30 / 70). Modules 1, 2, 8, and 14 trim their lecture to 20 min to keep the ratio honest. Every module has a hands-on lab; Modules 11 and 13 wrap with a design-discussion segment to preserve the architectural-decision practice that the prior paper exercises emphasized. The capstone in Module 14 is the integrative close.
+> **Lecture / lab split:** every module is paced at **30% lecture, 70% lab**. Across the course this works out to ~280 min lecture and ~665 min lab (≈ 30 / 70). Module 1 trims its lecture to 15 min (Lab 1 includes a 10-min Identity Center user-creation step in Part A); Modules 2, 8, and 14 trim their lecture to 20 min to keep the ratio honest. Every module has a hands-on lab; Modules 11 and 13 wrap with a design-discussion segment to preserve the architectural-decision practice that the prior paper exercises emphasized. The capstone in Module 14 is the integrative close.
 
 ## Repository layout
 
