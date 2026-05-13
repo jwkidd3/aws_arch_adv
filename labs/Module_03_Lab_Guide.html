@@ -216,12 +216,22 @@ Expand <strong>Tunnel options</strong> for each tunnel and set
 </ul>
 <h3 id="4-enable-route-propagation-2-min">4. Enable route propagation (2
 min)</h3>
+<p><strong>Before this step:</strong> confirm the VGW is fully attached.
+<strong>VPC → Virtual private gateways</strong> → select yours →
+<strong>State</strong> should be <code>available</code> AND the
+<strong>VPC ID</strong> column should show your VPC's ID. If it's still
+attaching, wait ~30-60 sec.</p>
 <ul>
-<li><strong>VPC → Route Tables</strong> → select your VPC's private
-subnet route table</li>
-<li><strong>Route propagation tab</strong> → Edit → enable propagation
-from the VGW.</li>
+<li><strong>VPC → Route Tables</strong> → select your VPC's
+<strong>private</strong> subnet route table (the one whose
+<strong>Associations</strong> tab lists the private subnet IDs).</li>
+<li>Click the <strong>Route propagation</strong> tab (lower pane) →
+<strong>Edit route propagation</strong>.</li>
+<li>Check the box next to your VGW → <strong>Save</strong>.</li>
 </ul>
+<p><strong>If the VGW doesn't appear in the list:</strong> the VGW
+isn't attached to this VPC yet. Go back and verify Step 2. The console
+sometimes caches — a browser refresh forces a re-fetch.</p>
 <p>This <em>would</em> cause BGP-learned routes (e.g.,
 <code>10.99.0.0/16</code>) to appear here once the tunnel was UP. Since
 the on-prem side is absent in this lab, the propagation is configured
