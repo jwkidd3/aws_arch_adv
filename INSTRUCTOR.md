@@ -80,12 +80,12 @@ If you want to restore the original simulator-based flow (instructor running lib
 
 > **Course-wide ratio target: 30% lecture, 70% lab.** Every module slot is timed at roughly that split. The "lecture" minutes are the absolute maximum — if you finish slides early, hand back the time to the lab. Never the other way around.
 
-### Module 1 — Reviewing Architecting Concepts (25 min teach + 50 min lab)
+### Module 1 — Reviewing Architecting Concepts (20 min teach + 55 min lab)
 
 - WAFR is review for this audience. **25 minutes is enough.** Survey by show-of-hands which pillars learners use today, anchor on the two least-used pillars and the design-principles slide. Skip the per-pillar service-list slides if the room is sharp.
 - **Lab 1** is a console-only Well-Architected VPC build. With 50 min, students can complete the full multi-AZ public/private build, NAT, route tables, and validate via SSH from a public-subnet EC2. Walk the room — common mistakes are missing IGW route in the public route table and NAT in the public subnet (not the private subnet).
 
-### Module 2 — Single to Multiple Accounts (25 min teach + 50 min lab)
+### Module 2 — Single to Multiple Accounts (20 min teach + 55 min lab)
 
 - Spend disproportionate time on the **OU strategy** slide — this is the durable concept; SCPs are mechanics. Cut the IAM Identity Center deep-dive to a single comparison row.
 - **Lab 2**: students experience their Sandbox account from the inside, then watch a live SCP attach/detach from the management account. The "aha" is *not* the SCP itself — it's that the deny propagated without the student touching their account. Stretch goal: instructor attaches a tag-required SCP, students try untagged launches, see deny, then succeed when tags are added.
@@ -123,7 +123,7 @@ If you want to restore the original simulator-based flow (instructor running lib
 - CloudFormation discussion: keep the YAML primer to ~5 min — students may know IaC from the dedicated Terraform course; the goal here is "what does the AWS-native option look like".
 - **Lab 7** has the longest lab budget on Day 2 (65 min). End-to-end: CodeCommit → CodeBuild → CodeDeploy. With the extra 20 min, switch the deploy strategy to canary and watch the traffic split. Pre-stage a starter `buildspec.yml` template the student copies in.
 
-### Module 8 — High Availability & DDoS Protection (25 min teach + 50 min lab)
+### Module 8 — High Availability & DDoS Protection (20 min teach + 55 min lab)
 
 - The **Shield Standard vs Advanced** distinction is the most-asked-about — Standard is free; Advanced is a $3,000/mo commitment with response-team access. Have the answer ready.
 - 25 min teach forces you to skip Network Firewall deep-dive — give it one slide and move on.
@@ -159,7 +159,7 @@ If you want to restore the original simulator-based flow (instructor running lib
 - **10 min discussion** at the end: portfolio-card walkthrough (Insurance / Healthcare SaaS / Manufacturing) — pairs pick strategy + AWS service per workload. Preserves the 7 Rs design-thinking the prior paper exercise emphasized.
 - **Cost watch:** the dms.t3.small replication instance is ~$0.07/hr while running. With cleanup at slot end, ~$0.05/student total. Across 27 students: ~$1.35.
 
-### Module 14 — Capstone (25 min framing + 50 min build/walkthrough)
+### Module 14 — Capstone (20 min framing + 55 min build/walkthrough)
 
 - **25 min framing/recap**: scenario brief (lab guide), course recap mapped to the capstone components (which module each piece comes from), questions before they pair up.
 - **50 min build/walk**: 15 min architecture diagram in pairs → 25 min console build of the highest-priority pieces (VPC + ALB + ASG, or VPC + RDS + S3 + CloudFront — pair chooses) → 10 min walkthroughs.

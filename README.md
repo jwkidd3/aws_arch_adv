@@ -55,9 +55,9 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | Time | Slot |
 |---|---|
 | 9:00 – 9:15 | Welcome, intros, AWS access portal sign-in to assigned Sandbox account |
-| 9:15 – 10:30 | **Module 1** *Reviewing Architecting Concepts* (25) + **Lab 1** Well-Architected VPC (50) |
+| 9:15 – 10:30 | **Module 1** *Reviewing Architecting Concepts* (20) + **Lab 1** Identity Center user + Well-Architected VPC (55) |
 | 10:30 – 10:45 | Break |
-| 10:45 – 12:00 | **Module 2** *Single to Multiple Accounts* (25) + **Lab 2** Organizations / SCP / IAM Identity Center (50) |
+| 10:45 – 12:00 | **Module 2** *Single to Multiple Accounts* (20) + **Lab 2** Organizations / SCP / IAM Identity Center (55) |
 | 12:00 – 1:00 | **Lunch** |
 | 1:00 – 2:30 | **Module 3** *Hybrid Connectivity* (25) + **Lab 3** Site-to-Site VPN + Route 53 Resolver (65) |
 | 2:30 – 2:45 | Break |
@@ -74,7 +74,7 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 12:00 – 1:00 | **Lunch** |
 | 1:00 – 2:30 | **Module 7** *CI/CD* — CodePipeline / CodeBuild / CodeDeploy / CloudFormation (25) + **Lab 7** Pipeline (65) |
 | 2:30 – 2:45 | Break |
-| 2:45 – 4:00 | **Module 8** *High Availability & DDoS Protection* — WAF, Shield, Network Firewall, Firewall Manager (25) + **Lab 8** WAF + ALB + ASG (50) |
+| 2:45 – 4:00 | **Module 8** *High Availability & DDoS Protection* — WAF, Shield, Network Firewall, Firewall Manager (20) + **Lab 8** WAF + ALB + ASG (55) |
 
 ### Day 3 — Securing data, scale, cost, migration, capstone
 
@@ -89,9 +89,9 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 1:00 – 1:45 | **Module 12** *Optimizing Cost* — Cost Explorer, Budgets, Savings Plans (15) + **Lab 12** Cost Explorer + Budgets (30) |
 | 1:45 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Lab 13** DMS console build (no task start) (30) + 7 Rs portfolio discussion (10) |
 | 2:30 – 2:45 | Break |
-| 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (25) + design + walkthrough (50) |
+| 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (20) + design + build + walkthrough (55) |
 
-> **Lecture / lab split:** every module is paced at roughly **30% lecture, 70% lab**. Across the course this works out to ~305 min lecture and ~640 min lab (≈ 32 / 68). Every module now has a hands-on lab; Modules 11 and 13 wrap with a design-discussion segment to preserve the architectural-decision practice that the prior paper exercises emphasized. The capstone in Module 14 is the integrative close.
+> **Lecture / lab split:** every module is paced at **30% lecture, 70% lab**. Across the course this works out to ~285 min lecture and ~660 min lab (≈ 30 / 70). Modules 1, 2, 8, and 14 trim their lecture to 20 min to keep the ratio honest. Every module has a hands-on lab; Modules 11 and 13 wrap with a design-discussion segment to preserve the architectural-decision practice that the prior paper exercises emphasized. The capstone in Module 14 is the integrative close.
 
 ## Repository layout
 
