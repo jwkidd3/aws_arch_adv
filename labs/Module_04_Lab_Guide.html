@@ -231,17 +231,27 @@ min)</h3>
 <ul>
 <li><strong>DataSync → Locations → Create location</strong></li>
 <li>Type: <strong>NFS</strong></li>
-<li>Agent: <strong>Create agent → Amazon EC2</strong> (yes, another
-agent VM — DataSync requires its own; in production this is on-prem)
+<li><strong>Launch the DataSync agent manually from EC2</strong> (the
+"Amazon EC2" hypervisor option in the DataSync Create-agent wizard is
+unreliable in this account — launch the AMI directly instead):
 <ul>
-<li><strong>Use <code>m5.2xlarge</code></strong> — the DataSync agent
-will not boot/activate below this floor (per
-<code>docs.aws.amazon.com/datasync/latest/userguide/agent-requirements.html</code>).
-For &gt;20M files in production, scale to <code>m5.4xlarge</code>.</li>
-<li>Same VPC and public subnet</li>
+<li><strong>EC2 → Launch instance</strong></li>
+<li>AMI: search <code>aws-datasync</code> under <em>AWS-owned AMIs</em>
+(or use SSM parameter <code>/aws/service/datasync/ami</code>)</li>
+<li>Type: <strong><code>m5.2xlarge</code></strong> — the DataSync agent
+will not boot/activate below this floor</li>
+<li>Same VPC and public subnet; no key pair needed</li>
+<li>Security group: inbound TCP 80 from <em>My IP</em> (one-time, for
+activation); outbound all</li>
+<li>Launch. Wait ~5 min for boot. Note the public IPv4.</li>
 </ul></li>
-<li>Activation: same flow as Storage Gateway (use the agent's public
-IP)</li>
+<li><strong>Activate the agent</strong>: <strong>DataSync → Agents →
+Create agent</strong>. Hypervisor: pick any (it's just metadata, e.g.
+VMware ESXi). Service endpoint: <strong>Public</strong>. Activation key:
+paste the agent's public IP — console fetches the key. Name it
+<code>archadv-datasync-agent</code>. Create.</li>
+<li>Wait for the agent to show <strong>Online</strong>, then back to
+<strong>DataSync → Locations → Create location</strong> to continue.</li>
 <li>After agent is <code>Online</code>: NFS server
 <code>&lt;gateway-public-ip&gt;</code>, mount path
 <code>/home/ec2-user</code></li>
