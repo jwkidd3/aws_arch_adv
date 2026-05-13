@@ -219,16 +219,42 @@ event).</li>
 That's how Org-level audit attributes actions back to the IAM IdC user,
 even though the call ran in your member account.</li>
 </ol>
-<h2 id="part-d--tag-required-scp-stretch-10-min">Part D — Tag-required
-SCP (stretch, 10 min)</h2>
-<p>Time permitting, the instructor attaches a second SCP requiring
-<code>Owner</code> tag on EC2 launches:</p>
+<h2 id="part-d--tag-policy-compliance-check-10-min">Part D — Tag policy
+compliance check (10 min)</h2>
+<p>The Org also has a <strong>tag policy</strong> attached to the
+Sandbox OU. It standardizes two tag keys: <code>Course</code> (must
+equal <code>archadv</code>) and <code>Owner</code> (key name only —
+each student's value differs). Unlike an SCP, the tag policy is
+<strong>advisory</strong> — it doesn't block resource creation. The
+only way to see whether your resources are compliant is via a tag
+compliance report.</p>
 <ol type="1">
-<li>Try to launch an EC2 with no tags → denied.</li>
-<li>Add <code>Owner=&lt;your-name&gt;</code> and
-<code>Course=archadv</code> tags during launch → succeeds.</li>
-<li>Instructor detaches the SCP.</li>
+<li>From your Sandbox console, open <strong>Resource Groups & Tag
+Editor → Tag policies</strong> (left nav).</li>
+<li>Click <strong>View effective tag policy</strong>. You'll see the
+merged tag policy inherited from the Org/OU — the keys it
+standardizes and any enforced resource types.</li>
+<li>Click <strong>Tag policies → Resources</strong> (left nav).</li>
+<li>Click <strong>Generate report</strong> for your account. Wait ~30
+sec.</li>
+<li>The result table shows every taggable resource in your account
+with its compliance status. The Lab 1 VPC components you created
+should appear — green check if you tagged them
+<code>Course=archadv</code> and <code>Owner=&lt;your-name&gt;</code>;
+red X if you forgot.</li>
+<li>For any non-compliant resource: click into it, <strong>Manage
+tags</strong>, add the missing tags, save.</li>
+<li>Re-run the report (it takes a few minutes for compliance status to
+update). Confirm the previously-red resources are now green.</li>
 </ol>
+<p>Alternative CLI from CloudShell:</p>
+<pre><code class="language-bash">aws resourcegroupstaggingapi get-resources \
+  --include-compliance-details \
+  --exclude-compliant-resources \
+  --region us-east-1
+</code></pre>
+<p>Returns only the resources currently out of compliance with the
+attached tag policy.</p>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
 <li><label><input type="checkbox" />You experienced the
