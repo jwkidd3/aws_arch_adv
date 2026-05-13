@@ -58,13 +58,11 @@ Root
 
 ### Module 2 setup (must be done before class)
 
-Module 2's lab cannot have students create new top-level Org structure (only the management account can). Students will:
+Module 2's lab cannot have students create new top-level Org structure (only the management account can). The flow:
 
-1. Sign into their Sandbox account and try a service in a non-approved region — succeeds.
-2. Instructor (live in management account) attaches the staged region-restriction SCP to the Sandbox OU.
-3. Students retry — gets `AccessDenied`. Instructor detaches the SCP. Students retry again — succeeds.
-
-The "aha" moment is the deny propagating across all student accounts simultaneously without any student doing anything in their own account. Attach the SCP **before class starts** — it's the steady state students experience. The optional detach demo (run it live to show the deny disappearing) is instructor-led if time allows.
+1. **Pre-class**: instructor attaches the `DenyOutsideApprovedRegions` SCP to the Sandbox OU. It stays attached for the duration of Lab 2 (and beyond).
+2. **In class — students** sign into their Sandbox, try a service in `eu-west-1` → `UnauthorizedOperation`. Try the same in `us-east-1` and `us-east-2` → succeeds. Try a third region (e.g., `ca-central-1`) → also denied.
+3. **Optional instructor-led demo** (if time allows): detach the SCP live, students retry `eu-west-1` → now succeeds. Re-attach, the deny returns. This shows the propagation effect — Org-level controls applied or removed instantly across every student's account without anyone doing anything in their own account.
 
 #### The exact SCP staged in this Org
 
