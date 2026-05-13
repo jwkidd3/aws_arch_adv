@@ -97,7 +97,7 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 
 ```
 aws_arch_adv/
-├── Module_00/        Instructor reference — multi-account scaffolding (instructor-only)
+├── extras/           Inherited Terraform reference material — not part of the course
 ├── Module_01/ … Module_13/
 │   ├── slides/       Module slide deck (Reveal.js HTML)
 │   └── labs/         Lab guide (markdown) — console-driven steps
