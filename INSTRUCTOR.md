@@ -93,6 +93,32 @@ Policy name: **`DenyOutsideApprovedRegions`**. Approved regions: `us-east-1` and
 }
 ```
 
+#### Tag policy (advisory-only — students see compliance in Lab 2 Part D)
+
+Policy name: **`archadv-tag-standards`** (or your preferred name). Standardizes `Course=archadv` and the `Owner` key. **Advisory only**: doesn't block resource creation. Visible in **Resource Groups & Tag Editor → Tag policies → Resources** as a compliance report.
+
+```json
+{
+  "tags": {
+    "Course": {
+      "tag_key": {
+        "@@assign": "Course"
+      },
+      "tag_value": {
+        "@@assign": ["archadv"]
+      }
+    },
+    "Owner": {
+      "tag_key": {
+        "@@assign": "Owner"
+      }
+    }
+  }
+}
+```
+
+Attach via: **Organizations → Policies → Tag policies → Create policy** → paste JSON → attach to Sandbox OU (or wherever the Sandbox accounts live).
+
 ### Module 3 setup (no pre-class work needed)
 
 **Updated 2026-05-12:** Lab 3 is now **configure-only** — students build the AWS-side hybrid networking resources (CGW, VGW, Site-to-Site VPN, Route 53 Resolver outbound endpoint, forwarding rule) and observe the `DOWN` tunnel state, but no IPsec responder is required. Students use placeholder values (`203.0.113.10` peer IP, `archadv-lab3-2026` PSK, ASN 65000, etc.) defined in the lab guide.
