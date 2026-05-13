@@ -128,7 +128,7 @@ Attach via: **Organizations → Policies → Tag policies → Create policy** �
 
 ### Module 3 setup (no pre-class work needed)
 
-**Updated 2026-05-12:** Lab 3 is now **configure-only** — students build the AWS-side hybrid networking resources (CGW, VGW, Site-to-Site VPN, Route 53 Resolver outbound endpoint, forwarding rule) and observe the `DOWN` tunnel state, but no IPsec responder is required. Students use placeholder values (`203.0.113.10` peer IP, `archadv-lab3-2026` PSK, ASN 65000, etc.) defined in the lab guide.
+**Updated 2026-05-12:** Lab 3 is now **configure-only** — students build the AWS-side hybrid networking resources (CGW, VGW, Site-to-Site VPN, Route 53 Resolver outbound endpoint, forwarding rule) and observe the `DOWN` tunnel state, but no IPsec responder is required. Students use placeholder values (`203.0.113.10` peer IP, `archadv_lab3_2026` PSK, ASN 65000, etc.) defined in the lab guide.
 
 The teaching point shifts from "see the tunnel come UP" to "see exactly what AWS provides to a hybrid customer, including the downloaded vendor-specific config that an on-prem network engineer would paste into their router." Lab time reduced from 75 to 50 min.
 
