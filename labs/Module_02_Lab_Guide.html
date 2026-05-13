@@ -138,15 +138,21 @@ starting state (5 min)</h2>
 org and see the management account ID, but you can't see other accounts,
 OUs, or policies. That's expected — only the management account owns the
 Org.</li>
-<li><strong>IAM Identity Center</strong> is also managed centrally. From
-your access portal page, note:
+<li><strong>IAM Identity Center</strong> is managed centrally in the
+management account. <strong>Do NOT open the "IAM Identity Center"
+service in your Sandbox console</strong> — it isn't enabled there and
+AWS will prompt you to enable it, which only the management account can
+do.
+<p>Instead, open a new browser tab and navigate to the
+<strong>access portal URL</strong> you used in Lab 1
+(<code>d-xxxxxxxxxx.awsapps.com/start</code>). Sign in with your IdC
+user. From the portal page, note:</p>
 <ul>
-<li>The portal URL itself
-(<code>d-xxxxxxxxxx.awsapps.com/start</code>)</li>
+<li>The portal URL itself</li>
 <li>That you only see <code>Sandbox&lt;N&gt;</code> listed (no other
 student's account)</li>
-<li>The <code>AWSAdministratorAccess</code> permission set the
-instructor assigned</li>
+<li>The <code>AdministratorAccess</code> permission set you assigned to
+yourself in Lab 1 Part A</li>
 </ul></li>
 <li>Inside your Sandbox, open <strong>IAM</strong> and confirm there is
 a small set of identity-center-managed roles (named
