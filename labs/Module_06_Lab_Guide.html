@@ -168,6 +168,14 @@ docker push $REPO:v1</code></pre>
 <p>Replace <code>&lt;you&gt;</code> with your name throughout. The push
 should complete in 30–60 sec.</p>
 <h3 id="3-ecs-cluster-1-min">3. ECS cluster (1 min)</h3>
+<p><strong>First-time ECS prep</strong> (one-time per Sandbox): the ECS
+service-linked role <code>AWSServiceRoleForECS</code> must exist before
+the first cluster create, or you get
+<em>"Unable to assume the service linked role"</em>. Run this once in
+CloudShell:</p>
+<pre class="bash"><code>aws iam create-service-linked-role --aws-service-name ecs.amazonaws.com</code></pre>
+<p>If you see <code>InvalidInput: Service role already exists</code>,
+that's fine — proceed.</p>
 <ul>
 <li><strong>Amazon ECS → Clusters → Create cluster</strong></li>
 <li>Name: <code>archadv-&lt;you&gt;-cluster</code></li>
