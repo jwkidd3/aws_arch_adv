@@ -209,7 +209,7 @@ with <code>AmazonECSTaskExecutionRolePolicy</code>)</li>
 Application</strong></li>
 <li>Name: <code>archadv-&lt;you&gt;-alb</code></li>
 <li>Scheme: internet-facing</li>
-<li>VPC: yours (or default)</li>
+<li>VPC: the Lab 1 VPC (the one with private subnets — <strong>not</strong> the default VPC)</li>
 <li>Mappings: 2 AZs, <strong>public</strong> subnets in each</li>
 <li>Security group: new — allow <code>80/tcp</code> from
 <code>0.0.0.0/0</code></li>
@@ -221,7 +221,10 @@ Application</strong></li>
 <li>Protocol: HTTP, port <code>80</code></li>
 <li>VPC: same</li>
 <li>Health check path: <code>/</code></li>
-<li>Create.</li>
+<li>Click <strong>Next</strong>.</li>
+<li><strong>Register targets page: leave the IP list EMPTY.</strong> Do
+not enter any IP address. The ECS service in step 6 will register
+Fargate task IPs automatically. Click <strong>Create target group</strong>.</li>
 </ul></li>
 <li>Back in the ALB tab, refresh and select the new target group as the
 default action.</li>
