@@ -208,10 +208,20 @@ needed).</p>
 <li>Instance profile: create role
 <code>archadv-&lt;you&gt;-ssm-ec2</code> with
 <code>AmazonSSMManagedInstanceCore</code>. Attach during launch.</li>
-<li>Security group: allow <strong>All ICMP - IPv4</strong> from
-<code>10.0.0.0/8</code> (so cross-VPC ping works), allow all traffic
-from same SG. <strong>Do not</strong> open any port to
-<code>0.0.0.0/0</code> — we connect via Session Manager only.</li>
+<li><strong>Security group</strong>: create a NEW security group in each
+VPC named <code>archadv-&lt;you&gt;-prod-sg</code> /
+<code>nonprod-sg</code> / <code>shared-sg</code>. Configure these rules:
+<table>
+<thead><tr><th>Rule</th><th>Type</th><th>Protocol</th><th>Source</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Inbound 1</td><td>All ICMP - IPv4</td><td>ICMP</td><td><code>10.0.0.0/8</code></td><td>Cross-VPC <code>ping</code> test in Part D</td></tr>
+<tr><td>Inbound 2</td><td>All traffic</td><td>All</td><td>The SG itself (self-reference — pick this SG's ID as the source)</td><td>Lets same-SG instances talk freely; pattern reused in later labs</td></tr>
+<tr><td>Outbound 1</td><td>All traffic</td><td>All</td><td><code>0.0.0.0/0</code></td><td>Default rule — keep it; SSM Agent needs egress to reach the SSM service</td></tr>
+</tbody>
+</table>
+<strong>Do not</strong> add any rule allowing inbound from
+<code>0.0.0.0/0</code> — we connect via Session Manager only, never SSH.
+Repeat for all three VPCs.</li>
 <li>Auto-assign public IP: <strong>Enable</strong>.</li>
 <li>Name tags: <code>prod-ec2</code>, <code>nonprod-ec2</code>,
 <code>shared-ec2</code>.</li>
