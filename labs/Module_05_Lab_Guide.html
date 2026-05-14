@@ -212,16 +212,17 @@ needed).</p>
 VPC named <code>archadv-&lt;you&gt;-prod-sg</code> /
 <code>nonprod-sg</code> / <code>shared-sg</code>. Configure these rules:
 <table>
-<thead><tr><th>Rule</th><th>Type</th><th>Protocol</th><th>Source</th><th>Why</th></tr></thead>
+<thead><tr><th>Inbound rule</th><th>Type</th><th>Protocol</th><th>Source</th><th>Why</th></tr></thead>
 <tbody>
-<tr><td>Inbound 1</td><td>All ICMP - IPv4</td><td>ICMP</td><td><code>10.0.0.0/8</code></td><td>Cross-VPC <code>ping</code> test in Part D</td></tr>
-<tr><td>Inbound 2</td><td>All traffic</td><td>All</td><td>The SG itself (self-reference — pick this SG's ID as the source)</td><td>Lets same-SG instances talk freely; pattern reused in later labs</td></tr>
-<tr><td>Outbound 1</td><td>All traffic</td><td>All</td><td><code>0.0.0.0/0</code></td><td>Default rule — keep it; SSM Agent needs egress to reach the SSM service</td></tr>
+<tr><td>1</td><td>All ICMP - IPv4</td><td>ICMP</td><td><code>10.0.0.0/8</code></td><td>Cross-VPC <code>ping</code> test in Part D</td></tr>
+<tr><td>2</td><td>All traffic</td><td>All</td><td>The SG itself (self-reference — pick this SG's ID as the source)</td><td>Lets same-SG instances talk freely; pattern reused in later labs</td></tr>
 </tbody>
 </table>
-<strong>Do not</strong> add any rule allowing inbound from
-<code>0.0.0.0/0</code> — we connect via Session Manager only, never SSH.
-Repeat for all three VPCs.</li>
+<strong>Outbound:</strong> leave the default rule alone (new SGs come
+with <em>All traffic to <code>0.0.0.0/0</code></em> by default — SSM
+Agent uses it for egress to the SSM service). <strong>Do not</strong>
+add any inbound rule allowing <code>0.0.0.0/0</code> — we connect via
+Session Manager only, never SSH. Repeat for all three VPCs.</li>
 <li>Auto-assign public IP: <strong>Enable</strong>.</li>
 <li>Name tags: <code>prod-ec2</code>, <code>nonprod-ec2</code>,
 <code>shared-ec2</code>.</li>
