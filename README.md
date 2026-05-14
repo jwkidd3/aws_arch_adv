@@ -84,14 +84,14 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 9:15 – 10:30 | **Module 9** *Securing Data* — KMS, Secrets Manager, CloudHSM (25) + **Lab 9** KMS + Secrets Manager (50) |
 | 10:30 – 10:45 | Break |
 | 10:45 – 11:30 | **Module 10** *Large-Scale Data Stores* — Aurora, DynamoDB, data lake patterns (15) + **Lab 10** S3 + Glue + Athena data lake (30) |
-| 11:30 – 12:00 | **Module 11** *Large-Scale Applications* — multi-tier, autoscaling, geo-routing (10) + **Lab 11** ASG with custom CloudWatch metric scaling (25) + scenario discussion (5) |
-| 12:00 – 1:00 | **Lunch** |
-| 1:00 – 1:45 | **Module 12** *Optimizing Cost* — Cost Explorer, Budgets, Savings Plans (15) + **Lab 12** Cost Explorer + Budgets (30) |
-| 1:45 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Lab 13** DMS console build (no task start) (30) + 7 Rs portfolio discussion (10) |
+| 11:30 – 12:05 | **Module 11** *Large-Scale Applications* — multi-tier, autoscaling, geo-routing (10) + **Lab 11** ASG with custom CloudWatch metric scaling (25) |
+| 12:05 – 1:00 | **Lunch** |
+| 1:00 – 1:30 | **Module 12** *Optimizing Cost* — Cost Explorer, Budgets, Savings Plans (15) + **Lab 12 — instructor demo only** (15) |
+| 1:30 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Lab 13** DMS console build (no task start) (30) |
 | 2:30 – 2:45 | Break |
 | 2:45 – 4:00 | **Module 14** *Capstone Project* — framing (20) + design + build + walkthrough (55) |
 
-> **Lecture / lab split:** every module is paced at **30% lecture, 70% lab**. Across the course this works out to ~280 min lecture and ~665 min lab (≈ 30 / 70). Module 1 trims its lecture to 15 min (Lab 1 includes a 10-min Identity Center user-creation step in Part A); Modules 2, 8, and 14 trim their lecture to 20 min to keep the ratio honest. Every module has a hands-on lab; Modules 11 and 13 wrap with a design-discussion segment to preserve the architectural-decision practice that the prior paper exercises emphasized. The capstone in Module 14 is the integrative close.
+> **Lecture / lab split:** every module is paced at **30% lecture, 70% lab**. Module 1 trims its lecture to 15 min (Lab 1 includes a 10-min Identity Center user-creation step in Part A); Modules 2, 8, and 14 trim their lecture to 20 min to keep the ratio honest. **Day 3 schedule notes:** Lab 12 is delivered as a 15-min instructor demo (Cost Explorer is mgmt-account-only; Budgets is a 4-click flow with low hands-on payoff for the time cost). The Module 11 and Module 13 design-discussion tails are absorbed into lecture framing rather than separate segments — keeps Day 3 within the 5.5-hour working budget. The capstone in Module 14 is the integrative close.
 
 ## Repository layout
 
