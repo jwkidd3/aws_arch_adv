@@ -20,10 +20,12 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 | Lab 6 | **Lab 1 VPC** is used (default VPC has only public subnets and breaks Step 6) |
 | Lab 7 | `pip3 install --user git-remote-codecommit` works in CloudShell; `git clone codecommit::us-east-1://...` succeeds (the older `aws codecommit credential-helper` does NOT work with IAM Identity Center sessions) |
 | Lab 8 | "Override all rule actions to: Block" is set on each managed rule group; SQLi probe returns 403 |
-| Lab 9 | S3 default encryption with **Bucket Key disabled** (lab requires it for the `kms:ViaService` deny test); SAR rotation Lambda deploys before being attached to Secrets Manager |
-| Lab 10 | Athena workgroup result location set; Glue database name is hyphen-free |
-| Lab 12 | Member-account access to Cost Explorer (or fall back to Budgets-only path) |
-| Lab 14 | Aurora "kick off and move on" framing matches reality; CloudFront distribution propagation is acceptable |
+| Lab 9 | **Updated 2026-05-14:** Lab simplified — no SAR rotation Lambda, no `kms:ViaService` deny dance. Confirm Bucket Key **enabled** (now the lab default) and that manual rotation via the Versions tab shows `AWSCURRENT` + `AWSPREVIOUS` |
+| Lab 10 | Athena workgroup result location set; Glue database name uses underscored slug form (lab handles the hyphen-to-underscore conversion inline). Partitions flattened on 2026-05-14 — no `year=2024/` prefix in lab path |
+| Lab 11 | **Updated 2026-05-14:** ASG now in Lab 1 **public** subnets (not private) to drop NAT dependency. Load generator is a `curl` loop, not `ab` (CloudShell can't `dnf install httpd-tools` without sudo). Confirm `t3.small` available in both Lab 1 public AZs |
+| Lab 12 | **Updated 2026-05-14:** Lab is now Budgets-primary, Cost Explorer demo-only. **Pre-class:** decide whether Cost Explorer is enabled for member accounts in your Org. If denied, the lab's "expected — move on" framing kicks in and Part C is purely your demo from the mgmt account. No student-side work in Part C either way |
+| Lab 13 | **Updated 2026-05-14:** Subnet group pre-step added (was inline in old wizard). Confirm `dms.t3.small` is available in **both** Lab 1 public AZs (a + c in us-east-1) — if AZ c is dry, lab guide flags the workaround. **$0.07/hr RI cost reminder in Cleanup section moved to top of lab** |
+| Lab 14 | **Updated 2026-05-14:** Capstone reduced to pick-one-of-three build slices (A: CloudFront+S3+WAF; B: ALB+ASG reusing Lab 1 VPC; C: KMS+Secrets+S3). Aurora removed from student build options — instructor demos from mgmt account if asked. CloudFront propagation acceptable |
 
 **Time-budget note:** the lab guides now show realistic budgets (Labs 3, 4, 5 increased to 75/70/75 min, exceeding the schedule's 65/50/50 slots). Three options when this happens in class: (a) run over and adjust the next break, (b) drop the stretch goals and tail steps to stay in slot, (c) move slower labs to time-flex windows. The original `## Time budget` line in each lab guide reflects "how long this really takes," not the slot allocation.
 
@@ -48,6 +50,10 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] Cleanup script keyed on `Owner=<student>` + `Course=archadv` tags is tested
 - [ ] **VPC continuity: locked in — Lab 1's VPC stays up for the full course.** Confirmed 2026-05-12. Students do NOT delete the VPC at any point during class. Cost: NAT Gateway ~$0.045/hr × 24h × 3 nights = ~$3/student (~$81 for 27 students). After class ends, you (the instructor) clean up VPCs centrally across all Sandboxes — Lab 1 / Lab 3 / etc. cleanup sections in the lab guides only direct students to remove the per-lab compute (EC2s, NAT-attached EIPs are kept) so the VPC stays available for the next lab.
 - [ ] AWS access portal URL + per-student credentials packet is ready to distribute
+- [ ] **Day 3 pre-flight (added 2026-05-14):**
+  - [ ] Confirm `dms.t3.small` instance class is available in **us-east-1a** AND **us-east-1c** (Lab 13's subnet group uses both). Service Quotas → DMS, or just try a one-off Create in the console. If c is dry, Lab 13's guide flags the workaround.
+  - [ ] Decide whether member-account **Cost Explorer** access is enabled or denied in your Org. Either is fine — Lab 12 handles both, but you should know which path students are on before the slot starts.
+  - [ ] **Lab 1 VPC is still up** for every student (Labs 11, 13, 14 reuse it). If you cleaned up VPCs after Day 2 by mistake, restore Lab 1's VPC before Day 3 starts.
 
 ### Org structure at a glance
 
@@ -203,28 +209,31 @@ If you want to restore the original simulator-based flow (instructor running lib
 ### Module 11 — Large-Scale Applications (10 min teach + 25 min hands-on lab + 5 min discussion)
 
 - 10 min teach: only the **scaling triggers** slide (CPU / memory / custom CW metric / request count per target) and Route 53 latency-vs-geo.
-- **Lab 11** (25 min hands-on): students build ALB + ASG with target tracking on `ALBRequestCountPerTarget`, generate load via `ab` from CloudShell, watch the ASG scale from 2 to 3-4 instances. Validates the *behavior* of "scale on the right metric."
-- **5 min discussion** at the end: hand out the scenario cards (spiky news site, internal HR app, real-time game, batch image, IoT) and walk through which trigger fits each — this preserves the design-thinking that the prior paper exercise emphasized.
-- Slot is 30 min total; if the teach finishes early, hand the time to the lab. If the lab runs long, cut the optional scale-down step.
+- **Lab 11** (25 min hands-on): students build ALB + ASG **in the Lab 1 VPC's two public subnets** with target tracking on `ALBRequestCountPerTarget`, generate load via a CloudShell `curl` loop (not `ab` — CloudShell can't install httpd-tools), watch the ASG scale from 2 to 3 instances. Validates the *behavior* of "scale on the right metric."
+- **5 min discussion** at the end: scenario cards (spiky news site, internal HR app, real-time game, batch image, IoT) — which trigger fits each. Preserves the design-thinking.
+- Public subnets are the simplification: drops the SSM-via-NAT dependency for instance bootstrap. Tell students this when they ask why we're not using private subnets in this lab — production answer is different.
 
 ### Module 12 — Optimizing Cost (15 min teach + 30 min lab)
 
 - 15 min teach: AWS pricing models comparison + tagging-as-foundation. Skip the per-service cost optimization slides — they belong to the relevant module's lab.
-- **Lab 12** with 30 min: Cost Explorer saved report grouped by `Course=archadv` tag (instructor demo from management account if Sandboxes are fresh) + a student-built Budget alarm at $5 with email subscription. Confirm the SubscriptionConfirmation arrives.
+- **Lab 12** (30 min) restructured 2026-05-14 to **Budgets-primary, Cost Explorer demo-only.** Every student builds the $5 monthly Budget with Actual-80% + Forecasted-100% email alerts in their own Sandbox; you demo Cost Explorer (tag-grouped report + service grouping) from the management account during Part C (10 min). Member-account Cost Explorer is "expected to be denied — move on" in the lab guide, so the lab is robust whether your Org has it enabled for members or not.
+- **No "SubscriptionConfirmation"** for plain-email Budget alerts — the old guide said to look for one; the new lab guide explicitly tells students not to. Email comes directly from the Budgets service.
 
 ### Module 13 — Migrating Workloads (15 min teach + 30 min hands-on lab + 10 min discussion)
 
 - 15 min teach: drill the **7 Rs** (Retire, Retain, Rehost, Relocate, Repurchase, Replatform, Refactor) and DMS homogeneous vs heterogeneous. Cut the MGN video to 60 seconds.
-- **Lab 13** (30 min hands-on): students build a complete DMS pipeline (replication instance + source MySQL endpoint + S3 target endpoint + migration task) but **do not start the task** — there's no real source DB. The pre-migration assessment failure is the validation of "you'd really want this to run before promoting to prod."
-- **10 min discussion** at the end: portfolio-card walkthrough (Insurance / Healthcare SaaS / Manufacturing) — pairs pick strategy + AWS service per workload. Preserves the 7 Rs design-thinking the prior paper exercise emphasized.
-- **Cost watch:** the dms.t3.small replication instance is ~$0.07/hr while running. With cleanup at slot end, ~$0.05/student total. Across 27 students: ~$1.35.
+- **Lab 13** (30 min hands-on, updated 2026-05-14): students build the DMS pipeline — **pre-create the subnet group** (new top step in the lab guide; the wizard's inline create silently fails), then replication instance + source MySQL endpoint + S3 target endpoint + migration task. **Do not start the task**. Reuses Lab 1 VPC public subnets.
+- **10 min discussion** at the end: portfolio-card walkthrough (Insurance / Healthcare SaaS / Manufacturing) — pairs pick strategy + AWS service per workload.
+- **Cost watch — call this out loudly:** dms.t3.small RI is ~$0.07/hr the moment it exists. The lab guide opens with the warning and puts cleanup at the top of mind. Walk the room during the cleanup minute and make sure every student has the RI in `deleting` state before they leave. Forgotten DMS instances are the biggest cost overrun risk in this course.
 
 ### Module 14 — Capstone (20 min framing + 55 min build/walkthrough)
 
-- **25 min framing/recap**: scenario brief (lab guide), course recap mapped to the capstone components (which module each piece comes from), questions before they pair up.
-- **50 min build/walk**: 15 min architecture diagram in pairs → 25 min console build of the highest-priority pieces (VPC + ALB + ASG, or VPC + RDS + S3 + CloudFront — pair chooses) → 10 min walkthroughs.
-- Optional Terraform reference: Module 14 retains a small Terraform starter (`Module_14/terraform/`) for students who already took the dedicated Terraform course and want to see the equivalent IaC. Do not lecture on it.
-- **Realistic outcome**: students leave with a diagram + console-built proof-of-concept covering 2–3 tiers + one or two open decisions identified. That is success. Do not push for a fully-deployed multi-tier app.
+- **20 min framing/recap**: scenario brief (lab guide), course recap mapped to the capstone components (which module each piece comes from), questions before pair-up.
+- **55 min build/walk** (updated 2026-05-14): 15 min architecture diagram in pairs → 25 min console build of **exactly one** of three slices (A: CloudFront+S3+WAF; B: ALB+ASG reusing Lab 1 VPC; C: KMS+Secrets+S3) → 15 min walkthroughs (3 pairs × 5 min).
+- **Why pick-one-slice:** the old "build 2–3 components" framing routinely overran. One quality slice + a complete diagram is the right outcome for 25 build-minutes.
+- **Aurora removed from student build options** — create alone is ~15 min and overruns. If asked about Aurora, demo briefly from your mgmt account during the walkthrough block.
+- Optional Terraform reference (`Module_14/terraform/`) for students who already took the dedicated Terraform course — do not lecture on it.
+- **Realistic outcome**: students leave with a diagram + one working slice + one or two named trade-offs. That is success.
 
 ---
 
