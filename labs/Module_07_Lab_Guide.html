@@ -126,30 +126,44 @@ split.</p>
 <h2 id="time-budget-65-minutes">Time budget: 65 minutes</h2>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
-<li>The ECS service <code>archadv-&lt;you&gt;-hello-svc</code> from Lab
-6 must still be running. If you cleaned it up, redo Lab 6 quickly
-first.</li>
-<li>Open CloudShell.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region <strong><code>us-east-1</code></strong> (the same region as Lab 6 — CodePipeline source/build/deploy must all share a region).</li>
+<li>The ECS service <code>archadv-&lt;you&gt;-hello-svc</code> from Lab 6 must still be running with 2 healthy tasks. Confirm: <strong>Amazon ECS → Clusters → archadv-&lt;you&gt;-cluster → Services</strong> — service rolling count must show <code>2/2 Running</code>. If you cleaned it up, redo Lab 6 steps 1–7 quickly first (skip the rolling update).</li>
+<li>Open <strong>CloudShell</strong> in <code>us-east-1</code>.</li>
+<li>Have your <strong>account ID</strong> ready (top-right corner of the console; 12 digits). You will paste it as an environment variable.</li>
 </ol>
+<blockquote>
+<p><strong>Source-control choice — read this first.</strong> AWS stopped onboarding new customers to <strong>CodeCommit</strong> in July 2024. AWS Organizations accounts created after that date <strong>cannot create CodeCommit repositories</strong> — the console shows "This service is not available" or you get an <code>AccessDeniedException</code>. <strong>The primary path in this lab uses GitHub + AWS CodeConnections</strong>, which works in every Sandbox in this course. A legacy CodeCommit path is preserved at the end as <strong>Appendix A</strong> for accounts that still have it enabled — if your instructor has not confirmed CodeCommit access, use the primary path.</p>
+</blockquote>
 <h2 id="steps">Steps</h2>
-<h3 id="1-create-the-codecommit-repository-3-min">1. Create the
-CodeCommit repository (3 min)</h3>
+<h3 id="1-create-the-source-repository-on-github-5-min">1. Create the source repository on GitHub (5 min)</h3>
+<p>You need a personal GitHub account (free is fine). If you do not have one: <a href="https://github.com/signup">https://github.com/signup</a> — sign up, verify email, then come back. Total: 2 min.</p>
+<p><strong>Step 1a — create the empty repo on github.com.</strong></p>
 <ul>
-<li><strong>CodeCommit → Repositories → Create repository</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-hello</code></li>
-<li>Create.</li>
+<li>Go to <a href="https://github.com/new">https://github.com/new</a>.</li>
+<li>Repository name: <code>archadv-&lt;you&gt;-hello</code> (e.g. <code>archadv-jdoe-hello</code>).</li>
+<li>Visibility: <strong>Private</strong>.</li>
+<li><strong>Do NOT</strong> check "Add a README file", "Add .gitignore", or "Choose a license" — we want a truly empty repo (the wizard creates a usable initial commit).</li>
+<li>Click <strong>Create repository</strong>.</li>
+<li>On the next screen, copy the HTTPS clone URL — it looks like <code>https://github.com/&lt;your-gh-user&gt;/archadv-&lt;you&gt;-hello.git</code>.</li>
 </ul>
-<p>In CloudShell:</p>
-<pre class="bash"><code>git config --global user.name &quot;&lt;you&gt;&quot;
+<p><strong>Step 1b — create a fine-scoped GitHub Personal Access Token (PAT) so you can push from CloudShell.</strong></p>
+<ul>
+<li>Go to <strong>github.com → your avatar → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</strong>.</li>
+<li>Token name: <code>archadv-cloudshell</code>.</li>
+<li>Expiration: <strong>7 days</strong>.</li>
+<li>Resource owner: your own user.</li>
+<li>Repository access: <strong>Only select repositories</strong> → pick <code>archadv-&lt;you&gt;-hello</code>.</li>
+<li>Permissions → Repository permissions → <strong>Contents: Read and write</strong>. Leave everything else.</li>
+<li>Generate token. <strong>Copy the <code>github_pat_...</code> value — you cannot view it again.</strong> Paste it into a scratch tab for the next step.</li>
+</ul>
+<p><strong>Step 1c — push the initial commit from CloudShell.</strong> Run these commands one at a time. Replace <code>&lt;you&gt;</code> with your name slug, <code>&lt;your-gh-user&gt;</code> with your GitHub username, and <code>&lt;PAT&gt;</code> with the fine-grained token from step 1b.</p>
+<pre class="bash"><code>cd ~
+git config --global user.name &quot;&lt;you&gt;&quot;
 git config --global user.email &quot;&lt;you&gt;@example.com&quot;
+git config --global init.defaultBranch main
 
-# IAM Identity Center sessions use rotating credentials. The codecommit-credential-helper
-# does not support these. Use git-remote-codecommit instead.
-pip3 install --user git-remote-codecommit
-
-git clone codecommit::us-east-1://archadv-&lt;you&gt;-hello
+# Clone empty repo using the PAT inline (one-shot; do not commit this URL anywhere)
+git clone https://&lt;your-gh-user&gt;:&lt;PAT&gt;@github.com/&lt;your-gh-user&gt;/archadv-&lt;you&gt;-hello.git
 cd archadv-&lt;you&gt;-hello
 
 cat &gt; Dockerfile &lt;&lt;&#39;EOF&#39;
@@ -176,140 +190,378 @@ artifacts:
   files: imagedefinitions.json
 EOF
 
-git add . &amp;&amp; git commit -m &quot;init&quot;
-git push</code></pre>
-<h3 id="2-create-the-codebuild-project-5-min">2. Create the CodeBuild
-project (5 min)</h3>
+git add Dockerfile buildspec.yml
+git commit -m &quot;init: Dockerfile + buildspec&quot;
+git push -u origin main</code></pre>
+<p>Success looks like: <code>git push</code> prints <code>* [new branch] main -&gt; main</code>, and refreshing the GitHub repo page shows both files at the root.</p>
+<p>Failure modes:</p>
 <ul>
-<li><strong>CodeBuild → Build projects → Create project</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-build</code></li>
-<li>Source: AWS CodeCommit, repository
-<code>archadv-&lt;you&gt;-hello</code>, branch <code>main</code></li>
-<li>Environment: Managed image, Amazon Linux 2,
-<code>aws/codebuild/amazonlinux2-x86_64-standard:5.0</code></li>
-<li><strong>Privileged: enable</strong> (needed for Docker)</li>
-<li>Service role: <strong>Create new</strong></li>
-<li>Environment variables:
+<li><code>fatal: Authentication failed</code>: PAT was pasted wrong or expired. Re-create in step 1b.</li>
+<li><code>remote: Repository not found</code>: PAT scope did not include this repo. Re-create the PAT with the correct <strong>Only select repositories</strong> choice.</li>
+</ul>
+<h3 id="1d-create-the-codeconnections-connection-3-min">1d. Create the CodeConnections connection to GitHub (3 min)</h3>
+<p>CodePipeline talks to GitHub through a <strong>CodeConnections</strong> (formerly CodeStar Connections) resource. You create it once and reuse it.</p>
 <ul>
-<li><code>AWS_ACCOUNT_ID</code> = your account number</li>
-<li><code>AWS_REGION</code> = us-east-1</li>
-<li><code>IMAGE_REPO</code> =
-<code>archadv-&lt;you&gt;-hello</code></li>
+<li>Navigate: <strong>Developer Tools → Settings → Connections</strong>. Direct URL: <a href="https://console.aws.amazon.com/codesuite/settings/connections">console.aws.amazon.com/codesuite/settings/connections</a>.</li>
+<li>Click <strong>Create connection</strong>.</li>
+<li>Select a provider: <strong>GitHub</strong>.</li>
+<li>Connection name: <code>archadv-&lt;you&gt;-github</code>.</li>
+<li>Click <strong>Connect to GitHub</strong> — a popup opens to github.com.</li>
+<li>In the popup: <strong>Install a new app</strong> (or "Configure" if AWS Connector for GitHub already exists for your account).</li>
+<li>Choose your GitHub user as the install target.</li>
+<li>Repository access: <strong>Only select repositories</strong> → pick <code>archadv-&lt;you&gt;-hello</code>. <strong>Do not grant "All repositories" access.</strong></li>
+<li>Click <strong>Install</strong>. The popup returns to the AWS console.</li>
+<li>Back on the AWS tab, click <strong>Connect</strong>.</li>
+</ul>
+<p>Success looks like: the connection row shows <strong>Status: Available</strong> (green). Copy the <strong>Connection ARN</strong> — you will need it in step 5. It looks like <code>arn:aws:codeconnections:us-east-1:123456789012:connection/abcd1234-...</code>.</p>
+<p>Failure modes:</p>
+<ul>
+<li>Status stuck on <strong>Pending</strong>: the GitHub install never completed. Click the connection name → <strong>Update pending connection</strong> → walk through GitHub install again.</li>
+</ul>
+<h3 id="2-create-the-codebuild-project-5-min">2. Create the CodeBuild project (5 min)</h3>
+<ul>
+<li>Navigate: <strong>CodeBuild → Build projects → Create project</strong>.</li>
+<li><strong>Project configuration</strong> section:
+<ul>
+<li>Project name: <code>archadv-&lt;you&gt;-build</code>.</li>
 </ul></li>
-<li>Buildspec: use the buildspec.yml in the source</li>
-<li>Create.</li>
-</ul>
-<p>After creation, attach the inline policy
-<code>AmazonEC2ContainerRegistryPowerUser</code> to the build role (find
-the role in IAM, attach
-<code>AmazonEC2ContainerRegistryPowerUser</code>).</p>
-<h3 id="3-smoke-test-the-build-3-min">3. Smoke-test the build (3
-min)</h3>
+<li><strong>Source</strong> section:
 <ul>
-<li>CodeBuild → <code>archadv-&lt;you&gt;-build</code> → <strong>Start
-build</strong>.</li>
-<li>Watch <strong>Build log</strong>. Should succeed in ~3 min.</li>
-<li>Confirm a new <code>:latest</code> image in ECR.</li>
-</ul>
-<h3 id="4-create-the-artifact-bucket-1-min">4. Create the artifact
-bucket (1 min)</h3>
-<ul>
-<li><strong>S3 → Create bucket</strong>:
-<code>archadv-&lt;you&gt;-pipeline-artifacts</code>. Block public
-access. Tag.</li>
-</ul>
-<h3 id="5-create-the-codepipeline-5-min">5. Create the CodePipeline (5
-min)</h3>
-<ul>
-<li><strong>CodePipeline → Pipelines → Create pipeline</strong></li>
-<li>Pipeline name: <code>archadv-&lt;you&gt;-pipeline</code></li>
-<li>Service role: <strong>New</strong>, name auto</li>
-<li>Artifact store: custom location, the bucket from step 4</li>
-<li>Source provider: AWS CodeCommit, repository
-<code>archadv-&lt;you&gt;-hello</code>, branch <code>main</code>, change
-detection: CloudWatch Events</li>
-<li>Build provider: AWS CodeBuild, project
-<code>archadv-&lt;you&gt;-build</code></li>
-<li>Deploy provider: <strong>Amazon ECS</strong> (standard, not
-blue/green for now)
-<ul>
-<li>Cluster: <code>archadv-&lt;you&gt;-cluster</code></li>
-<li>Service: <code>archadv-&lt;you&gt;-hello-svc</code></li>
-<li>Image definitions file: <code>imagedefinitions.json</code></li>
+<li>Source provider: <strong>GitHub</strong>.</li>
+<li>Credential: <strong>Default source credential</strong> → <strong>CodeConnections</strong> → select the connection <code>archadv-&lt;you&gt;-github</code>.</li>
+<li>Repository: <strong>Repository in my GitHub account</strong>.</li>
+<li>GitHub repository: paste the HTTPS URL from step 1a (e.g. <code>https://github.com/&lt;your-gh-user&gt;/archadv-&lt;you&gt;-hello</code>).</li>
+<li>Source version: <code>main</code>.</li>
 </ul></li>
-<li>Create.</li>
+<li><strong>Primary source webhook events</strong> section: leave the webhook box <strong>unchecked</strong>. CodePipeline (step 5) will trigger builds; we do not want CodeBuild to react to pushes independently.</li>
+<li><strong>Environment</strong> section — use these exact values:
+<table>
+<thead><tr><th>Field</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Provisioning model</td><td>On-demand</td></tr>
+<tr><td>Environment image</td><td>Managed image</td></tr>
+<tr><td>Compute</td><td>EC2</td></tr>
+<tr><td>Operating system</td><td>Amazon Linux</td></tr>
+<tr><td>Runtime(s)</td><td>Standard</td></tr>
+<tr><td>Image</td><td><code>aws/codebuild/amazonlinux2-x86_64-standard:5.0</code></td></tr>
+<tr><td>Image version</td><td>Always use the latest image for this runtime version</td></tr>
+<tr><td>Service role</td><td><strong>New service role</strong></td></tr>
+<tr><td>Role name</td><td><code>codebuild-archadv-&lt;you&gt;-build-service-role</code> (auto-filled — accept it)</td></tr>
+<tr><td>Privileged</td><td><strong>CHECKED</strong> — required to run <code>docker build</code></td></tr>
+</tbody>
+</table></li>
+<li>Expand <strong>Additional configuration</strong> → <strong>Environment variables</strong>. Add <strong>exactly these 3</strong> Plaintext variables (do NOT use Parameter Store / Secrets Manager):
+<table>
+<thead><tr><th>#</th><th>Name</th><th>Value</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>AWS_ACCOUNT_ID</code></td><td>your 12-digit account ID</td><td>Plaintext</td></tr>
+<tr><td>2</td><td><code>AWS_REGION</code></td><td><code>us-east-1</code></td><td>Plaintext</td></tr>
+<tr><td>3</td><td><code>IMAGE_REPO</code></td><td><code>archadv-&lt;you&gt;-hello</code></td><td>Plaintext</td></tr>
+</tbody>
+</table></li>
+<li><strong>Buildspec</strong> section: <strong>Use a buildspec file</strong>. Buildspec name: leave blank (defaults to <code>buildspec.yml</code> at repo root).</li>
+<li><strong>Logs</strong> section: CloudWatch Logs <strong>checked</strong>. Group name: leave blank. Stream name: leave blank.</li>
+<li>Leave every other field at its default. Click <strong>Create build project</strong>.</li>
 </ul>
-<p>The pipeline starts immediately. End-to-end first run: 4–6 min.</p>
-<h3 id="6-validate">6. Validate</h3>
+<p><strong>Attach ECR push permission to the CodeBuild service role.</strong> The default role can only write CloudWatch Logs — it cannot push to ECR.</p>
+<ul>
+<li>Navigate: <strong>IAM → Roles</strong> → search <code>codebuild-archadv-&lt;you&gt;-build-service-role</code> → click into the role.</li>
+<li><strong>Permissions</strong> tab → <strong>Add permissions → Attach policies</strong>.</li>
+<li>Search: <code>AmazonEC2ContainerRegistryPowerUser</code>.</li>
+<li>Tick the box on that <strong>AWS managed</strong> policy. Click <strong>Add permissions</strong>.</li>
+</ul>
+<p>Success looks like: the role's Permissions tab now lists 2 policies: the auto-created inline <code>CodeBuildBasePolicy-...</code> and the AWS-managed <code>AmazonEC2ContainerRegistryPowerUser</code>.</p>
+<h3 id="3-smoke-test-the-build-3-min">3. Smoke-test the build (3 min)</h3>
+<ul>
+<li>Navigate: <strong>CodeBuild → Build projects → archadv-&lt;you&gt;-build</strong>.</li>
+<li>Click <strong>Start build</strong> (the orange button, top right). Do NOT click "Start build with overrides".</li>
+<li>You are redirected to the <strong>Build run</strong> page. Click the <strong>Phase details</strong> tab.</li>
+<li>Watch each phase tick green: <code>SUBMITTED → QUEUED → PROVISIONING → DOWNLOAD_SOURCE → INSTALL → PRE_BUILD → BUILD → POST_BUILD → UPLOAD_ARTIFACTS → FINALIZING → COMPLETED</code>.</li>
+</ul>
+<p>Success looks like: top of page shows <strong>Status: Succeeded</strong> (green) within 3–5 min, and at <strong>Amazon ECR → archadv-&lt;you&gt;-hello → Images</strong> a new image with tag <code>latest</code> appears with a recent push time.</p>
+<p>Failure modes:</p>
+<ul>
+<li>PRE_BUILD fails with <code>no basic auth credentials</code>: the ECR PowerUser policy was not attached. Re-check step 2's IAM attachment.</li>
+<li>BUILD fails with <code>Cannot connect to the Docker daemon</code>: Privileged checkbox was not enabled. Edit the project → Environment → tick Privileged → retry.</li>
+<li>DOWNLOAD_SOURCE fails with <code>Unable to access the GitHub repository</code>: the CodeConnections connection is not Available. Re-check step 1d.</li>
+</ul>
+<h3 id="4-create-the-artifact-bucket-2-min">4. Create the artifact bucket (2 min)</h3>
+<p>CodePipeline needs an S3 bucket to pass artifacts between stages.</p>
+<ul>
+<li>Navigate: <strong>Amazon S3 → Buckets → Create bucket</strong>.</li>
+<li>AWS Region: <strong>US East (N. Virginia) us-east-1</strong> (must match the pipeline region).</li>
+<li>Bucket name: <code>archadv-&lt;you&gt;-pipeline-artifacts-&lt;account-id&gt;</code> (the account-ID suffix avoids the global-uniqueness collision). Example: <code>archadv-jdoe-pipeline-artifacts-123456789012</code>.</li>
+<li>Object Ownership: <strong>ACLs disabled (recommended)</strong>.</li>
+<li>Block Public Access settings: <strong>Block <em>all</em> public access — checked</strong> (the default).</li>
+<li>Bucket Versioning: <strong>Disable</strong> (we will not need rollback).</li>
+<li>Default encryption: <strong>SSE-S3</strong> (the default).</li>
+<li>Tags (optional but advisory by tag policy): <code>Course=archadv</code>, <code>Owner=&lt;you&gt;</code>.</li>
+<li>Click <strong>Create bucket</strong>.</li>
+</ul>
+<h3 id="5-create-the-codepipeline-7-min">5. Create the CodePipeline (7 min)</h3>
+<ul>
+<li>Navigate: <strong>CodePipeline → Pipelines → Create pipeline</strong>.</li>
+<li>Creation option (V2 wizard): <strong>Build custom pipeline</strong>. Click <strong>Next</strong>.</li>
+</ul>
+<p><strong>Step 5a — Choose pipeline settings.</strong></p>
+<ul>
+<li>Pipeline name: <code>archadv-&lt;you&gt;-pipeline</code>.</li>
+<li>Execution mode: <strong>Queued</strong>.</li>
+<li>Service role: <strong>New service role</strong>. Role name: auto-fill (accept).</li>
+<li>Allow AWS CodePipeline to create a service role: <strong>checked</strong>.</li>
+<li>Expand <strong>Advanced settings</strong>:
+<ul>
+<li>Artifact store: <strong>Custom location</strong>.</li>
+<li>Bucket: <code>archadv-&lt;you&gt;-pipeline-artifacts-&lt;account-id&gt;</code> (the bucket from step 4).</li>
+<li>Encryption key: <strong>Default AWS Managed Key</strong>.</li>
+</ul></li>
+<li>Click <strong>Next</strong>.</li>
+</ul>
+<p><strong>Step 5b — Add source stage.</strong></p>
+<ul>
+<li>Source provider: <strong>GitHub (via GitHub App)</strong>. (NOT "GitHub (Version 1)" — that is the deprecated OAuth path.)</li>
+<li>Connection: <code>archadv-&lt;you&gt;-github</code> (from step 1d). Status badge next to it must read <strong>Ready to connect</strong> or <strong>Connected</strong>.</li>
+<li>Repository name: <code>&lt;your-gh-user&gt;/archadv-&lt;you&gt;-hello</code>.</li>
+<li>Default branch: <code>main</code>.</li>
+<li>Output artifact format: <strong>CodePipeline default</strong>.</li>
+<li>Trigger: <strong>No filter</strong> (the wizard creates a <code>push</code> trigger on the default branch automatically — you do not need to add one).</li>
+<li>Click <strong>Next</strong>.</li>
+</ul>
+<p><strong>Step 5c — Add build stage.</strong></p>
+<ul>
+<li>Other build providers: <strong>AWS CodeBuild</strong>.</li>
+<li>Region: <strong>US East (N. Virginia)</strong>.</li>
+<li>Project name: <code>archadv-&lt;you&gt;-build</code>.</li>
+<li>Build type: <strong>Single build</strong>.</li>
+<li>Click <strong>Next</strong>.</li>
+</ul>
+<p><strong>Step 5d — Add test stage.</strong></p>
+<ul>
+<li>Click <strong>Skip test stage</strong> → confirm in the dialog.</li>
+</ul>
+<p><strong>Step 5e — Add deploy stage.</strong></p>
+<ul>
+<li>Deploy provider: <strong>Amazon ECS</strong>. (NOT "Amazon ECS (Blue/Green)" — that is step 8.)</li>
+<li>Region: <strong>US East (N. Virginia)</strong>.</li>
+<li>Cluster name: <code>archadv-&lt;you&gt;-cluster</code>.</li>
+<li>Service name: <code>archadv-&lt;you&gt;-hello-svc</code>.</li>
+<li>Image definitions file: <code>imagedefinitions.json</code> (exactly this filename — case-sensitive — matches the artifact written by the buildspec).</li>
+<li>Click <strong>Next</strong>.</li>
+</ul>
+<p><strong>Step 5f — Review and create.</strong> Scroll the summary, confirm 3 stages (Source / Build / Deploy), click <strong>Create pipeline</strong>.</p>
+<p>The pipeline kicks off the first run automatically. Expected total time: 4–6 min.</p>
+<p>Success looks like: all 3 stage tiles green, <strong>Succeeded</strong> badge on each. Deploy stage details link shows "Deployment 1" on the ECS service with <strong>Rollout state: COMPLETED</strong>.</p>
+<p>Failure modes:</p>
+<ul>
+<li>Source stage red with <code>The provided role does not have permissions to perform this action</code>: the auto-created pipeline service role is missing CodeConnections use. Go to <strong>IAM → Roles → AWSCodePipelineServiceRole-...</strong> → attach inline policy with <code>codeconnections:UseConnection</code> on your connection ARN.</li>
+<li>Deploy stage red with <code>imagedefinitions.json: not found</code>: the buildspec didn't produce it. Open the CodeBuild build log, search for <code>UPLOAD_ARTIFACTS</code> — fix the buildspec and re-push.</li>
+</ul>
+<h3 id="6-validate-2-min">6. Validate (2 min)</h3>
+<p>In CloudShell — replace <code>&lt;you&gt;</code>:</p>
 <pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
-curl http://$ALB
-# After pipeline completes: &lt;h1&gt;archadv hello pipeline v3&lt;/h1&gt;</code></pre>
-<h3 id="7-trigger-a-re-deploy-from-a-commit-5-min">7. Trigger a
-re-deploy from a commit (5 min)</h3>
-<p>In CloudShell, in your repo:</p>
-<pre class="bash"><code>sed -i &#39;s/v3/v4/&#39; Dockerfile
-git add Dockerfile &amp;&amp; git commit -m &quot;v4&quot;
-git push</code></pre>
-<p>Watch the pipeline kick off automatically. After ~4 min,
-<code>curl</code> returns <code>v4</code>.</p>
-<h3
-id="8-switch-to-bluegreen-canary-deploy-10-min-optional-but-high-value">8.
-Switch to blue/green canary deploy (10 min, optional but
-high-value)</h3>
+curl -s http://$ALB</code></pre>
+<p>Success looks like: body is exactly <code>&lt;h1&gt;archadv hello pipeline v3&lt;/h1&gt;</code> — Lab 6 served <code>v1</code>/<code>v2</code>, this pipeline pushed <code>pipeline v3</code> from the GitHub source.</p>
+<p>Failure mode: still returns <code>v2</code> — the deploy stage finished but ECS is still draining old tasks. Wait 60 sec and re-curl, or watch <strong>ECS → Services → Deployments</strong> tab until <strong>Rollout state: COMPLETED</strong>.</p>
+<h3 id="7-trigger-a-re-deploy-from-a-commit-5-min">7. Trigger a re-deploy from a commit (5 min)</h3>
+<p>In CloudShell, inside the repo directory <code>~/archadv-&lt;you&gt;-hello</code>:</p>
+<pre class="bash"><code>cd ~/archadv-&lt;you&gt;-hello
+sed -i &#39;s/pipeline v3/pipeline v4/&#39; Dockerfile
+git add Dockerfile
+git commit -m &quot;bump v3 -&gt; v4&quot;
+git push origin main</code></pre>
+<p>Within 30 sec the CodePipeline page should auto-refresh and show the Source stage <strong>In progress</strong> (blue). Total run: 3–5 min.</p>
+<p>Validate:</p>
+<pre class="bash"><code>curl -s http://$ALB
+# Success: &lt;h1&gt;archadv hello pipeline v4&lt;/h1&gt;</code></pre>
+<p>Failure mode: pipeline does not trigger after the push. Check <strong>CodePipeline → archadv-&lt;you&gt;-pipeline → Triggers</strong> tab — the GitHub push trigger should be listed. If absent, edit the Source action and set up the trigger manually for branch <code>main</code> on push.</p>
+<h3 id="8-switch-to-bluegreen-canary-deploy-15-min-optional-but-high-value">8. Switch to blue/green canary deploy (15 min, optional but high-value)</h3>
+<p>This step swaps the Deploy provider from "Amazon ECS" (rolling) to "Amazon ECS (Blue/Green)" so CodeDeploy can shift traffic in stages. <strong>The ECS service must be re-created</strong> because the deployment controller (<code>ECS</code> vs <code>CODE_DEPLOY</code>) is immutable on an existing service.</p>
+<p><strong>Step 8a — create a second target group (TG2).</strong></p>
 <ul>
-<li><strong>CodeDeploy → Applications → Create application</strong>:
-type ECS.</li>
-<li><strong>Deployment group</strong>: type ECS, blue/green deployment,
-target group pair = your existing TG + a new TG2 (create one — same
-settings as Lab 6).</li>
-<li>Configure traffic shifting:
-<strong>CodeDeployDefault.ECSCanary10Percent5Minutes</strong> (10% to
-canary for 5 min, then 100%).</li>
-<li>Update the ECS service to use <strong>CODE_DEPLOY</strong> as the
-deployment controller (this requires re-creating the service — the
-console will guide you).</li>
-<li>Re-run the pipeline. Watch the deploy stage:
-<ul>
-<li>10% of traffic shifts to TG2 for 5 min</li>
-<li>Curl in a loop — you should see ~10% <code>v5</code> responses for
-the first 5 min</li>
-<li>Then 100% shift</li>
-</ul></li>
+<li>Navigate: <strong>EC2 → Target groups → Create target group</strong>.</li>
+<li>Target type: <strong>IP addresses</strong>.</li>
+<li>Target group name: <code>archadv-&lt;you&gt;-tg2</code>.</li>
+<li>Protocol: <strong>HTTP</strong>, Port: <code>80</code>.</li>
+<li>VPC: the same Lab 1 VPC used in Lab 6.</li>
+<li>Health check path: <code>/</code>.</li>
+<li><strong>Next</strong> → register targets page: <strong>leave the IP list EMPTY</strong>. CodeDeploy registers task IPs automatically.</li>
+<li><strong>Create target group</strong>.</li>
 </ul>
+<p><strong>Step 8b — add a test listener on the ALB.</strong> Blue/green uses 2 listeners: production (80) + test (8080).</p>
+<ul>
+<li>Navigate: <strong>EC2 → Load balancers → archadv-&lt;you&gt;-alb → Listeners and rules</strong> tab → <strong>Add listener</strong>.</li>
+<li>Protocol: <strong>HTTP</strong>. Port: <code>8080</code>.</li>
+<li>Default action: <strong>Forward to target groups</strong> → <code>archadv-&lt;you&gt;-tg2</code> (weight 1).</li>
+<li><strong>Add</strong>.</li>
+<li><strong>ALB security group:</strong> open inbound to TCP <code>8080</code> from <code>0.0.0.0/0</code> (so the test listener is reachable for validation). Add a 2nd inbound rule alongside the existing 80 rule:
+<table>
+<thead><tr><th>#</th><th>Type</th><th>Port</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>1 (existing)</td><td>HTTP</td><td>80</td><td>0.0.0.0/0</td></tr>
+<tr><td>2 (add)</td><td>Custom TCP</td><td>8080</td><td>0.0.0.0/0</td></tr>
+</tbody>
+</table></li>
+</ul>
+<p><strong>Step 8c — create the CodeDeploy application + deployment group.</strong></p>
+<ul>
+<li>Navigate: <strong>CodeDeploy → Applications → Create application</strong>.</li>
+<li>Application name: <code>archadv-&lt;you&gt;-cd-app</code>.</li>
+<li>Compute platform: <strong>Amazon ECS</strong>.</li>
+<li><strong>Create application</strong>.</li>
+<li>On the application page: <strong>Deployment groups → Create deployment group</strong>.</li>
+<li>Deployment group name: <code>archadv-&lt;you&gt;-cd-dg</code>.</li>
+<li>Service role: choose an existing role with the AWS managed policy <code>AWSCodeDeployRoleForECS</code>. If none exists, create one now: <strong>IAM → Roles → Create role</strong> → trusted entity <strong>AWS service → CodeDeploy</strong> → use case <strong>CodeDeploy - ECS</strong> → name <code>archadv-&lt;you&gt;-codedeploy-role</code> → create. Return to this page and select it.</li>
+<li>Environment configuration: ECS cluster <code>archadv-&lt;you&gt;-cluster</code>, ECS service <strong>(leave blank for now — step 8d creates it)</strong>.</li>
+<li>Load balancer: production listener <code>HTTP:80</code> on <code>archadv-&lt;you&gt;-alb</code>; test listener <code>HTTP:8080</code> on the same ALB; target group 1 <code>archadv-&lt;you&gt;-tg</code>; target group 2 <code>archadv-&lt;you&gt;-tg2</code>.</li>
+<li>Deployment configuration: <code>CodeDeployDefault.ECSCanary10Percent5Minutes</code>.</li>
+<li>Original revision termination: <strong>5 minutes</strong> after successful deployment.</li>
+<li><strong>Create deployment group</strong>. (The "ECS service blank" warning is OK — we will edit it after re-creating the service.)</li>
+</ul>
+<p><strong>Step 8d — re-create the ECS service with deployment controller CODE_DEPLOY.</strong></p>
+<ul>
+<li>Navigate: <strong>ECS → Clusters → archadv-&lt;you&gt;-cluster → Services</strong>.</li>
+<li>Select <code>archadv-&lt;you&gt;-hello-svc</code> → <strong>Update service</strong> → desired count <code>0</code> → Update → wait until 0 running tasks (~1 min) → back → <strong>Delete service</strong> → force delete checkbox → confirm.</li>
+<li>Click <strong>Create</strong> and repeat Lab 6 step 6 with these changes:
+<table>
+<thead><tr><th>Field</th><th>Value (changed)</th></tr></thead>
+<tbody>
+<tr><td>Service name</td><td><code>archadv-&lt;you&gt;-hello-svc</code> (same)</td></tr>
+<tr><td>Deployment options → Deployment type</td><td><strong>Blue/green deployment (powered by AWS CodeDeploy)</strong></td></tr>
+<tr><td>Deployment configuration</td><td><code>CodeDeployDefault.ECSCanary10Percent5Minutes</code></td></tr>
+<tr><td>CodeDeploy service role</td><td><code>archadv-&lt;you&gt;-codedeploy-role</code></td></tr>
+<tr><td>Load balancing → Listener</td><td>Production: <code>80:HTTP</code>; Test: <code>8080:HTTP</code></td></tr>
+<tr><td>Target groups</td><td>TG1: <code>archadv-&lt;you&gt;-tg</code>; TG2: <code>archadv-&lt;you&gt;-tg2</code></td></tr>
+</tbody>
+</table>
+All other fields (subnets, task SG, public IP off) stay identical to Lab 6 step 6.</li>
+<li><strong>Create</strong>. Wait until 2 tasks RUNNING + target group <code>archadv-&lt;you&gt;-tg</code> shows 2 healthy.</li>
+</ul>
+<p><strong>Step 8e — edit the pipeline's deploy stage to use Blue/Green.</strong></p>
+<ul>
+<li>Navigate: <strong>CodePipeline → archadv-&lt;you&gt;-pipeline → Edit</strong> → Deploy stage <strong>Edit stage</strong> → click the Deploy action's pencil icon.</li>
+<li>Action provider: change to <strong>Amazon ECS (Blue/Green)</strong>.</li>
+<li>AWS CodeDeploy application name: <code>archadv-&lt;you&gt;-cd-app</code>.</li>
+<li>AWS CodeDeploy deployment group: <code>archadv-&lt;you&gt;-cd-dg</code>.</li>
+<li>Amazon ECS task definition: <strong>SourceArtifact</strong> → <code>taskdef.json</code>.</li>
+<li>AWS CodeDeploy AppSpec file: <strong>SourceArtifact</strong> → <code>appspec.yaml</code>.</li>
+<li><strong>Done → Save</strong>.</li>
+</ul>
+<p>The pipeline now needs <code>taskdef.json</code> and <code>appspec.yaml</code> in the repo. Add them in CloudShell:</p>
+<pre class="bash"><code>cd ~/archadv-&lt;you&gt;-hello
+
+# Export the current task def revision as JSON
+aws ecs describe-task-definition --task-definition archadv-&lt;you&gt;-hello \
+  --query &#39;taskDefinition.{family:family,networkMode:networkMode,containerDefinitions:containerDefinitions,requiresCompatibilities:requiresCompatibilities,cpu:cpu,memory:memory,executionRoleArn:executionRoleArn}&#39; &gt; taskdef.json
+
+# CodeDeploy will substitute &lt;IMAGE1_NAME&gt; with the new image from the build stage
+# Replace the image field in container[0] with the placeholder
+python3 -c &quot;
+import json
+with open(&#39;taskdef.json&#39;) as f: td = json.load(f)
+td[&#39;containerDefinitions&#39;][0][&#39;image&#39;] = &#39;&lt;IMAGE1_NAME&gt;&#39;
+with open(&#39;taskdef.json&#39;,&#39;w&#39;) as f: json.dump(td, f, indent=2)
+&quot;
+
+cat &gt; appspec.yaml &lt;&lt;&#39;EOF&#39;
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: &lt;TASK_DEFINITION&gt;
+        LoadBalancerInfo:
+          ContainerName: &quot;web&quot;
+          ContainerPort: 80
+EOF
+
+# Update the buildspec to write imageDetail.json (CodeDeploy convention for B/G)
+cat &gt; buildspec.yml &lt;&lt;&#39;EOF&#39;
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - REPO=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_REPO
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  build:
+    commands:
+      - docker build -t $IMAGE_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION .
+      - docker tag $IMAGE_REPO:$CODEBUILD_RESOLVED_SOURCE_VERSION $REPO:latest
+      - docker push $REPO:latest
+  post_build:
+    commands:
+      - printf &#39;{&quot;ImageURI&quot;:&quot;%s&quot;}&#39; $REPO:latest &gt; imageDetail.json
+artifacts:
+  files:
+    - imageDetail.json
+    - taskdef.json
+    - appspec.yaml
+EOF
+
+sed -i &#39;s/pipeline v4/pipeline v5/&#39; Dockerfile
+git add Dockerfile taskdef.json appspec.yaml buildspec.yml
+git commit -m &quot;canary: taskdef + appspec + v5&quot;
+git push origin main</code></pre>
+<p><strong>Step 8f — watch the canary deploy.</strong> While the pipeline runs, start a 1-per-second loop in a separate CloudShell tab:</p>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+while true; do curl -s http://$ALB | head -c 80; echo; sleep 1; done</code></pre>
+<p>Expected timeline (~12–15 min):</p>
+<ol type="1">
+<li>Build stage ~3 min.</li>
+<li>Deploy stage opens CodeDeploy deployment. Replacement task set provisions on TG2 (~2 min).</li>
+<li>CodeDeploy shifts <strong>10%</strong> of production listener traffic to TG2. You will see roughly 1 in 10 responses flip to <code>pipeline v5</code> while the other 9 remain <code>pipeline v4</code>.</li>
+<li>After 5 min wait, CodeDeploy shifts <strong>100%</strong> — all curl output is <code>pipeline v5</code>.</li>
+<li>5 min later, the original task set terminates.</li>
+</ol>
+<p>Failure mode: deployment hangs at <code>BeforeAllowTraffic</code> hook for 10+ min — CodeDeploy role is missing permission to register targets. Re-attach <code>AWSCodeDeployRoleForECS</code> to the role.</p>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
-<li><label><input type="checkbox" />CodeCommit repo has buildspec.yml
-and Dockerfile</label></li>
-<li><label><input type="checkbox" />CodeBuild project succeeds in
-standalone build</label></li>
-<li><label><input type="checkbox" />Pipeline runs end-to-end on a
-commit</label></li>
-<li><label><input type="checkbox" />Pipeline-deployed image visible in
-ECS service revision history</label></li>
-<li><label><input type="checkbox" />(Optional) Canary deploy splits
-traffic 10/90 for 5 min before full shift</label></li>
+<li><label><input type="checkbox" />GitHub repo <code>archadv-&lt;you&gt;-hello</code> has <code>Dockerfile</code> + <code>buildspec.yml</code> on <code>main</code></label></li>
+<li><label><input type="checkbox" />CodeConnections connection <code>archadv-&lt;you&gt;-github</code> status: <strong>Available</strong></label></li>
+<li><label><input type="checkbox" />CodeBuild project <code>archadv-&lt;you&gt;-build</code> standalone build: Succeeded</label></li>
+<li><label><input type="checkbox" />Pipeline first run end-to-end: 3 stages green</label></li>
+<li><label><input type="checkbox" />Curl returns <code>&lt;h1&gt;archadv hello pipeline v3&lt;/h1&gt;</code></label></li>
+<li><label><input type="checkbox" />Push of v4 triggers pipeline automatically and curl flips to <code>v4</code></label></li>
+<li><label><input type="checkbox" />(Optional, step 8) Canary deploy of v5 shows ~10/90 mix for 5 min then 100% v5</label></li>
 </ul>
 <h2 id="cleanup">Cleanup</h2>
 <ol type="1">
-<li>Delete the pipeline. Delete CodeBuild project.</li>
-<li>Delete the CodeCommit repository.</li>
-<li>Delete the CodeDeploy application (if you did step 8).</li>
-<li>Empty and delete the artifact bucket.</li>
-<li>Leave ECS for the rest of the day or clean up via Lab 6's cleanup
-steps.</li>
+<li>CodePipeline → <code>archadv-&lt;you&gt;-pipeline</code> → <strong>Delete pipeline</strong>.</li>
+<li>CodeBuild → <code>archadv-&lt;you&gt;-build</code> → <strong>Delete</strong>.</li>
+<li>If you did step 8: CodeDeploy → <code>archadv-&lt;you&gt;-cd-app</code> → delete (deletes the deployment group too). Then delete <code>archadv-&lt;you&gt;-tg2</code> and the ALB's <code>8080</code> listener.</li>
+<li>S3 → <code>archadv-&lt;you&gt;-pipeline-artifacts-&lt;account-id&gt;</code> → <strong>Empty</strong>, then <strong>Delete</strong>.</li>
+<li>Developer Tools → Settings → Connections → <code>archadv-&lt;you&gt;-github</code> → <strong>Delete</strong>.</li>
+<li>Revoke the GitHub PAT: github.com → Settings → Developer settings → Fine-grained tokens → <code>archadv-cloudshell</code> → <strong>Delete</strong>.</li>
+<li>Leave ECS service / cluster / ECR repo running — Lab 8 does not use them, but Lab 6's cleanup section handles them at end of day.</li>
 </ol>
 <h2 id="stretch-goals">Stretch goals</h2>
 <ul>
-<li>Add a <strong>manual approval action</strong> between the build and
-deploy stages.</li>
-<li>Replace CodeCommit with a <strong>GitHub source action</strong>
-using an <strong>AWS CodeConnections</strong> connection (formerly
-CodeStar Connections — renamed in 2024). This is what most teams use
-today.</li>
-<li>Add a CloudWatch alarm on ECS task health and configure CodeDeploy
-to <strong>auto-rollback</strong> if it fires during the canary
-window.</li>
+<li>Add a <strong>Manual approval</strong> action between Build and Deploy. Pipeline pauses; you click <strong>Review → Approve</strong> to continue. Useful for production gates.</li>
+<li>Add a CloudWatch alarm on ECS task <code>UnhealthyHostCount &gt; 0</code> and add it as a CodeDeploy auto-rollback alarm in the deployment group. Push a broken Dockerfile (e.g., bad <code>CMD</code>) and watch CodeDeploy roll back automatically during canary.</li>
+<li>Add a CodeBuild stage that runs <code>trivy image</code> against the just-pushed tag and fails the pipeline on HIGH/CRITICAL CVEs.</li>
 </ul>
+<h2 id="appendix-a-legacy-codecommit-source-path">Appendix A — legacy CodeCommit source path (only if your account predates July 2024)</h2>
+<blockquote>
+<p>Use this <strong>only</strong> if your instructor has confirmed that CodeCommit is enabled in your Sandbox. If <strong>CodeCommit → Create repository</strong> shows "This service is not available to new customers" or returns <code>AccessDeniedException</code>, stay on the GitHub path above.</p>
+</blockquote>
+<p>Substitute these step 1 instructions for the GitHub flow; the rest of the lab (steps 2–8) is identical except <strong>step 5b source provider</strong> becomes <strong>AWS CodeCommit</strong> with branch <code>main</code> and change detection <strong>Amazon CloudWatch Events</strong>.</p>
+<ul>
+<li>Navigate: <strong>CodeCommit → Repositories → Create repository</strong>.</li>
+<li>Repository name: <code>archadv-&lt;you&gt;-hello</code>.</li>
+<li><strong>Create</strong>.</li>
+</ul>
+<p>In CloudShell:</p>
+<pre class="bash"><code>git config --global user.name &quot;&lt;you&gt;&quot;
+git config --global user.email &quot;&lt;you&gt;@example.com&quot;
+git config --global init.defaultBranch main
+
+# IAM Identity Center sessions use rotating credentials.
+# The codecommit-credential-helper does not support them — use git-remote-codecommit.
+pip3 install --user git-remote-codecommit
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+
+git clone codecommit::us-east-1://archadv-&lt;you&gt;-hello
+cd archadv-&lt;you&gt;-hello
+# ... then create Dockerfile + buildspec.yml as in step 1c above, commit, and push.</code></pre>
   <div class="nav-footer">
     <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
   </div>
