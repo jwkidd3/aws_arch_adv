@@ -200,10 +200,19 @@ more</strong> with these settings:</p>
 </table>
 <p>Skip NAT in all three to save cost — we're testing TGW reachability,
 not internet egress.</p>
-<p>Launch one <strong><code>t3.micro</code> EC2 in each VPC's public
-subnet</strong>, with a public IP. We use public subnets so SSM Agent
-can reach the SSM service via the IGW (no NAT, no interface endpoints
-needed).</p>
+<p><strong>Launch 3 EC2 instances total — one per VPC.</strong> Each
+VPC has 2 public subnets (one per AZ); pick either one. We use a public
+subnet so SSM Agent can reach the SSM service via the IGW (no NAT, no
+interface endpoints needed).</p>
+<table>
+<thead><tr><th>#</th><th>VPC</th><th>Subnet</th><th>Type</th><th>Name tag</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>archadv-&lt;you&gt;-prod</code></td><td>either public subnet</td><td><code>t3.micro</code></td><td><code>prod-ec2</code></td></tr>
+<tr><td>2</td><td><code>archadv-&lt;you&gt;-nonprod</code></td><td>either public subnet</td><td><code>t3.micro</code></td><td><code>nonprod-ec2</code></td></tr>
+<tr><td>3</td><td><code>archadv-&lt;you&gt;-shared</code></td><td>either public subnet</td><td><code>t3.micro</code></td><td><code>shared-ec2</code></td></tr>
+</tbody>
+</table>
+<p>For each instance, use the settings below.</p>
 <ul>
 <li>Instance profile: create role
 <code>archadv-&lt;you&gt;-ssm-ec2</code> with
@@ -224,8 +233,7 @@ Agent uses it for egress to the SSM service). <strong>Do not</strong>
 add any inbound rule allowing <code>0.0.0.0/0</code> — we connect via
 Session Manager only, never SSH. Repeat for all three VPCs.</li>
 <li>Auto-assign public IP: <strong>Enable</strong>.</li>
-<li>Name tags: <code>prod-ec2</code>, <code>nonprod-ec2</code>,
-<code>shared-ec2</code>.</li>
+
 </ul>
 <p>Wait ~2 min for SSM Agent to register each instance — they appear
 under <strong>Systems Manager → Session Manager → Start session</strong>
