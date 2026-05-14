@@ -231,52 +231,132 @@ default action.</li>
 <li>Create the ALB. Wait ~2 min until state <code>Active</code>.</li>
 </ul>
 <h3 id="6-ecs-service-3-min">6. ECS service (3 min)</h3>
+<p><strong>Before you start:</strong> you will need the <strong>ALB security group ID</strong> (the SG you created in step 5, named like <code>archadv-&lt;you&gt;-alb-sg</code>). Open it in another tab now: <strong>EC2 → Security Groups</strong> → filter on <code>archadv-&lt;you&gt;</code> → copy the <code>sg-...</code> ID for the ALB SG. You will paste it into the inbound source field below.</p>
 <ul>
-<li><strong>ECS → Clusters → archadv-<you>-cluster → Services →
-Create</strong></li>
-<li>Compute: Fargate, latest platform version</li>
-<li>Application type: Service</li>
-<li>Family: <code>archadv-&lt;you&gt;-hello</code>, latest revision</li>
-<li>Service name: <code>archadv-&lt;you&gt;-hello-svc</code></li>
-<li>Desired tasks: <code>2</code></li>
-<li>Networking: your VPC, <strong>private</strong> subnets, security
-group: create new — allow <code>80/tcp</code> from the <strong>ALB's
-security group</strong> only</li>
-<li>Public IP: <strong>off</strong> (Fargate tasks egress via NAT)</li>
-<li>Load balancing: Application Load Balancer
+<li>Navigate: <strong>Amazon ECS → Clusters</strong> → click <code>archadv-&lt;you&gt;-cluster</code> → <strong>Services</strong> tab → <strong>Create</strong>.</li>
+<li><strong>Environment</strong> section:
 <ul>
-<li>Choose <code>archadv-&lt;you&gt;-alb</code>, listener
-<code>80:HTTP</code></li>
-<li>Target group: <code>archadv-&lt;you&gt;-tg</code></li>
+<li>Existing cluster: <code>archadv-&lt;you&gt;-cluster</code> (pre-filled).</li>
+<li>Compute configuration (advanced): <strong>Launch type</strong>.</li>
+<li>Launch type: <strong>FARGATE</strong>.</li>
+<li>Platform version: <strong>LATEST</strong>.</li>
 </ul></li>
-<li>Create. Wait ~3 min until <strong>Last status: RUNNING</strong> for
-both tasks.</li>
+<li><strong>Deployment configuration</strong> section:
+<ul>
+<li>Application type: <strong>Service</strong>.</li>
+<li>Task definition family: <code>archadv-&lt;you&gt;-hello</code>.</li>
+<li>Revision: the highest number (it will be <code>1</code> on first run).</li>
+<li>Service name: <code>archadv-&lt;you&gt;-hello-svc</code>.</li>
+<li>Service type: <strong>Replica</strong>.</li>
+<li>Desired tasks: <code>2</code>.</li>
+</ul></li>
+<li><strong>Networking</strong> section:
+<ul>
+<li>VPC: select the <strong>Lab 1 VPC</strong> by name (it is the VPC tagged <code>Course=archadv</code>). Do NOT pick the default VPC — its subnets are all public and have no NAT, so the tasks will fail to pull the image.</li>
+<li>Subnets: <strong>remove all 4 default-selected subnets first</strong>, then add ONLY the 2 private subnets from the Lab 1 VPC. Use the table below to identify them.</li>
 </ul>
-<h3 id="7-validate">7. Validate</h3>
+<table>
+<thead><tr><th>#</th><th>Subnet name tag</th><th>Add?</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>archadv-public-1a</code></td><td>NO</td><td>Public — would give task a route via IGW; we want NAT-only egress</td></tr>
+<tr><td>2</td><td><code>archadv-public-1b</code></td><td>NO</td><td>Same as above</td></tr>
+<tr><td>3</td><td><code>archadv-private-1a</code></td><td><strong>YES</strong></td><td>Private subnet in AZ <code>us-east-1a</code></td></tr>
+<tr><td>4</td><td><code>archadv-private-1b</code></td><td><strong>YES</strong></td><td>Private subnet in AZ <code>us-east-1b</code></td></tr>
+</tbody>
+</table>
+<ul>
+<li>Security group: select <strong>Create a new security group</strong>.
+<ul>
+<li>Security group name: <code>archadv-&lt;you&gt;-tasks-sg</code>.</li>
+<li>Description: <code>ECS Fargate tasks — accept 80 from ALB SG only</code>.</li>
+<li>Inbound rules — add <strong>exactly one</strong> rule:
+<table>
+<thead><tr><th>#</th><th>Type</th><th>Protocol</th><th>Port</th><th>Source type</th><th>Source value</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Custom TCP</td><td>TCP</td><td><code>80</code></td><td>Custom</td><td>the ALB SG ID you copied above (paste the <code>sg-...</code>)</td></tr>
+</tbody>
+</table></li>
+<li>Outbound rules: <strong>leave the default rule alone</strong> (the wizard pre-populates "All traffic to 0.0.0.0/0" — this is correct; do not add or remove anything).</li>
+</ul></li>
+<li>Public IP: <strong>TURNED OFF</strong> (toggle to off). Tasks reach ECR and the internet via the NAT Gateway in the Lab 1 VPC.</li>
+</ul></li>
+<li><strong>Load balancing</strong> section:
+<ul>
+<li>Use load balancing: <strong>checked</strong>.</li>
+<li>Load balancer type: <strong>Application Load Balancer</strong>.</li>
+<li>Container to load balance: <strong><code>web 80:80</code></strong> (the wizard offers it because the task definition exposes port 80).</li>
+<li>Application Load Balancer: <strong>Use an existing load balancer</strong>.</li>
+<li>Load balancer name: <code>archadv-&lt;you&gt;-alb</code>.</li>
+<li>Listener: <strong>Use an existing listener</strong> → <code>80:HTTP</code>.</li>
+<li>Target group: <strong>Use an existing target group</strong> → <code>archadv-&lt;you&gt;-tg</code>.</li>
+<li>Health check grace period: <code>60</code> seconds.</li>
+</ul></li>
+<li>Leave all other sections at defaults. Click <strong>Create</strong>.</li>
+<li>Wait for the service to converge. On the service's <strong>Tasks</strong> tab, success looks like: 2 rows, both with <strong>Last status: RUNNING</strong>, <strong>Health status: HEALTHY</strong>, takes 2–4 min.</li>
+<li>Failure modes to watch for:
+<ul>
+<li>Tasks loop <strong>PROVISIONING → DEPROVISIONING</strong>: networking is wrong — almost always a public subnet was selected. Re-check the subnet table above.</li>
+<li>Tasks reach <strong>RUNNING</strong> but target group shows <strong>unhealthy</strong>: SG rule on the task SG is missing or pointing at the wrong source. Confirm the inbound rule references the ALB SG ID, not <code>0.0.0.0/0</code>.</li>
+<li>Tasks fail with <strong>CannotPullContainerError</strong>: NAT Gateway is missing/route table not associated. Open the Lab 1 VPC → Route Tables → confirm the private subnets' route table has <code>0.0.0.0/0 → nat-...</code>.</li>
+</ul></li>
+</ul>
+<h3 id="7-validate">7. Validate (2 min)</h3>
+<p>In CloudShell — replace <code>&lt;you&gt;</code> in the command with your name slug:</p>
 <pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
-curl http://$ALB
-# Expected: &lt;h1&gt;archadv hello v1&lt;/h1&gt;</code></pre>
+echo $ALB     # sanity-check: should print a hostname ending in .elb.amazonaws.com
+curl -i http://$ALB</code></pre>
+<p>Success looks like:</p>
+<ul>
+<li>HTTP status <code>200 OK</code> on the first line of output.</li>
+<li>Body is exactly <code>&lt;h1&gt;archadv hello v1&lt;/h1&gt;</code>.</li>
+</ul>
+<p>Failure modes:</p>
+<ul>
+<li><code>curl: (52) Empty reply from server</code> or <code>503 Service Unavailable</code>: targets are not healthy yet. Go to <strong>EC2 → Target Groups → archadv-&lt;you&gt;-tg → Targets</strong> tab — wait until both rows show <strong>Health status: healthy</strong>. Can take 60–90 sec after tasks reach RUNNING.</li>
+<li><code>Could not resolve host</code>: the <code>ALB</code> variable is empty. Re-run the <code>describe-load-balancers</code> line and check you used your actual name slug.</li>
+</ul>
 <h3 id="8-rolling-update-5-min">8. Rolling update (5 min)</h3>
-<p>In CloudShell:</p>
-<pre class="bash"><code>sed -i &#39;s/v1/v2/&#39; Dockerfile
+<p><strong>Step 8a — build and push v2 in CloudShell.</strong> Re-use the same shell from step 2 (the <code>$ACCOUNT</code>, <code>$REGION</code>, <code>$REPO</code> env vars must still be set; if the session timed out, re-export them first):</p>
+<pre class="bash"><code>cd ~/hello
+sed -i &#39;s/v1/v2/&#39; Dockerfile
 docker build -t archadv-hello:v2 .
 docker tag archadv-hello:v2 $REPO:v2
 docker push $REPO:v2</code></pre>
-<p>In the console:</p>
+<p>Success looks like: <code>docker push</code> ends with a line containing <code>v2: digest: sha256:...</code> and the new tag is visible at <strong>Amazon ECR → Repositories → archadv-&lt;you&gt;-hello → Images</strong>.</p>
+<p><strong>Step 8b — create a new task-definition revision (console).</strong></p>
 <ul>
-<li><strong>ECS → Task definitions → archadv-<you>-hello → Create new
-revision</strong>. Change the image tag from <code>:v1</code> to
-<code>:v2</code>. Create.</li>
-<li><strong>ECS → Services → archadv-<you>-hello-svc → Update</strong>.
-Pick the new revision. Update.</li>
-<li>Watch the <strong>Tasks</strong> tab. ECS will start 2 new tasks,
-wait for them to be healthy, then drain the 2 old ones.</li>
+<li>Navigate: <strong>Amazon ECS → Task definitions</strong> → click <code>archadv-&lt;you&gt;-hello</code> → select the row with the highest revision number → <strong>Actions → Create new revision → Create new revision</strong>.</li>
+<li>Scroll to the <strong>Container - 1</strong> section.</li>
+<li>Find the <strong>Image URI</strong> field. Change ONLY the trailing tag: <code>:v1</code> → <code>:v2</code>. The account ID, region, and repo name stay the same. Example before/after:
+<ul>
+<li>Before: <code>123456789012.dkr.ecr.us-east-1.amazonaws.com/archadv-&lt;you&gt;-hello:v1</code></li>
+<li>After: <code>123456789012.dkr.ecr.us-east-1.amazonaws.com/archadv-&lt;you&gt;-hello:v2</code></li>
+</ul></li>
+<li>Do NOT change anything else.</li>
+<li>Scroll to the bottom → <strong>Create</strong>. A new revision (2) appears.</li>
 </ul>
-<p>While the rollout is in progress, run this in a CloudShell loop:</p>
-<pre class="bash"><code>while true; do curl -s http://$ALB; sleep 1; done</code></pre>
-<p>You'll see the response transition from <code>v1</code> to
-<code>v2</code> as old tasks drain. There should be <strong>zero failed
-responses</strong> during the rollout — that's the point.</p>
+<p><strong>Step 8c — point the service at the new revision.</strong></p>
+<ul>
+<li>Navigate: <strong>Amazon ECS → Clusters → archadv-&lt;you&gt;-cluster → Services</strong> tab → click <code>archadv-&lt;you&gt;-hello-svc</code> → <strong>Update service</strong>.</li>
+<li>Revision: change from <code>1 (LATEST)</code> to <code>2 (LATEST)</code>.</li>
+<li>Force new deployment: <strong>leave UNCHECKED</strong> (the revision change alone triggers the rollout).</li>
+<li>Leave every other field alone. Scroll down → <strong>Update</strong>.</li>
+</ul>
+<p><strong>Step 8d — observe the rollout.</strong> Open a fresh CloudShell tab and start a 1-per-second curl loop BEFORE the new tasks come up. Replace <code>&lt;you&gt;</code>:</p>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+while true; do curl -s http://$ALB; sleep 1; done</code></pre>
+<p>In the console, watch <strong>Service → Tasks</strong> tab. Expected timeline (3–5 min total):</p>
+<ol type="1">
+<li>2 new tasks appear in <code>PROVISIONING</code>, then <code>PENDING</code>, then <code>RUNNING</code>.</li>
+<li>Once both new tasks are <strong>HEALTHY</strong> in the target group, the 2 old tasks transition to <code>DEACTIVATING → STOPPING → STOPPED</code>.</li>
+<li>Briefly there are 4 tasks (200% deployment) — this is correct.</li>
+</ol>
+<p>Success looks like: the curl loop output flips from <code>&lt;h1&gt;archadv hello v1&lt;/h1&gt;</code> to <code>&lt;h1&gt;archadv hello v2&lt;/h1&gt;</code> with <strong>zero non-200 responses</strong> and zero empty lines. Stop the loop with <kbd>Ctrl-C</kbd>.</p>
+<p>Failure modes:</p>
+<ul>
+<li>Curl loop returns <code>504</code> or empty during rollout: minimum healthy percent is too low. Skip — this is just a flake; rerun.</li>
+<li>Rollout stalls with 2 new tasks stuck <code>UNHEALTHY</code>: check that the new image was actually pushed (<code>aws ecr describe-images --repository-name archadv-&lt;you&gt;-hello</code> should list <code>v2</code>).</li>
+</ul>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
 <li><label><input type="checkbox" />ECR repository contains
