@@ -116,164 +116,178 @@
   <div class="lab-header">
     <div class="course-tag">Advanced Architecting on AWS</div>
   </div>
-<h1 id="lab-12--cost-explorer--budgets">Lab 12 — Cost Explorer +
-Budgets</h1>
+<h1 id="lab-12--budgets-with-cost-explorer-demo">Lab 12 — Budgets (with
+Cost Explorer demo)</h1>
 <h2 id="objective">Objective</h2>
-<p>Build a tag-grouped Cost Explorer report and a Budget that emails you
-when spend crosses a threshold. The Budget alarm is the part that
-actually runs in production — every account should have one.</p>
+<p>Build a monthly cost <strong>Budget with an email alert</strong> in
+your own Sandbox account. Watch the instructor demo a tag-grouped Cost
+Explorer report from the management account. The Budget alarm is the
+piece that runs in production — every account should have one.</p>
 <h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
+<p>Throughout, replace <code>&lt;you&gt;</code> with your slug. Budgets
+and Cost Explorer are <strong>global</strong> services accessed via
+<code>us-east-1</code> — the region selector top-right is irrelevant
+for this lab. The SCP allows them either way.</p>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
-<li><strong>Note:</strong> Cost Explorer needs ~24 hours of data after
-first activation. If your Sandbox account is fresh, your Cost Explorer
-will be empty — the instructor will demo the report from the management
-account, and you'll focus on building the Budget alarm in your own
-Sandbox.</li>
-<li><strong>If you see "You don't have access" on Cost
-Explorer</strong>, your management account has restricted member-account
-billing access. Skip Parts A/C/E and do only Part D (Budgets) — Budgets
-create works regardless.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Role badge top-right
+reads <code>AWSAdministratorAccess @ Sandbox&lt;N&gt;</code>.</li>
+<li>Have your <strong>own email address</strong> ready for the alert
+recipient.</li>
+<li><strong>Cost Explorer access:</strong> in many shared-Org setups
+member-account access to Cost Explorer is disabled by the management
+account. <strong>You will probably see "You don't have access"</strong>
+when you try Part A — that's expected. Note it and move on. The
+instructor demos the report from the management account in Part C; you
+focus on Part B (Budgets), which works in every Sandbox.</li>
 </ol>
-<h2 id="part-a--activate-cost-explorer-2-min">Part A — Activate Cost
-Explorer (2 min)</h2>
+<h2 id="part-a--try-cost-explorer-2-min">Part A — Try Cost Explorer (2
+min)</h2>
 <ul>
-<li><strong>Billing and Cost Management → Cost Explorer</strong></li>
-<li>If prompted, click <strong>Launch Cost Explorer</strong>.
-(Activation takes a few minutes; data starts populating immediately and
-historical data fills in over ~24 hours.)</li>
-</ul>
-<h2 id="part-b--activate-cost-allocation-tags-3-min">Part B — Activate
-cost allocation tags (3 min)</h2>
+<li>Navigate: top-right account menu → <strong>Billing and Cost
+Management</strong>, then in the left nav click <strong>Cost
+Explorer</strong>.</li>
+<li>One of three things happens:
 <ul>
-<li><strong>Billing and Cost Management → Cost allocation
-tags</strong></li>
-<li>Find <code>Owner</code> and <code>Course</code> in the user-defined
-tags list.</li>
-<li>Activate both. (User-defined tags must be activated before they show
-up in Cost Explorer reports.)</li>
-<li>Note: <strong>tag activation only affects costs incurred after
-activation.</strong> This is one of the most common AWS finance mistakes
-— activating tags after the fact and being surprised that historical
-data isn't grouped.</li>
-</ul>
-<h2
-id="part-c--build-a-saved-cost-explorer-report-5-min-instructor-led-if-sandbox-is-fresh">Part
-C — Build a saved Cost Explorer report (5 min, instructor-led if Sandbox
-is fresh)</h2>
-<p>The instructor demos this from the management account where data
-exists; you follow along reading-only in your own account if data is
-missing.</p>
-<ul>
-<li><strong>Cost Explorer → Reports → Create new report</strong></li>
-<li>Date range: <strong>Last 7 days</strong></li>
-<li>Granularity: <strong>Daily</strong></li>
-<li>Group by → <strong>Tag</strong> → <code>Course</code></li>
-<li>Filters: Tag <code>Course = archadv</code></li>
-<li>Save report as <code>archadv-spend-by-course</code>.</li>
-</ul>
-<p>The instructor's account should show a small bar chart with daily
-archadv spend. Your account will be empty (until tomorrow).</p>
-<h2 id="part-d--build-a-budget-with-email-alert-15-min">Part D — Build a
-Budget with email alert (15 min)</h2>
-<p>This is the important part. Do this <strong>in your own Sandbox
-account.</strong></p>
-<h3 id="1-create-the-budget">1. Create the Budget</h3>
-<ul>
-<li><strong>Billing and Cost Management → Budgets → Create a
-budget</strong></li>
-<li><strong>Budget setup: Customize (advanced)</strong> → Next</li>
-<li><strong>Budget type: Cost budget</strong> → Next</li>
-<li>Name: <code>archadv-&lt;you&gt;-budget</code></li>
-<li>Period: <strong>Monthly</strong>, renewal type: <strong>Recurring
-budget</strong></li>
-<li>Budgeted amount: <strong>$5</strong> (intentionally low so it
-triggers during class)</li>
-<li>Budget scope: cost types defaults</li>
-<li>Budget tags filter: <code>Course = archadv</code> (optional — if the
-tag is not yet activated as a cost allocation tag, leave
-unfiltered)</li>
-</ul>
-<h3 id="2-configure-alerts">2. Configure alerts</h3>
-<ul>
-<li>Add an alert at:
-<ul>
-<li><strong>80% of budgeted amount, ACTUAL cost</strong> → email</li>
-<li><strong>100% of budgeted amount, FORECASTED cost</strong> →
-email</li>
+<li><strong>"You don't have access"</strong> banner → expected in this
+Org. Move to Part B.</li>
+<li><strong>"Launch Cost Explorer" button</strong> → click it. Cost
+Explorer activates; data starts populating but historical data fills
+over ~24 hours, so the chart is empty today. Move to Part B.</li>
+<li><strong>A chart with bars</strong> → your account has data. Skim
+it; the instructor will still demo Part C from a management account
+with richer data.</li>
 </ul></li>
-<li>Email recipient: your own email address.</li>
-<li>Save.</li>
 </ul>
-<h3 id="3-confirm-delivery">3. Confirm delivery</h3>
+<h2 id="part-b--build-the-budget-15-min">Part B — Build the Budget (15
+min)</h2>
+<p>This is the part that matters. It works regardless of Cost Explorer
+access.</p>
+<h3 id="1-create-the-budget-7-min">1. Create the Budget (7 min)</h3>
 <ul>
-<li><strong>If you used a plain email recipient</strong> (the lab's
-path): there is <strong>no confirmation step</strong>. Budget alerts
-deliver directly via the Budgets service — historic guidance about
-confirming a subscription only applies to SNS topic subscribers.</li>
-<li><strong>If you used an SNS topic instead</strong>: check your inbox
-for <strong>"AWS Notification - Subscription Confirmation"</strong> and
-click the link. Without it, no emails arrive.</li>
+<li>Navigate: <strong>Billing and Cost Management → Budgets → Create a
+budget</strong>.</li>
+<li><strong>Budget setup:</strong> <strong>Customize (advanced)</strong>
+→ <strong>Next</strong>.</li>
+<li><strong>Budget type:</strong> <strong>Cost budget — Recommended</strong>
+→ <strong>Next</strong>.</li>
+<li><strong>Set your budget:</strong>
+<ul>
+<li>Budget name: <code>archadv-&lt;you&gt;-budget</code></li>
+<li>Period: <strong>Monthly</strong></li>
+<li>Budget renewal type: <strong>Recurring budget</strong></li>
+<li>Start month: this month (default).</li>
+<li>Budgeting method: <strong>Fixed</strong></li>
+<li>Enter budgeted amount: <strong>5</strong> (i.e. $5/month —
+intentionally low so the alert can fire today).</li>
+<li>Budget scope: <strong>All AWS services</strong> (default — do not
+add filters).</li>
+</ul></li>
+<li><strong>Next</strong>.</li>
 </ul>
-<h3 id="4-force-a-quick-alarm-optional-5-min">4. Force a quick alarm
-(optional, 5 min)</h3>
-<p>If you want to see the alarm fire today rather than waiting:</p>
+<h3 id="2-configure-the-alert-thresholds-5-min">2. Configure the alert
+thresholds (5 min)</h3>
 <ul>
-<li>Lower the budget to <strong>$0.50</strong> instead of $5.</li>
-<li>Within ~6 hours of class spend, the 80% alarm fires (most archadv
-spend in a Sandbox-N account during class is $1–3).</li>
-<li>Restore to $5 after the demo.</li>
+<li>On the <strong>Configure alerts</strong> page, click
+<strong>Add an alert threshold</strong>. Fill <em>exactly</em>:
+<ul>
+<li>Threshold: <strong>80</strong></li>
+<li>Of: <strong>% of budgeted amount</strong></li>
+<li>Trigger: <strong>Actual</strong></li>
+<li>Email recipients: <strong>your own email</strong> (you will receive
+the alert; comma-separate to add more).</li>
+</ul></li>
+<li>Click <strong>Add an alert threshold</strong> again, fill:
+<ul>
+<li>Threshold: <strong>100</strong></li>
+<li>Of: <strong>% of budgeted amount</strong></li>
+<li>Trigger: <strong>Forecasted</strong></li>
+<li>Email recipients: same email.</li>
+</ul></li>
+<li><strong>Next</strong>.</li>
 </ul>
-<h2 id="part-e--review-high-cost-services-3-min-discussion">Part E —
-Review high-cost services (3 min, discussion)</h2>
-<p>In Cost Explorer (or the instructor's demo account):</p>
+<h3 id="3-attach-actions-skip-3-min">3. Attach actions: skip (3 min)</h3>
 <ul>
-<li><strong>Group by → Service</strong>, last 7 days</li>
-<li>Identify the top 3 services. For a typical archadv class day they
-will be:
+<li>On <strong>Attach actions — optional</strong>, leave empty and click
+<strong>Next</strong>. (Budget Actions can stop EC2s or apply
+IAM-deny policies on breach; out of scope for this lab.)</li>
+<li>On <strong>Review</strong>, verify:
+<ul>
+<li>Period: Monthly</li>
+<li>Budgeted amount: $5.00</li>
+<li>2 alerts (Actual 80%, Forecasted 100%)</li>
+<li>Recipient email matches yours</li>
+</ul></li>
+<li>Click <strong>Create budget</strong>.</li>
+</ul>
+<h3 id="4-confirm-delivery-2-min">4. Confirm delivery (2 min)</h3>
+<ul>
+<li>Plain email recipients (the lab's path) do <strong>not</strong>
+require a confirmation click — Budgets sends directly via its own
+service. <strong>Do not</strong> search for a "Subscription Confirmation"
+email; one will not arrive.</li>
+<li>The Budget appears in <strong>Budgets</strong> list with status
+<strong>OK</strong>. Current vs forecasted spend may both read
+<code>$0.00</code> if Cost Explorer data hasn't populated yet — that
+doesn't disable the alert; once spend actually accrues, the alert
+fires.</li>
+</ul>
+<p>To see the alert fire <em>today</em>, you can lower the budget to
+<strong>$0.50</strong> in <strong>Edit budget</strong> — typical
+in-class Sandbox spend is $1–3 and the 80% alert
+(<code>Actual ≥ $0.40</code>) trips within a few hours.</p>
+<h2 id="part-c--cost-explorer-demo-10-min-instructor-led">Part C — Cost
+Explorer demo (10 min, instructor-led)</h2>
+<p>The instructor demos from a management account where Cost Explorer
+has data. Students watch and follow along by reading on the screen;
+nothing to build in your own Sandbox.</p>
+<p>Demo steps the instructor walks through:</p>
 <ol type="1">
-<li><strong>NAT Gateway</strong> (often the #1 surprise — $0.045/hr × N
-students × 9 hours)</li>
-<li><strong>EC2</strong> (the bastion / ASG instances)</li>
-<li><strong>Storage Gateway m5.xlarge</strong> (only on Module 4 day;
-expensive if left running)</li>
-</ol></li>
-</ul>
-<p>Discussion: <strong>the most effective cost optimization is
+<li><strong>Activate cost allocation tags.</strong> <strong>Billing
+and Cost Management → Cost allocation tags</strong>; locate
+<code>Course</code> and <code>Owner</code> in the User-defined tags
+list; <strong>Activate</strong>. Note: activation only affects
+<em>costs incurred after activation</em>.</li>
+<li><strong>Build a tag-grouped report.</strong> <strong>Cost Explorer →
+Reports → Create new report</strong>; Date range: <strong>Last 7 days</strong>;
+Granularity: <strong>Daily</strong>; Group by:
+<strong>Tag → Course</strong>; Filter: <code>Course = archadv</code>;
+<strong>Save</strong> as <code>archadv-spend-by-course</code>.</li>
+<li><strong>Group by service.</strong> Same report, change Group by to
+<strong>Service</strong>. The top three services in a typical archadv
+class day:
+<ul>
+<li><strong>NAT Gateway</strong> — usually #1
+($0.045/hr/student × class hours; surprises everyone).</li>
+<li><strong>EC2</strong> — the bastion and ASG instances.</li>
+<li><strong>Storage Gateway m5.xlarge</strong> — only spikes on the
+Module 4 day; expensive if left running.</li>
+</ul></li>
+</ol>
+<p>The takeaway: <strong>the most effective cost optimization is
 destroying the resource</strong>. Lab cleanups exist for a reason.</p>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
-<li><label><input type="checkbox" />Cost Explorer is
-activated</label></li>
-<li><label><input type="checkbox" /><code>Owner</code> and
-<code>Course</code> cost allocation tags are activated</label></li>
-<li><label><input type="checkbox" />Budget exists at $5/month with 80%
-actual + 100% forecasted alerts</label></li>
-<li><label><input type="checkbox" />Email subscription confirmed (you
-clicked the link)</label></li>
-<li><label><input type="checkbox" />You can name the top 3 cost
-contributors in your Sandbox</label></li>
+<li><label><input type="checkbox" />Budget <code>archadv-&lt;you&gt;-budget</code>
+appears in the Budgets list with status <strong>OK</strong></label></li>
+<li><label><input type="checkbox" />Two alert thresholds configured:
+<strong>Actual 80%</strong> and <strong>Forecasted 100%</strong></label></li>
+<li><label><input type="checkbox" />Email recipient is your own
+address</label></li>
+<li><label><input type="checkbox" />You noted the instructor's top 3
+service-cost contributors during the Part C demo</label></li>
 </ul>
 <h2 id="cleanup">Cleanup</h2>
-<p>Leave the Budget in place — it's the one thing in this lab you should
-keep. Everything else is just reporting.</p>
-<h2 id="stretch-goals">Stretch goals</h2>
+<p><strong>Leave the Budget in place.</strong> It's the one artifact
+from this lab that should outlive the class — keeps you covered against
+runaway spend in this Sandbox while it still exists.</p>
+<h2 id="stretch-goals">Stretch goals (only if you finish early)</h2>
 <ul>
-<li>Create a <strong>Savings Plan recommendation</strong> report. (Cost
-Explorer → Recommendations → Compute Savings Plans). The recommendations
-need 7+ days of usage data; the instructor demos from the management
-account.</li>
-<li><strong>AWS Cost Anomaly Detection</strong> is auto-enabled when
-Cost Explorer activates and ships with an AWS-services monitor. Inspect
-it. Then add a <strong>customer-managed monitor</strong> scoped to a tag
-value (e.g., <code>Course=archadv</code>) with an SNS action. This is
-the alarm you actually want long-term — Budgets fire on absolute
-thresholds; Anomaly Detection fires on <em>unusual patterns</em>.</li>
-<li>Read the AWS pricing for one of these and quote the per-hour cost:
-NAT Gateway, S3 Standard, an <code>m5.xlarge</code> EC2, KMS request,
-CloudFront request. Surprise yourself.</li>
+<li>Read the AWS pricing page for one service and quote the per-hour
+cost: <strong>NAT Gateway</strong>, <strong>S3 Standard</strong>,
+<strong>m5.xlarge EC2</strong>, <strong>KMS API request</strong>,
+<strong>CloudFront request</strong>. Pick the one you'd never have
+guessed.</li>
 </ul>
   <div class="nav-footer">
     <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
