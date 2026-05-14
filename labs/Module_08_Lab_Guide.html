@@ -125,140 +125,303 @@ brute-force loop.</p>
 <h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
-<li>Reuse the VPC from Lab 1, or use the default VPC.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region <strong><code>us-east-1</code></strong>.</li>
+<li>Use the <strong>Lab 1 VPC</strong> (the one tagged <code>Course=archadv</code>, with 2 public + 2 private subnets and a NAT Gateway). <strong>Do not use the default VPC</strong> — its subnets are all public, so step 3 (ASG in private subnets) will fail.</li>
+<li>Confirm the <strong>EC2 SSM IAM instance profile</strong> exists from earlier labs: <strong>IAM → Roles</strong> → search for a role named <code>archadv-ssm-ec2-role</code> or similar with <code>AmazonSSMManagedInstanceCore</code> attached. If missing, create it now: trusted entity <strong>AWS service → EC2</strong>, attach <strong>AmazonSSMManagedInstanceCore</strong>, name it <code>archadv-&lt;you&gt;-ssm-ec2-role</code>. (No <code>iam:PassRole</code> issues — your Sandbox IdC role has admin.)</li>
+<li>Open CloudShell in <code>us-east-1</code>.</li>
 </ol>
+<blockquote>
+<p><strong>Known capacity quirk:</strong> <code>t3.micro</code> in <strong>us-east-1b</strong> occasionally returns <code>InsufficientInstanceCapacity</code>. If the ASG cannot launch in step 3, edit the ASG and remove <code>us-east-1b</code> from subnets (use <code>us-east-1a</code> + <code>us-east-1c</code> instead). The capstone runs fine with 2 AZs in any combination.</p>
+</blockquote>
 <h2 id="steps">Steps</h2>
 <h3 id="1-launch-template-5-min">1. Launch template (5 min)</h3>
 <ul>
-<li><strong>EC2 → Launch templates → Create launch
-template</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-lt</code></li>
-<li>AMI: Amazon Linux 2023</li>
-<li>Instance type: <code>t3.micro</code></li>
-<li>Key pair: don't include — we'll use SSM</li>
-<li>Security group: create new — allow <code>80/tcp</code> from the
-soon-to-be-created <strong>ALB's security group</strong> (you can attach
-this in step 3 after the ALB SG exists)</li>
-<li>IAM instance profile: a role with
-<code>AmazonSSMManagedInstanceCore</code></li>
-<li>User data:</li>
-</ul>
+<li>Navigate: <strong>EC2 → Launch templates → Create launch template</strong>.</li>
+<li><strong>Launch template name and description</strong> section:
+<ul>
+<li>Launch template name: <code>archadv-&lt;you&gt;-lt</code>.</li>
+<li>Template version description: <code>v1 - httpd with instance ID</code>.</li>
+<li><strong>Auto Scaling guidance:</strong> tick <strong>"Provide guidance to help me set up a template that I can use with EC2 Auto Scaling"</strong> — this hides ASG-incompatible fields.</li>
+</ul></li>
+<li><strong>Application and OS Images (AMI)</strong> section:
+<ul>
+<li>Quick Start tab → <strong>Amazon Linux</strong> → AMI dropdown: pick the row labeled <strong>Amazon Linux 2023 AMI</strong> with the green "Free tier eligible" tag and architecture <strong>64-bit (x86)</strong>. (Do NOT pick the Arm64 row — the user-data below assumes <code>dnf</code> on x86_64; Arm64 works too but the AMI ID changes.)</li>
+</ul></li>
+<li><strong>Instance type</strong> section: <code>t3.micro</code>.</li>
+<li><strong>Key pair (login)</strong> section: <strong>Don't include in launch template</strong>. (Course rule: SSM Session Manager only — no SSH, no key pairs, no port 22.)</li>
+<li><strong>Network settings</strong> section:
+<ul>
+<li>Subnet: <strong>Don't include in launch template</strong> (the ASG sets the subnet).</li>
+<li>Firewall (security groups): <strong>Create security group</strong>.
+<ul>
+<li>Security group name: <code>archadv-&lt;you&gt;-ec2-sg</code>.</li>
+<li>Description: <code>EC2 web tier — accept 80 from ALB SG only</code>.</li>
+<li>VPC: <strong>the Lab 1 VPC</strong> (NOT default).</li>
+<li>Inbound rules: <strong>leave empty for now</strong>. You will add the rule in step 2 after the ALB SG exists. (Adding it now creates a chicken-and-egg loop — the ALB SG does not exist yet.)</li>
+</ul></li>
+</ul></li>
+<li><strong>Advanced details</strong> section (expand):
+<ul>
+<li>IAM instance profile: <code>archadv-&lt;you&gt;-ssm-ec2-role</code> (the role from pre-flight step 3).</li>
+<li>Metadata version: <strong>V2 only (token required)</strong>.</li>
+<li>Metadata response hop limit: <code>2</code>.</li>
+<li>User data: paste this verbatim (the metadata IMDSv2 token fetch matches the V2-only setting):
 <pre class="bash"><code>#!/bin/bash
 dnf install -y httpd
 systemctl enable --now httpd
 TOKEN=$(curl -s -X PUT &quot;http://169.254.169.254/latest/api/token&quot; -H &quot;X-aws-ec2-metadata-token-ttl-seconds: 60&quot;)
 HOST=$(curl -s -H &quot;X-aws-ec2-metadata-token: $TOKEN&quot; http://169.254.169.254/latest/meta-data/instance-id)
-echo &quot;&lt;h1&gt;archadv $HOST&lt;/h1&gt;&quot; &gt; /var/www/html/index.html</code></pre>
-<ul>
-<li>Create.</li>
+echo &quot;&lt;h1&gt;archadv $HOST&lt;/h1&gt;&quot; &gt; /var/www/html/index.html</code></pre></li>
+</ul></li>
+<li>Resource tags (optional): <code>Course=archadv</code>, <code>Owner=&lt;you&gt;</code>. Apply to: <strong>Instances</strong>.</li>
+<li>Click <strong>Create launch template</strong>.</li>
 </ul>
-<h3 id="2-application-load-balancer-5-min">2. Application Load Balancer
-(5 min)</h3>
+<p>Success looks like: the template list shows version <code>1</code> as <strong>Default version</strong>. Click into it and verify the <strong>Advanced details</strong> tab shows IMDSv2 = Required and the user data preview matches.</p>
+<h3 id="2-application-load-balancer-5-min">2. Application Load Balancer + target group (7 min)</h3>
+<p>You will create the ALB first (which creates the ALB SG), then go back and add the inbound rule on the EC2 SG that references the new ALB SG.</p>
+<p><strong>Step 2a — create the target group.</strong></p>
 <ul>
-<li><strong>EC2 → Load Balancers → Create → Application</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-alb</code></li>
-<li>Scheme: internet-facing</li>
-<li>VPC: yours; mappings: 2 public subnets across 2 AZs</li>
-<li>Security group: new — <code>80/tcp</code> from
-<code>0.0.0.0/0</code></li>
-<li>Listener: HTTP:80</li>
-<li>Target group: create a new target group for
-<strong>instances</strong>, port 80, health check <code>/</code></li>
-<li>Create. Wait until <code>Active</code> (~2 min).</li>
+<li>Navigate: <strong>EC2 → Target groups → Create target group</strong>.</li>
+<li>Choose a target type: <strong>Instances</strong>.</li>
+<li>Target group name: <code>archadv-&lt;you&gt;-tg</code>.</li>
+<li>Protocol: <strong>HTTP</strong>. Port: <code>80</code>.</li>
+<li>IP address type: <strong>IPv4</strong>.</li>
+<li>VPC: the Lab 1 VPC.</li>
+<li>Protocol version: <strong>HTTP1</strong>.</li>
+<li>Health checks: protocol <strong>HTTP</strong>, path <code>/</code>.</li>
+<li>Advanced health check settings (expand): leave all defaults (port: traffic port, healthy threshold 5, unhealthy threshold 2, timeout 5 sec, interval 30 sec).</li>
+<li><strong>Next</strong> → register targets page: <strong>leave the instance list EMPTY</strong>. The ASG in step 3 registers instances automatically.</li>
+<li><strong>Create target group</strong>.</li>
 </ul>
-<p>Now go back to your launch template's security group and allow
-<code>80/tcp</code> from the ALB SG.</p>
-<h3 id="3-auto-scaling-group-5-min">3. Auto Scaling Group (5 min)</h3>
+<p><strong>Step 2b — create the ALB.</strong></p>
 <ul>
-<li><strong>EC2 → Auto Scaling Groups → Create</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-asg</code></li>
-<li>Launch template: yours, latest version</li>
-<li>VPC: yours; subnets: 2 <strong>private</strong> subnets across 2
-AZs</li>
-<li>Attach to the load balancer's target group from step 2</li>
-<li>Health check type: <strong>ELB</strong></li>
-<li>Group size: desired 2, min 2, max 4</li>
-<li>Scaling policy: target tracking, average CPU 50%</li>
-<li>Create. Wait ~3 min until 2 instances are <code>InService</code> in
-the target group.</li>
+<li>Navigate: <strong>EC2 → Load balancers → Create load balancer</strong> → <strong>Application Load Balancer → Create</strong>.</li>
+<li><strong>Basic configuration</strong>:
+<ul>
+<li>Load balancer name: <code>archadv-&lt;you&gt;-alb</code>.</li>
+<li>Scheme: <strong>Internet-facing</strong>.</li>
+<li>IP address type: <strong>IPv4</strong>.</li>
+</ul></li>
+<li><strong>Network mapping</strong>:
+<ul>
+<li>VPC: the Lab 1 VPC.</li>
+<li>Mappings — pick exactly 2 AZs and 2 <strong>public</strong> subnets:
+<table>
+<thead><tr><th>AZ</th><th>Subnet to pick</th></tr></thead>
+<tbody>
+<tr><td><code>us-east-1a</code></td><td><code>archadv-public-1a</code></td></tr>
+<tr><td><code>us-east-1b</code></td><td><code>archadv-public-1b</code></td></tr>
+</tbody>
+</table>
+Do NOT select the private subnets — ALB nodes need IGW egress to be internet-facing.</li>
+</ul></li>
+<li><strong>Security groups</strong>:
+<ul>
+<li>Click <strong>Create new security group</strong> (opens in new tab).</li>
+<li>Security group name: <code>archadv-&lt;you&gt;-alb-sg</code>.</li>
+<li>Description: <code>ALB - accept HTTP from internet</code>.</li>
+<li>VPC: Lab 1 VPC.</li>
+<li>Inbound rules — add <strong>exactly one</strong>:
+<table>
+<thead><tr><th>#</th><th>Type</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>HTTP (80)</td><td>Anywhere-IPv4 (<code>0.0.0.0/0</code>)</td></tr>
+</tbody>
+</table></li>
+<li>Outbound rules: <strong>leave the default rule alone</strong>.</li>
+<li><strong>Create security group</strong>. Note the resulting <code>sg-...</code> ID.</li>
+<li>Back in the ALB tab, click the refresh icon next to Security groups and select <code>archadv-&lt;you&gt;-alb-sg</code>. <strong>Remove the default SG</strong> from the selection if it auto-added.</li>
+</ul></li>
+<li><strong>Listeners and routing</strong>:
+<ul>
+<li>Protocol: <strong>HTTP</strong>. Port: <code>80</code>.</li>
+<li>Default action: <strong>Forward to target group</strong> → <code>archadv-&lt;you&gt;-tg</code>.</li>
+</ul></li>
+<li><strong>Create load balancer</strong>. Wait ~2 min on the LB details page until <strong>State: Active</strong>.</li>
 </ul>
-<h3 id="4-validate-the-baseline">4. Validate the baseline</h3>
+<p><strong>Step 2c — add the EC2 SG inbound rule (now that the ALB SG exists).</strong></p>
+<ul>
+<li>Navigate: <strong>EC2 → Security groups</strong> → click <code>archadv-&lt;you&gt;-ec2-sg</code>.</li>
+<li><strong>Inbound rules</strong> tab → <strong>Edit inbound rules</strong>.</li>
+<li>Click <strong>Add rule</strong>. Set exactly:
+<table>
+<thead><tr><th>Field</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td><strong>HTTP</strong> (auto-fills protocol TCP, port 80)</td></tr>
+<tr><td>Source type</td><td><strong>Custom</strong></td></tr>
+<tr><td>Source</td><td>start typing <code>archadv-&lt;you&gt;-alb-sg</code> and click the matching <code>sg-...</code> result</td></tr>
+<tr><td>Description</td><td><code>From ALB</code></td></tr>
+</tbody>
+</table></li>
+<li><strong>Save rules</strong>. Outbound rules: do not touch.</li>
+</ul>
+<h3 id="3-auto-scaling-group-7-min">3. Auto Scaling Group (7 min)</h3>
+<ul>
+<li>Navigate: <strong>EC2 → Auto Scaling Groups → Create Auto Scaling group</strong>.</li>
+<li><strong>Step 1 — Choose launch template</strong>:
+<ul>
+<li>Auto Scaling group name: <code>archadv-&lt;you&gt;-asg</code>.</li>
+<li>Launch template: <code>archadv-&lt;you&gt;-lt</code>. Version: <strong>Default (1)</strong>.</li>
+<li>Click <strong>Next</strong>.</li>
+</ul></li>
+<li><strong>Step 2 — Choose instance launch options</strong>:
+<ul>
+<li>Instance type requirements: <strong>Override launch template</strong> → instance types: add <code>t3.micro</code>, <code>t3.small</code>, <code>t3a.micro</code>. (Multiple types help dodge the us-east-1b capacity issue.)</li>
+<li>Instance purchase options: 100% On-Demand (default).</li>
+<li>Network → VPC: Lab 1 VPC.</li>
+<li>Availability Zones and subnets: select <strong>exactly 2 private subnets</strong>:
+<table>
+<thead><tr><th>AZ</th><th>Subnet to pick</th></tr></thead>
+<tbody>
+<tr><td><code>us-east-1a</code></td><td><code>archadv-private-1a</code></td></tr>
+<tr><td><code>us-east-1b</code></td><td><code>archadv-private-1b</code></td></tr>
+</tbody>
+</table>
+(If you hit <code>InsufficientInstanceCapacity</code> later, swap <code>1b</code> for <code>1c</code> as called out in the pre-flight quirk box.)</li>
+<li><strong>Next</strong>.</li>
+</ul></li>
+<li><strong>Step 3 — Configure advanced options</strong>:
+<ul>
+<li>Load balancing: <strong>Attach to an existing load balancer</strong>.</li>
+<li>Choose target groups: <code>archadv-&lt;you&gt;-tg | HTTP</code>.</li>
+<li>VPC Lattice integration options: <strong>No VPC Lattice service</strong>.</li>
+<li>Health checks: <strong>Turn on Elastic Load Balancing health checks</strong> (this is the key change — ELB health beats EC2-only health for web tiers). Health check grace period: <code>120</code> seconds.</li>
+<li>Additional settings: <strong>Enable group metrics collection within CloudWatch</strong>.</li>
+<li><strong>Next</strong>.</li>
+</ul></li>
+<li><strong>Step 4 — Configure group size and scaling</strong>:
+<ul>
+<li>Desired capacity: <code>2</code>.</li>
+<li>Min: <code>2</code>. Max: <code>4</code>.</li>
+<li>Scaling policies: <strong>Target tracking scaling policy</strong>.
+<ul>
+<li>Policy name: <code>archadv-cpu50</code>.</li>
+<li>Metric type: <strong>Average CPU utilization</strong>.</li>
+<li>Target value: <code>50</code>.</li>
+<li>Instance warmup: <code>120</code> seconds.</li>
+</ul></li>
+<li>Instance scale-in protection: off.</li>
+<li><strong>Next → Next → Create Auto Scaling group</strong>.</li>
+</ul></li>
+</ul>
+<p>Watch the <strong>Activity</strong> tab. Success looks like: 2 instances move from <code>Pending</code> → <code>InService</code> within 3 min. On <strong>EC2 → Target groups → archadv-&lt;you&gt;-tg → Targets</strong>, both targets show <strong>Health status: healthy</strong> within ~90 sec after that (the user-data installs httpd before the health check passes).</p>
+<p>Failure modes:</p>
+<ul>
+<li>Activity log shows <code>Launching a new EC2 instance ... failed: InsufficientInstanceCapacity</code>: edit the ASG → Network → swap <code>us-east-1b</code> subnet for <code>us-east-1c</code> → save. The ASG will retry within 5 min automatically.</li>
+<li>Targets stuck <strong>unhealthy</strong>: SSM into one instance to debug. <strong>EC2 → Instances → pick the instance → Connect → Session Manager → Connect</strong>. Run <code>systemctl status httpd</code> and <code>curl -s localhost</code>. If httpd never started, user-data did not run — the AMI was wrong (Arm64 selected instead of x86_64).</li>
+</ul>
+<h3 id="4-validate-the-baseline-2-min">4. Validate the baseline (2 min)</h3>
+<p>In CloudShell — replace <code>&lt;you&gt;</code>:</p>
 <pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
-for i in 1 2 3 4 5; do curl -s http://$ALB; done</code></pre>
-<p>You should see two different instance IDs alternating — that's the
-ALB round-robin.</p>
-<h3 id="5-aws-waf-web-acl-10-min">5. AWS WAF web ACL (10 min)</h3>
+echo $ALB
+for i in 1 2 3 4 5 6 7 8; do curl -s http://$ALB; done</code></pre>
+<p>Success looks like: 8 lines of <code>&lt;h1&gt;archadv i-...&lt;/h1&gt;</code> with <strong>exactly 2 distinct instance IDs</strong> alternating (the ALB does round-robin by default).</p>
+<p>Failure mode: all 8 lines are the same instance — the other target is unhealthy. Check the Target group's Targets tab.</p>
+<h3 id="5-aws-waf-web-acl-12-min">5. AWS WAF web ACL (12 min)</h3>
 <ul>
-<li><strong>AWS WAF &amp; Shield → Web ACLs → Create web
-ACL</strong></li>
-<li>Region: us-east-1</li>
-<li>Name: <code>archadv-&lt;you&gt;-waf</code></li>
-<li>Resource type: regional resources</li>
-<li>Add the existing ALB as an associated resource</li>
-<li>Add managed rule groups (in this order — WAF evaluates rules
-top-down):
-<ol type="1">
-<li><strong>AWS managed rules → Core rule set</strong>
-(AWSManagedRulesCommonRuleSet)</li>
-<li><strong>AWS managed rules → Known bad inputs</strong>
-(AWSManagedRulesKnownBadInputsRuleSet)</li>
-<li><strong>AWS managed rules → SQL database</strong>
-(AWSManagedRulesSQLiRuleSet)</li>
-</ol></li>
-<li>For each rule group, expand it and set <strong>"Override all rule
-actions to" → Block</strong>. (Several CRS rules default to
-<code>Count</code>, not <code>Block</code>. Without this override, the
-SQLi probe in step 6 may return 200.)</li>
-<li>Default action: <strong>Allow</strong></li>
-<li>Create.</li>
+<li>Navigate: <strong>AWS WAF &amp; Shield → Web ACLs</strong>. Region selector top-right: <strong>US East (N. Virginia)</strong> (regional WAF must match the ALB region).</li>
+<li>Click <strong>Create web ACL</strong>.</li>
 </ul>
-<h3 id="6-trigger-a-managed-rule-block-3-min">6. Trigger a managed-rule
-block (3 min)</h3>
-<pre class="bash"><code>curl &quot;http://$ALB/?id=1&#39; OR &#39;1&#39;=&#39;1&quot;
-# Expected: 403 Forbidden — blocked by SQLi rule group</code></pre>
-<p>In <strong>AWS WAF → Web ACLs → archadv-<you>-waf → Sampled
-requests</strong> within ~2 min: the request appears with
-<code>BLOCK</code> and the matched rule.</p>
-<h3 id="7-custom-rate-based-rule-10-min">7. Custom rate-based rule (10
-min)</h3>
-<p>Add a rule to the same web ACL:</p>
+<p><strong>Step 5a — Describe web ACL and associate it.</strong></p>
 <ul>
-<li>Add rule → <strong>Rate-based rule</strong></li>
-<li>Name: <code>archadv-rate-limit</code></li>
-<li>Rate limit: <code>100</code>; <strong>Evaluation window:</strong> 5
-min; <strong>Request aggregation:</strong> Source IP</li>
-<li>Action: <strong>Block</strong></li>
-<li>Save.</li>
+<li>Resource type: <strong>Regional resources (Application Load Balancer, API Gateway, ...)</strong>. NOT "CloudFront distributions".</li>
+<li>Region: <strong>US East (N. Virginia)</strong>.</li>
+<li>Name: <code>archadv-&lt;you&gt;-waf</code>.</li>
+<li>CloudWatch metric name: auto (accept).</li>
+<li>Description: leave blank.</li>
+<li>Associated AWS resources: click <strong>Add AWS resources</strong> → tick <strong>Application Load Balancer</strong> → tick the row for <code>archadv-&lt;you&gt;-alb</code> → <strong>Add</strong>.</li>
+<li><strong>Next</strong>.</li>
 </ul>
-<p>Trigger it from CloudShell:</p>
-<pre class="bash"><code>for i in $(seq 1 200); do curl -s -o /dev/null -w &quot;%{http_code}\n&quot; http://$ALB/; done | sort | uniq -c</code></pre>
-<p>After ~100 requests in quick succession, you should see many
-<code>403</code>s — the rate-based rule kicked in.</p>
-<p>In <strong>CloudWatch → Metrics → AWS/WAFV2</strong> find the
-<code>BlockedRequests</code> metric for your web ACL and confirm the
-spike.</p>
+<p><strong>Step 5b — Add rules and rule groups.</strong> Click <strong>Add rules → Add managed rule groups</strong>. Under <strong>AWS managed rule groups</strong>, expand the list and toggle these 3 rule groups <strong>ON</strong> in this order (priority is set by add-order — top is highest priority, evaluated first):</p>
+<table>
+<thead><tr><th>Priority</th><th>Rule group (verbatim console name)</th><th>Vendor</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Core rule set</strong> (<code>AWSManagedRulesCommonRuleSet</code>)</td><td>AWS</td><td>Generic OWASP top-10 protection</td></tr>
+<tr><td>2</td><td><strong>Known bad inputs</strong> (<code>AWSManagedRulesKnownBadInputsRuleSet</code>)</td><td>AWS</td><td>Catches known exploit payloads (Log4Shell, etc.)</td></tr>
+<tr><td>3</td><td><strong>SQL database</strong> (<code>AWSManagedRulesSQLiRuleSet</code>)</td><td>AWS</td><td>Trips on the probe in step 6</td></tr>
+</tbody>
+</table>
+<p>For each of the 3 rule groups, expand the toggle and check the <strong>Set rules action to block</strong> checkbox under <strong>Override all rule actions</strong>. This is critical:</p>
+<blockquote>
+<p><strong>Why "Override all rule actions to Block":</strong> several rules inside the Core rule set default to <code>Count</code> (observe only), not <code>Block</code>. If you skip the override, your SQLi probe in step 6 will return <strong>200 OK</strong> instead of <strong>403</strong>, the rule will show up in Sampled requests as <code>COUNT</code>, and the lab will appear broken. <strong>Tick the Block override on all 3 rule groups.</strong></p>
+</blockquote>
+<ul>
+<li>Click <strong>Add rules</strong> (bottom of the rule-groups panel) — you return to the rules list with 3 entries.</li>
+<li><strong>Default web ACL action for requests that don't match any rules</strong>: <strong>Allow</strong>.</li>
+<li><strong>Next</strong>.</li>
+</ul>
+<p><strong>Step 5c — Set rule priority.</strong> Order of the 3 rule groups: <code>Core rule set</code> → <code>Known bad inputs</code> → <code>SQL database</code> (drag to reorder if needed). Click <strong>Next</strong>.</p>
+<p><strong>Step 5d — Configure metrics.</strong> Accept all defaults (CloudWatch metrics on for each rule + ACL-level). <strong>Next</strong>.</p>
+<p><strong>Step 5e — Review and create.</strong> <strong>Create web ACL</strong>. Wait ~30 sec; the association with the ALB takes effect within a minute.</p>
+<h3 id="6-trigger-a-managed-rule-block-3-min">6. Trigger a managed-rule block (3 min)</h3>
+<p>In CloudShell — the literal-string single-quotes inside the URL are intentional (they form the SQLi pattern):</p>
+<pre class="bash"><code>ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+curl -i &quot;http://$ALB/?id=1%27%20OR%20%271%27=%271&quot;</code></pre>
+<p>Success looks like: first line of response is <code>HTTP/1.1 403 Forbidden</code> and the body contains <code>&lt;TITLE&gt;ERROR: The request could not be satisfied&lt;/TITLE&gt;</code>.</p>
+<p>Then navigate: <strong>AWS WAF → Web ACLs → archadv-&lt;you&gt;-waf → Sampled requests</strong> tab. Within 2 min the request appears with:</p>
+<ul>
+<li>Action: <strong>BLOCK</strong> (red).</li>
+<li>Matching rule: <code>AWSManagedRulesSQLiRuleSet</code> (or a CRS sub-rule that matched first).</li>
+</ul>
+<p>Failure modes:</p>
+<ul>
+<li><code>200 OK</code> instead of 403: you skipped the <strong>Override all rule actions to Block</strong> checkbox in step 5b. Edit the web ACL, expand each rule group, tick the override, save.</li>
+<li>Sampled requests is empty: WAF samples are best-effort and lag up to 5 min. Refresh; if still empty, check the request was sent to the correct ALB DNS.</li>
+</ul>
+<h3 id="7-custom-rate-based-rule-12-min">7. Custom rate-based rule (12 min)</h3>
+<p><strong>Step 7a — add the rule.</strong></p>
+<ul>
+<li>Navigate: <strong>AWS WAF → Web ACLs → archadv-&lt;you&gt;-waf → Rules</strong> tab → <strong>Add rules → Add my own rules and rule groups</strong>.</li>
+<li>Rule type: <strong>Rule builder</strong>.</li>
+<li>Name: <code>archadv-rate-limit</code>.</li>
+<li>Type: <strong>Rate-based rule</strong>.</li>
+<li>Rate limit: <code>100</code>.</li>
+<li>Evaluation window: <strong>1 minute</strong>. (NOT the default 5 min — the 1-minute window trips faster from CloudShell, which matters because CloudShell egresses through a small NAT IP pool that AWS may share across sessions.)</li>
+<li>Request aggregation: <strong>Source IP</strong>.</li>
+<li>Scope of inspection and rate limiting: <strong>Consider all requests</strong>.</li>
+<li>Action: <strong>Block</strong>.</li>
+<li>Click <strong>Add rule → Save</strong>. Priority order: keep <code>archadv-rate-limit</code> at the <strong>bottom</strong> (priority 4) — the managed rule groups should still run first so SQLi/CRS bans get specific labels.</li>
+</ul>
+<p><strong>Step 7b — trigger the rule from CloudShell.</strong> WAF rate-based rules group requests by source IP. CloudShell sessions in <code>us-east-1</code> egress from a NAT pool — sometimes 2 students in the same class share an outbound IP, which means their request rates aggregate. The 1-minute / 100-request window above is tuned to trip reliably even at single-user pace.</p>
+<pre class="bash"><code># Hammer the ALB with ~250 requests as fast as possible (parallel with xargs)
+ALB=$(aws elbv2 describe-load-balancers --names archadv-&lt;you&gt;-alb --query &#39;LoadBalancers[0].DNSName&#39; --output text)
+seq 1 250 | xargs -n1 -P20 -I{} curl -s -o /dev/null -w &quot;%{http_code}\n&quot; http://$ALB/ \
+  | sort | uniq -c</code></pre>
+<p>Success looks like output similar to:</p>
+<pre><code>     97 200
+    153 403</code></pre>
+<p>(The first ~100 in the 1-min window pass with 200, the rest hit the rate rule and return 403.)</p>
+<p>Failure modes:</p>
+<ul>
+<li>All 250 return <code>200</code>: the rate rule has not propagated yet. WAF rule changes can take 30–60 sec to be live globally. Wait 1 minute and re-run.</li>
+<li>Output is all <code>200</code> even after waiting: the rule was added at the wrong scope. Open <strong>archadv-&lt;you&gt;-waf → Rules → archadv-rate-limit → Edit</strong> and confirm Action = <strong>Block</strong> (not Count). The default for new rate rules in some console versions is Count.</li>
+<li>Curl is too slow to trip 100 req/min: increase parallelism with <code>-P40</code>.</li>
+</ul>
+<p><strong>Step 7c — confirm in CloudWatch.</strong></p>
+<ul>
+<li>Navigate: <strong>CloudWatch → Metrics → All metrics → AWS/WAFV2</strong> → <strong>Region, Rule, WebACL</strong>.</li>
+<li>Filter on <code>WebACL = archadv-&lt;you&gt;-waf</code> and <code>Rule = archadv-rate-limit</code>. Plot the <strong>BlockedRequests</strong> metric. Sum, 1-minute period.</li>
+<li>Success looks like: a spike of ~150 in the minute you ran the loop.</li>
+</ul>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
-<li><label><input type="checkbox" />ALB serves traffic from 2 ASG
-instances (round-robin)</label></li>
-<li><label><input type="checkbox" />SQLi-shape request returns
-403</label></li>
-<li><label><input type="checkbox" />WAF Sampled requests shows the BLOCK
-with matched rule</label></li>
-<li><label><input type="checkbox" />Rate-based rule blocks traffic above
-100/5min</label></li>
-<li><label><input type="checkbox" />CloudWatch
-<code>BlockedRequests</code> ticks up</label></li>
+<li><label><input type="checkbox" />Launch template <code>archadv-&lt;you&gt;-lt</code> exists with IMDSv2 = Required</label></li>
+<li><label><input type="checkbox" />ALB <code>archadv-&lt;you&gt;-alb</code> state: Active; SG accepts 80 from 0.0.0.0/0</label></li>
+<li><label><input type="checkbox" />EC2 SG accepts 80 from the ALB SG only (no 0.0.0.0/0)</label></li>
+<li><label><input type="checkbox" />ASG has exactly 2 InService instances in the target group, both healthy</label></li>
+<li><label><input type="checkbox" />Baseline curl returns 2 distinct instance IDs across 8 requests</label></li>
+<li><label><input type="checkbox" />SQLi-shape request returns HTTP 403 and shows BLOCK in WAF Sampled requests with rule group <code>AWSManagedRulesSQLiRuleSet</code> (or CRS)</label></li>
+<li><label><input type="checkbox" />Rate-based rule: 250-request parallel loop returns ~100 × 200 + ~150 × 403</label></li>
+<li><label><input type="checkbox" />CloudWatch metric <code>BlockedRequests</code> for the <code>archadv-rate-limit</code> rule shows the spike</label></li>
 </ul>
 <h2 id="cleanup">Cleanup</h2>
 <ol type="1">
-<li>WAF web ACL → disassociate ALB → delete web ACL.</li>
-<li>ASG → set desired/min to 0, then delete.</li>
-<li>Launch template → delete.</li>
-<li>ALB → delete; target group → delete.</li>
-<li>Security groups → delete.</li>
+<li>WAF: <strong>archadv-&lt;you&gt;-waf → Associated AWS resources → disassociate the ALB</strong>, then <strong>Delete web ACL</strong>.</li>
+<li>ASG: <strong>EC2 → Auto Scaling Groups → archadv-&lt;you&gt;-asg → Edit</strong> → set desired/min/max all to <code>0</code> → wait for 0 instances (~2 min) → back → <strong>Delete</strong>.</li>
+<li>Launch template: <strong>EC2 → Launch templates → archadv-&lt;you&gt;-lt → Actions → Delete template</strong>.</li>
+<li>ALB: <strong>EC2 → Load balancers → archadv-&lt;you&gt;-alb → Actions → Delete load balancer</strong>. Wait until gone, then delete target group <code>archadv-&lt;you&gt;-tg</code>.</li>
+<li>Security groups: delete <code>archadv-&lt;you&gt;-ec2-sg</code> first, then <code>archadv-&lt;you&gt;-alb-sg</code> (the EC2 SG references the ALB SG; if you delete the ALB SG first the EC2 SG delete will fail).</li>
+<li>IAM: leave <code>archadv-&lt;you&gt;-ssm-ec2-role</code> in place — it is reused in Lab 9.</li>
 </ol>
 <h2 id="stretch-goals">Stretch goals</h2>
 <ul>
