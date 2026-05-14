@@ -119,217 +119,270 @@
 <h1 id="lab-9--kms--secrets-manager">Lab 9 — KMS + Secrets Manager</h1>
 <h2 id="objective">Objective</h2>
 <p>Create a customer-managed KMS key, encrypt an S3 object with it, then
-store and rotate a database password in Secrets Manager. Practice the
-<strong>key policy as the source of truth</strong> mental model.</p>
+store and manually rotate a database password in Secrets Manager.
+Practice the <strong>key policy as the source of truth</strong> mental
+model.</p>
 <h2 id="time-budget-50-minutes">Time budget: 50 minutes</h2>
+<p>Throughout this lab, replace <code>&lt;you&gt;</code> with your
+assigned student slug (e.g., <code>mary-smith</code>). All work is in
+<strong>us-east-1</strong>.</p>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
-<li>Open CloudShell.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code> via the IAM Identity Center
+access portal. Confirm the role badge top-right reads
+<code>AWSAdministratorAccess @ Sandbox&lt;N&gt;</code>.</li>
+<li>Top-right region selector: <code>US East (N. Virginia) us-east-1</code>.</li>
+<li>Open <strong>CloudShell</strong> (icon in the top bar). Wait for the
+prompt.</li>
 </ol>
 <h2 id="part-a--customer-managed-kms-key-15-min">Part A —
 Customer-managed KMS key (15 min)</h2>
-<h3 id="1-create-the-key">1. Create the key</h3>
+<h3 id="1-create-the-cmk-5-min">1. Create the CMK (5 min)</h3>
 <ul>
-<li><strong>AWS KMS → Customer managed keys → Create key</strong></li>
-<li>Type: <strong>Symmetric</strong>, usage: <strong>Encrypt and
-decrypt</strong></li>
+<li>Navigate: <strong>Key Management Service (KMS) → Customer managed
+keys → Create key</strong>.</li>
+<li><strong>Step 1 — Configure key:</strong>
+<ul>
+<li>Key type: <strong>Symmetric</strong></li>
+<li>Key usage: <strong>Encrypt and decrypt</strong></li>
+<li>Leave Advanced options at defaults. <strong>Next</strong>.</li>
+</ul></li>
+<li><strong>Step 2 — Add labels:</strong>
+<ul>
 <li>Alias: <code>archadv-&lt;you&gt;-key</code></li>
 <li>Description: <code>archadv lab key</code></li>
-<li>Key administrators: your IAM IdC role (search for
-<code>AWSReservedSSO_AWSAdministratorAccess_</code>)</li>
-<li>Key users: same role</li>
-<li>Review the <strong>key policy</strong> that the wizard generated.
-Note the structure:
-<ul>
-<li><code>Enable IAM User Permissions</code> statement (lets your
-account use IAM policies to authorize access)</li>
-<li><code>Allow access for Key Administrators</code></li>
-<li><code>Allow use of the key</code></li>
-<li><code>Allow attachment of persistent resources</code></li>
+<li>Tags: add <code>Course = archadv</code> and
+<code>Owner = &lt;you&gt;</code>. <strong>Next</strong>.</li>
 </ul></li>
-<li>Finish.</li>
+<li><strong>Step 3 — Key administrators:</strong> tick the role that
+starts with <code>AWSReservedSSO_AWSAdministratorAccess_</code> (the
+IdC role you signed in with). Leave <strong>Allow key administrators to
+delete this key</strong> ticked. <strong>Next</strong>.</li>
+<li><strong>Step 4 — Define key usage permissions:</strong> tick the
+<em>same</em> <code>AWSReservedSSO_AWSAdministratorAccess_</code> role.
+<strong>Next</strong>.</li>
+<li><strong>Step 5 — Review:</strong> skim the auto-generated key
+policy. Note four statement Sids: <code>Enable IAM User Permissions</code>,
+<code>Allow access for Key Administrators</code>, <code>Allow use of
+the key</code>, <code>Allow attachment of persistent resources</code>.
+Click <strong>Finish</strong>.</li>
 </ul>
-<h3 id="2-encrypt-an-s3-object-with-this-key">2. Encrypt an S3 object
-with this key</h3>
+<p><strong>Validation:</strong> the new key shows in the table with
+status <code>Enabled</code> and your alias. If you see "You don't have
+permission," your IdC session expired — sign out and back in.</p>
+<h3 id="2-create-the-s3-bucket-and-default-encryption-3-min">2. Create
+the S3 bucket and default encryption (3 min)</h3>
 <ul>
-<li><strong>S3 → Create bucket</strong>:
-<code>archadv-&lt;you&gt;-secure</code>. Block public access.</li>
-<li><strong>Properties → Default encryption</strong> → Edit → SSE-KMS →
-choose your CMK (<code>archadv-&lt;you&gt;-key</code>). <strong>Set
-Bucket Key: Disable</strong> for this lab — Bucket Key changes the KMS
-encryption-context shape from object-ARN to bucket-ARN, which would
-interact awkwardly with Step 4. (In production you typically want Bucket
-Key enabled for cost; this is a lab convenience.)</li>
-<li>Create a sample file in CloudShell and upload:</li>
+<li>Navigate: <strong>S3 → Create bucket</strong>.</li>
+<li>Bucket name: <code>archadv-&lt;you&gt;-secure</code></li>
+<li>AWS Region: <strong>US East (N. Virginia) us-east-1</strong>.</li>
+<li>Object Ownership: <strong>ACLs disabled (recommended)</strong>
+(default — leave it).</li>
+<li>Block Public Access: <strong>Block <em>all</em> public access</strong>
+(default — leave it).</li>
+<li><strong>Default encryption:</strong>
+<ul>
+<li>Encryption type: <strong>Server-side encryption with AWS Key
+Management Service keys (SSE-KMS)</strong></li>
+<li>AWS KMS key: <strong>Choose from your AWS KMS keys</strong> → pick
+<code>alias/archadv-&lt;you&gt;-key</code></li>
+<li>Bucket Key: <strong>Enable</strong> (leave as default — this is the
+production setting and works fine for this lab).</li>
+</ul></li>
+<li>Click <strong>Create bucket</strong>.</li>
 </ul>
-<pre class="bash"><code>echo &quot;secret-payload-$(date)&quot; &gt; secret.txt
-aws s3 cp secret.txt s3://archadv-&lt;you&gt;-secure/</code></pre>
-<h3 id="3-validate-encryption-usage">3. Validate encryption usage</h3>
-<pre class="bash"><code>aws s3api head-object --bucket archadv-&lt;you&gt;-secure --key secret.txt
-# Look for &quot;ServerSideEncryption&quot;: &quot;aws:kms&quot; and &quot;SSEKMSKeyId&quot;: &quot;arn:...&quot;</code></pre>
-<p>In <strong>CloudTrail → Event history</strong>, find the
-corresponding <code>Decrypt</code> (when you re-read it) or
-<code>GenerateDataKey</code> (when you wrote it) call. Note: the call's
-<code>requestParameters.encryptionContext</code> ties the operation to
-the S3 object — that's the <strong>encryption context</strong> mechanism
-in action.</p>
-<h3 id="4-tighten-the-key-policy-5-min">4. Tighten the key policy (5
-min)</h3>
-<p>Add a statement that <strong>only allows decrypt when the call comes
-via S3</strong> (the <code>kms:ViaService</code> condition is more
-robust than encryption-context conditions, which break with S3 Bucket
-Key enabled):</p>
-<pre class="json"><code>{
-  &quot;Sid&quot;: &quot;DenyDecryptUnlessViaS3&quot;,
-  &quot;Effect&quot;: &quot;Deny&quot;,
-  &quot;Principal&quot;: &quot;*&quot;,
-  &quot;Action&quot;: &quot;kms:Decrypt&quot;,
-  &quot;Resource&quot;: &quot;*&quot;,
-  &quot;Condition&quot;: {
-    &quot;StringNotEquals&quot;: {
-      &quot;kms:ViaService&quot;: &quot;s3.us-east-1.amazonaws.com&quot;
-    }
-  }
+<h3 id="3-upload-an-encrypted-object-3-min">3. Upload an encrypted
+object (3 min)</h3>
+<p>In CloudShell:</p>
+<pre class="bash"><code>YOU=&lt;you&gt;    # e.g. mary-smith
+echo &quot;secret-payload-$(date +%s)&quot; &gt; /tmp/secret.txt
+aws s3 cp /tmp/secret.txt s3://archadv-$YOU-secure/
+aws s3api head-object --bucket archadv-$YOU-secure --key secret.txt \
+  --query &#39;{SSE:ServerSideEncryption,KeyId:SSEKMSKeyId,BucketKey:BucketKeyEnabled}&#39;</code></pre>
+<p><strong>Expected output:</strong></p>
+<pre><code>{
+    &quot;SSE&quot;: &quot;aws:kms&quot;,
+    &quot;KeyId&quot;: &quot;arn:aws:kms:us-east-1:...:key/...&quot;,
+    &quot;BucketKey&quot;: true
 }</code></pre>
-<p>This denies any direct <code>kms:Decrypt</code> call that doesn't
-come <em>via</em> S3 — so a direct <code>aws kms decrypt</code> from
-CloudShell fails, but reading the encrypted S3 object still works.</p>
-<p><strong>Important:</strong> this deny will also break Part B's
-Secrets Manager retrieval if you keep it on the same CMK. <strong>Remove
-this deny statement before starting Part B</strong>, or use a separate
-CMK for Secrets Manager.</p>
-<p>Test from CloudShell:</p>
-<pre class="bash"><code># Encrypt directly via KMS — works (encrypt isn&#39;t denied):
-aws kms encrypt --key-id alias/archadv-&lt;you&gt;-key --plaintext &quot;test&quot; \
-  --query CiphertextBlob --output text &gt; ct.b64
-
-# Decrypt directly via KMS — denied (kms:ViaService is not s3.*):
-aws kms decrypt --ciphertext-blob fileb://&lt;(base64 -d ct.b64)
-# Expected: AccessDenied
-
-# Decrypt via S3 — works (kms:ViaService matches):
-aws s3 cp s3://archadv-&lt;you&gt;-secure/secret.txt -</code></pre>
-<p>Once you've observed both outcomes, <strong>edit the key policy and
-remove this deny statement</strong> before continuing to Part B.</p>
-<h2 id="part-b--secrets-manager-15-min">Part B — Secrets Manager (15
+<p><strong>Failure modes:</strong></p>
+<ul>
+<li><code>SSE</code> is <code>AES256</code> → the default-encryption
+setting didn't save. Re-edit the bucket's <strong>Properties → Default
+encryption</strong>.</li>
+<li><code>NoSuchBucket</code> → typo in <code>$YOU</code>; bucket name
+is global and case-sensitive lowercase.</li>
+</ul>
+<h3 id="4-find-the-kms-call-in-cloudtrail-4-min">4. Find the KMS call in
+CloudTrail (4 min)</h3>
+<ul>
+<li>Navigate: <strong>CloudTrail → Event history</strong>.</li>
+<li>Lookup attribute: <strong>Event name</strong> → value
+<code>GenerateDataKey</code>. Time range: <strong>Last 15 minutes</strong>.</li>
+<li>Click into the most recent event. In the <strong>Event record</strong>
+JSON, locate:
+<ul>
+<li><code>requestParameters.keyId</code> → matches your CMK ARN</li>
+<li><code>requestParameters.encryptionContext.aws:s3:arn</code> →
+references your bucket (Bucket Key uses the bucket ARN here)</li>
+<li><code>userIdentity.sessionContext.sessionIssuer.userName</code> →
+the <code>AWSReservedSSO_AWSAdministratorAccess_</code> role</li>
+</ul></li>
+</ul>
+<p>This is the <strong>encryption context</strong> mechanism — S3 tells
+KMS "this data key is for this bucket," and KMS records that on every
+call.</p>
+<p><strong>If the event isn't there yet:</strong> CloudTrail Event
+history lags 1–5 min. Refresh after 60 sec.</p>
+<h2 id="part-b--secrets-manager-20-min">Part B — Secrets Manager (20
 min)</h2>
-<h3 id="1-create-the-secret">1. Create the secret</h3>
+<h3 id="1-create-the-secret-5-min">1. Create the secret (5 min)</h3>
 <ul>
-<li><strong>Secrets Manager → Store a new secret</strong></li>
-<li>Type: <strong>Other type of secret</strong></li>
-<li>Key/value:
+<li>Navigate: <strong>AWS Secrets Manager → Secrets → Store a new
+secret</strong>.</li>
+<li><strong>Step 1 — Choose secret type:</strong>
 <ul>
-<li><code>username</code> = <code>archadvuser</code></li>
-<li><code>password</code> = (auto-generate, 20 chars, exclude special
-chars)</li>
+<li>Secret type: <strong>Other type of secret</strong></li>
+<li>Key/value pairs (use the <strong>Plaintext</strong> tab if easier; the
+form below pastes there directly):</li>
+</ul>
+<pre><code>{&quot;username&quot;:&quot;archadvuser&quot;,&quot;password&quot;:&quot;CHANGE-ME-AT-STEP-3&quot;}</code></pre>
+<ul>
+<li>Encryption key: pick <code>alias/archadv-&lt;you&gt;-key</code>
+(your CMK from Part A).</li>
+<li><strong>Next</strong>.</li>
 </ul></li>
-<li>Encryption key: your CMK from Part A</li>
-<li>Name: <code>archadv-&lt;you&gt;-db-pass</code></li>
-<li>Configure rotation: <strong>Disable</strong> (we'll enable
-manually)</li>
-<li>Store.</li>
-</ul>
-<h3 id="2-read-the-secret">2. Read the secret</h3>
-<pre class="bash"><code>aws secretsmanager get-secret-value --secret-id archadv-&lt;you&gt;-db-pass --query SecretString --output text</code></pre>
-<p>This works because (a) your IAM IdC role allows
-<code>secretsmanager:GetSecretValue</code>, AND (b) the KMS key policy
-allows <code>kms:Decrypt</code> for your role on this encryption
-context.</p>
-<h3 id="3-enable-rotation-5-min">3. Enable rotation (5 min)</h3>
-<p>The one-click "deploy from SAR" flow inside Secrets Manager was
-removed years ago. You now deploy the rotation Lambda first, then attach
-it.</p>
-<p>a. <strong>Lambda → Applications → Create application → Browse
-serverless application repository.</strong> Search for
-<strong>SecretsManagerRotationTemplate</strong> (publisher: AWS). Deploy
-with placeholder parameters (any values are fine — the endpoint won't be
-reachable). Wait ~3 min for the CloudFormation stack to deploy.</p>
-<p>b. <strong>Secrets Manager → your secret → Rotation → Edit
-rotation:</strong></p>
+<li><strong>Step 2 — Configure secret:</strong>
 <ul>
-<li>Automatic rotation: <strong>Enabled</strong>, schedule: every 30
-days</li>
-<li>Rotation function: pick the Lambda you deployed in (a)</li>
-<li>Save.</li>
-</ul>
-<p>c. Click <strong>Rotate secret immediately</strong>. The Lambda will
-fail at the <code>setSecret</code> step (no MySQL to update — that's
-expected and fine). Observe:</p>
-<ul>
-<li>A new secret version with <code>AWSPENDING</code> staging label
-appears</li>
-<li>Lambda execution logs in CloudWatch show the rotation attempt and
-failure point</li>
-</ul>
-<h3 id="4-manually-rotate-the-secret-3-min">4. Manually rotate the
-secret (3 min)</h3>
-<ul>
-<li>Secret → <strong>Retrieve secret value → Edit</strong></li>
-<li>Change the password to a new value</li>
-<li>Save.</li>
-<li>Re-run <code>aws secretsmanager get-secret-value</code>. New value
-appears.</li>
-<li>Inspect: under <code>Versions</code> you can see both
-<code>AWSCURRENT</code> (new) and <code>AWSPREVIOUS</code> (old) —
-that's the staging label rotation.</li>
-</ul>
-<h2 id="part-c--cross-account-access-concept-5-min-instructor-led">Part
-C — Cross-account access concept (5 min, instructor-led)</h2>
-<p>Discussion only — students will not implement.</p>
-<p>In a real shared Org:</p>
-<ul>
-<li>A workload in <code>Prod</code> account needs the secret stored in
-<code>Security</code> account.</li>
-<li>The KMS key in <code>Security</code> must:
-<ul>
-<li>Allow the <strong>Prod role</strong> to call
-<code>kms:Decrypt</code> (resource-based key policy)</li>
-<li>Have its grants visible from the Prod side (via IAM policy on the
-Prod role)</li>
+<li>Secret name: <code>archadv-&lt;you&gt;-db-pass</code></li>
+<li>Description: <code>archadv lab secret</code></li>
+<li>Tags: <code>Course = archadv</code>, <code>Owner = &lt;you&gt;</code></li>
+<li><strong>Next</strong>.</li>
 </ul></li>
-<li>The Secrets Manager <strong>resource policy</strong> must allow the
-Prod role to call <code>GetSecretValue</code>.</li>
-<li>This is two policies — at the secret AND at the key. Forgetting
-either side is the most common mistake.</li>
+<li><strong>Step 3 — Configure rotation:</strong> leave
+<strong>Automatic rotation</strong> toggled <strong>off</strong>.
+<strong>Next</strong>.</li>
+<li><strong>Step 4 — Review:</strong> <strong>Store</strong>.</li>
+</ul>
+<h3 id="2-read-the-secret-via-cli-3-min">2. Read the secret via CLI (3 min)</h3>
+<p>In CloudShell:</p>
+<pre class="bash"><code>aws secretsmanager get-secret-value \
+  --secret-id archadv-$YOU-db-pass \
+  --query SecretString --output text</code></pre>
+<p><strong>Expected:</strong> a JSON string containing
+<code>"username":"archadvuser"</code> and
+<code>"password":"CHANGE-ME-AT-STEP-3"</code>.</p>
+<p>This succeeded because <em>both</em> policies allowed it: your IdC
+role has <code>secretsmanager:GetSecretValue</code> (IAM), AND the CMK's
+key policy allows <code>kms:Decrypt</code> for the same role. Remove
+either and this call fails — that's the "key policy as source of truth"
+takeaway.</p>
+<h3 id="3-rotate-manually-staging-labels-7-min">3. Rotate manually
+(staging labels) (7 min)</h3>
+<p>Manual rotation is what students should learn — it's the
+<em>mechanism</em>. Automatic rotation via Lambda is production hygiene
+that lives in the rotation-Lambda hands-on lab (not this one).</p>
+<ul>
+<li>Navigate: <strong>Secrets Manager → archadv-&lt;you&gt;-db-pass →
+Overview tab → Secret value → Retrieve secret value → Edit</strong>.</li>
+<li>In the <strong>Key/value</strong> editor change the
+<code>password</code> value to <code>ROTATED-VALUE-1</code>.</li>
+<li>Click <strong>Save</strong>.</li>
+<li>Re-run the CLI from Step 2. <code>password</code> now reads
+<code>ROTATED-VALUE-1</code>.</li>
+<li>Switch to the <strong>Versions</strong> tab on the secret. You see
+two rows:
+<ul>
+<li>New version → staging label <code>AWSCURRENT</code></li>
+<li>Old version → staging label <code>AWSPREVIOUS</code></li>
+</ul></li>
+</ul>
+<p>That two-version rollback window is the durable concept — same
+mechanic that automatic rotation uses, just done by hand here.</p>
+<h3 id="4-rollback-3-min">4. Rollback (3 min)</h3>
+<p>Real rotations fail. Practice rolling back to
+<code>AWSPREVIOUS</code> via CLI:</p>
+<pre class="bash"><code># Get the two version IDs
+aws secretsmanager list-secret-version-ids \
+  --secret-id archadv-$YOU-db-pass \
+  --query &#39;Versions[].{Id:VersionId,Stages:VersionStages}&#39;
+
+# Capture the previous version ID into a variable
+PREV=$(aws secretsmanager list-secret-version-ids \
+  --secret-id archadv-$YOU-db-pass \
+  --query &#39;Versions[?contains(VersionStages, `AWSPREVIOUS`)].VersionId | [0]&#39; \
+  --output text)
+
+# Get the new version ID
+CURR=$(aws secretsmanager list-secret-version-ids \
+  --secret-id archadv-$YOU-db-pass \
+  --query &#39;Versions[?contains(VersionStages, `AWSCURRENT`)].VersionId | [0]&#39; \
+  --output text)
+
+# Swap the AWSCURRENT label back to the older version
+aws secretsmanager update-secret-version-stage \
+  --secret-id archadv-$YOU-db-pass \
+  --version-stage AWSCURRENT \
+  --move-to-version-id $PREV \
+  --remove-from-version-id $CURR
+
+# Confirm
+aws secretsmanager get-secret-value --secret-id archadv-$YOU-db-pass \
+  --query SecretString --output text</code></pre>
+<p><strong>Expected:</strong> <code>password</code> is back to
+<code>CHANGE-ME-AT-STEP-3</code>. Staging label
+<code>AWSCURRENT</code> moved; no new secret version was created.</p>
+<h2 id="part-c--key-policy-vs-iam-policy-discussion-5-min-instructor-led">Part
+C — Key policy vs IAM policy (5 min, instructor-led discussion)</h2>
+<p>The instructor walks the room through one mental model:</p>
+<ul>
+<li><strong>IAM policy</strong> on a principal says "this role can call
+<code>kms:Decrypt</code> on key X."</li>
+<li><strong>Key policy</strong> on the CMK says "key X allows
+<code>kms:Decrypt</code> from this principal."</li>
+<li><strong>Both must say yes.</strong> If only one says yes, the call
+fails. That's why the saying goes: <em>the key policy is the source of
+truth</em> — it's the one most teams forget to check.</li>
+<li>Cross-account: the key policy in the key's home account must name
+the foreign-account principal explicitly. IAM policy on the foreign side
+is not enough.</li>
 </ul>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
-<li><label><input type="checkbox" />CMK created with alias and
-reasonable key policy</label></li>
-<li><label><input type="checkbox" />S3 object encrypted via CMK; HEAD
-shows <code>aws:kms</code> SSE</label></li>
-<li><label><input type="checkbox" />You located the
-<code>GenerateDataKey</code> event in CloudTrail</label></li>
-<li><label><input type="checkbox" />Tightened key policy denies non-S3
-decrypts</label></li>
-<li><label><input type="checkbox" />Secrets Manager secret retrievable
-via CLI</label></li>
-<li><label><input type="checkbox" />Secret rotation triggers a new
-version (even if rotation Lambda fails)</label></li>
+<li><label><input type="checkbox" />CMK <code>alias/archadv-&lt;you&gt;-key</code>
+exists, status <code>Enabled</code></label></li>
+<li><label><input type="checkbox" /><code>head-object</code> shows
+<code>SSE: aws:kms</code> and <code>KeyId</code> matching your CMK
+ARN</label></li>
+<li><label><input type="checkbox" />A <code>GenerateDataKey</code> event
+appears in CloudTrail with your bucket in the encryption context</label></li>
+<li><label><input type="checkbox" /><code>get-secret-value</code> returns
+the secret JSON containing <code>archadvuser</code></label></li>
+<li><label><input type="checkbox" />After editing the secret, the
+Versions tab shows <code>AWSCURRENT</code> + <code>AWSPREVIOUS</code></label></li>
+<li><label><input type="checkbox" />After running the rollback CLI,
+<code>get-secret-value</code> shows the original password value</label></li>
 </ul>
 <h2 id="cleanup">Cleanup</h2>
 <ol type="1">
-<li>Delete the secret (use <code>--force-delete-without-recovery</code>
-only if you understand the risk).</li>
-<li>Delete the rotation Lambda (CloudFormation stack created by the
-SAR).</li>
-<li>Schedule the KMS key for deletion (7-day waiting period — that's by
-design).</li>
-<li>Empty and delete the S3 bucket.</li>
+<li><strong>Secrets Manager → archadv-&lt;you&gt;-db-pass → Actions →
+Delete secret</strong> → set waiting period to <strong>7 days</strong>
+(minimum). The secret is scheduled, not immediately gone.</li>
+<li><strong>S3 → archadv-&lt;you&gt;-secure → Empty</strong>, then
+<strong>Delete</strong>.</li>
+<li><strong>KMS → Customer managed keys → archadv-&lt;you&gt;-key →
+Key actions → Schedule key deletion</strong> → waiting period
+<strong>7 days</strong>. The 7-day minimum is by design — keys can be
+restored within that window.</li>
 </ol>
-<h2 id="stretch-goals">Stretch goals</h2>
+<h2 id="stretch-goals">Stretch goals (only if you finish early)</h2>
 <ul>
-<li>Add a <strong>CloudHSM cluster</strong> to the discussion. When
-would you use HSM-backed keys vs KMS? (Answer: regulated workloads
-requiring FIPS 140-2 Level 3, or "single-tenant" key custody.)</li>
-<li>Configure <strong>automatic key rotation</strong> on the CMK
-(annual, AWS-managed). Note: AWS rotates the <em>key material</em> but
-the key ARN stays the same — applications never change.</li>
-<li>Set up <strong>Secrets Manager replica secrets</strong> in another
-region for DR. Walk through what fails over if the primary region is
-down.</li>
+<li>Enable <strong>automatic annual key rotation</strong> on the CMK
+(Key actions → Enable key rotation). AWS rotates the key material; the
+ARN and alias stay the same.</li>
+<li>Read your CMK's policy JSON in <strong>Key policy → Switch to policy
+view</strong>. Identify which of the four statements would be the
+single point of failure if removed.</li>
 </ul>
   <div class="nav-footer">
     <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
