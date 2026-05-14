@@ -263,6 +263,21 @@ git push -u origin main</code></pre>
 <li><strong>Logs</strong> section: CloudWatch Logs <strong>checked</strong>. Group name: leave blank. Stream name: leave blank.</li>
 <li>Leave every other field at its default. Click <strong>Create build project</strong>.</li>
 </ul>
+<p><strong>Required: attach ECR permissions to the new service role.</strong>
+The wizard creates a role with CloudWatch Logs + S3 access, but it does
+<strong>NOT</strong> include ECR permissions, which the buildspec needs
+to <code>docker push</code>. Do this immediately after creating the
+project:</p>
+<ol>
+<li>Open a new tab: <strong>IAM → Roles</strong>.</li>
+<li>Search for <code>codebuild-archadv-&lt;you&gt;-build-service-role</code> and open it.</li>
+<li><strong>Permissions</strong> tab → <strong>Add permissions</strong>
+→ <strong>Attach policies</strong>.</li>
+<li>Search <code>AmazonEC2ContainerRegistryPowerUser</code>, check it,
+click <strong>Add permissions</strong>.</li>
+</ol>
+<p>Without this, the first build fails with:
+<code>User ... is not authorized to perform: ecr:GetAuthorizationToken</code>.</p>
 <p><strong>Attach ECR push permission to the CodeBuild service role.</strong> The default role can only write CloudWatch Logs — it cannot push to ECR.</p>
 <ul>
 <li>Navigate: <strong>IAM → Roles</strong> → search <code>codebuild-archadv-&lt;you&gt;-build-service-role</code> → click into the role.</li>
