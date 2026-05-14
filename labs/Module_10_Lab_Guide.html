@@ -120,33 +120,37 @@
 data lake (S3 + Glue + Athena)</h1>
 <h2 id="objective">Objective</h2>
 <p>Stand up a minimal data lake by hand: drop CSV files into S3, run a
-Glue Crawler to infer the schema, then query the data with Athena. The
-point is the <strong>pattern</strong> — separating storage (S3) from
-catalog (Glue) from compute (Athena) — and seeing how cheaply you can
-begin without a database.</p>
+Glue Crawler to infer the schema, query with Athena. The point is the
+<strong>pattern</strong> — separating storage (S3) from catalog (Glue)
+from compute (Athena).</p>
 <h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
-<p>This is the only hands-on slot in Module 10. The first 15 minutes of
-the module are slide-driven (Aurora vs DynamoDB vs Redshift vs
-S3-data-lake decision lens); the lab proves the data-lake half of that
-lens by having you build one.</p>
+<p>Throughout this lab, replace <code>&lt;you&gt;</code> with your
+student slug. <strong>If your slug contains a hyphen</strong> (e.g.,
+<code>mary-smith</code>), use the <strong>underscore</strong> form
+(<code>mary_smith</code>) <em>only</em> where this guide explicitly
+calls for <code>&lt;you_underscore&gt;</code> — Glue databases reject
+hyphens.</p>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
-<li>Open CloudShell.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code> via IAM Identity Center.
+Confirm role badge top-right reads
+<code>AWSAdministratorAccess @ Sandbox&lt;N&gt;</code>.</li>
+<li>Region: <strong>US East (N. Virginia) us-east-1</strong>.</li>
+<li>Open <strong>CloudShell</strong>.</li>
 </ol>
 <h2 id="steps">Steps</h2>
-<h3 id="1-create-the-data-lake-bucket-and-seed-data-5-min">1. Create the
-data lake bucket and seed data (5 min)</h3>
-<p>In CloudShell:</p>
-<pre class="bash"><code>LEARNER=&lt;your-name&gt;
-LAKE=archadv-$LEARNER-datalake
+<h3 id="1-create-bucket-and-seed-3-csvs-4-min">1. Create bucket and seed
+three CSVs (4 min)</h3>
+<p>In CloudShell, set your slug then run the block:</p>
+<pre class="bash"><code>YOU=&lt;you&gt;                       # e.g. mary-smith (hyphen ok here)
+YOU_DB=$(echo $YOU | tr &#39;-&#39; &#39;_&#39;)   # underscored form for Glue DB
+LAKE=archadv-$YOU-datalake
 
-aws s3 mb s3://$LAKE
+aws s3 mb s3://$LAKE --region us-east-1
 aws s3api put-public-access-block --bucket $LAKE \
   --public-access-block-configuration &quot;BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true&quot;
 
-cat &gt; /tmp/q1.csv &lt;&lt;&#39;EOF&#39;
+cat &gt; /tmp/sales1.csv &lt;&lt;&#39;EOF&#39;
 order_id,region,product,quantity,revenue
 1001,us-east,widget-a,3,29.97
 1002,us-east,widget-b,1,49.99
@@ -155,7 +159,7 @@ order_id,region,product,quantity,revenue
 1005,ap-south,widget-b,4,199.96
 EOF
 
-cat &gt; /tmp/q2.csv &lt;&lt;&#39;EOF&#39;
+cat &gt; /tmp/sales2.csv &lt;&lt;&#39;EOF&#39;
 order_id,region,product,quantity,revenue
 2001,us-east,widget-a,7,69.93
 2002,us-west,widget-c,3,119.97
@@ -164,132 +168,201 @@ order_id,region,product,quantity,revenue
 2005,ap-south,widget-c,1,39.99
 EOF
 
-aws s3 cp /tmp/q1.csv s3://$LAKE/sales/year=2024/q1.csv
-aws s3 cp /tmp/q2.csv s3://$LAKE/sales/year=2024/q2.csv</code></pre>
-<h3 id="2-create-the-glue-catalog-database-1-min">2. Create the Glue
-catalog database (1 min)</h3>
+# Both files go to the SAME unpartitioned prefix s3://$LAKE/sales/
+aws s3 cp /tmp/sales1.csv s3://$LAKE/sales/sales1.csv
+aws s3 cp /tmp/sales2.csv s3://$LAKE/sales/sales2.csv
+aws s3 ls s3://$LAKE/sales/</code></pre>
+<p><strong>Expected:</strong> <code>aws s3 ls</code> lists exactly two
+files. <strong>Failure mode:</strong>
+<code>BucketAlreadyOwnedByYou</code> or
+<code>BucketAlreadyExists</code> — pick a different slug or re-use the
+existing bucket name.</p>
+<h3 id="2-create-glue-database-1-min">2. Create the Glue database (1
+min)</h3>
 <ul>
-<li><strong>AWS Glue → Data Catalog → Databases → Add
-database</strong></li>
-<li>Name: <code>archadv_&lt;your-name&gt;_db</code> (lowercase
-alphanumeric + underscores only — <strong>no hyphens</strong>, even if
-your assigned name has one. Replace <code>mary-smith</code> with
-<code>mary_smith</code> here.)</li>
-<li>Add.</li>
+<li>Navigate: <strong>AWS Glue → Data Catalog → Databases → Add
+database</strong>.</li>
+<li>Name: <code>archadv_&lt;you_underscore&gt;_db</code> (e.g.,
+<code>archadv_mary_smith_db</code>). <strong>No hyphens.</strong> Glue
+silently rejects them with an obscure error.</li>
+<li>Leave Location and Description empty. Click <strong>Create
+database</strong>.</li>
 </ul>
-<h3 id="3-create-the-iam-role-for-glue-2-min">3. Create the IAM role for
-Glue (2 min)</h3>
+<h3 id="3-create-glue-iam-role-3-min">3. Create the Glue IAM role (3
+min)</h3>
 <ul>
-<li><strong>IAM → Roles → Create role</strong></li>
-<li>Trusted entity: AWS service → Glue</li>
-<li>Permissions: attach <code>AWSGlueServiceRole</code> and create an
-inline policy giving <code>s3:GetObject</code>,
-<code>s3:ListBucket</code> on
-<code>arn:aws:s3:::archadv-&lt;you&gt;-datalake</code> and
-<code>/*</code>.</li>
-<li>Name: <code>archadv-&lt;you&gt;-glue-role</code>. Create.</li>
+<li>Navigate: <strong>IAM → Roles → Create role</strong>.</li>
+<li><strong>Trusted entity type:</strong> AWS service. <strong>Service:</strong>
+Glue. <strong>Next</strong>.</li>
+<li><strong>Permissions policies:</strong> tick
+<code>AWSGlueServiceRole</code>. <strong>Next</strong>.</li>
+<li><strong>Role name:</strong> <code>archadv-&lt;you&gt;-glue-role</code>.
+<strong>Create role</strong>.</li>
+<li>Open the role you just made → <strong>Permissions → Add permissions
+→ Create inline policy → JSON</strong>, paste:</li>
 </ul>
-<h3 id="4-create-and-run-the-crawler-5-min">4. Create and run the
-crawler (5 min)</h3>
+<pre class="json"><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [&quot;s3:GetObject&quot;, &quot;s3:ListBucket&quot;],
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::archadv-&lt;you&gt;-datalake&quot;,
+        &quot;arn:aws:s3:::archadv-&lt;you&gt;-datalake/*&quot;
+      ]
+    }
+  ]
+}</code></pre>
 <ul>
-<li><strong>Glue → Crawlers → Create crawler</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-sales-crawler</code></li>
-<li>Source: S3 path
-<code>s3://archadv-&lt;you&gt;-datalake/sales/</code></li>
-<li>IAM role: <code>archadv-&lt;you&gt;-glue-role</code></li>
-<li>Output database: <code>archadv_&lt;your-name&gt;_db</code></li>
-<li>Schedule: on demand</li>
-<li>Create.</li>
-<li><strong>Run crawler</strong>. Wait ~60 sec until
-<code>Ready</code>.</li>
+<li>Replace <code>&lt;you&gt;</code> in both ARNs with your slug. Policy
+name: <code>archadv-s3-read</code>. <strong>Create policy</strong>.</li>
 </ul>
-<h3 id="5-verify-the-catalog-2-min">5. Verify the catalog (2 min)</h3>
+<h3 id="4-create-and-run-the-crawler-6-min">4. Create and run the
+crawler (6 min)</h3>
 <ul>
-<li><strong>Glue → Data Catalog → Databases → archadv_<your-name>_db →
-Tables</strong>.</li>
-<li>Open the <code>sales</code> table. Verify:
+<li>Navigate: <strong>AWS Glue → Crawlers → Create crawler</strong>.</li>
+<li><strong>Step 1 — Set crawler properties:</strong> name
+<code>archadv-&lt;you&gt;-sales-crawler</code>. <strong>Next</strong>.</li>
+<li><strong>Step 2 — Choose data sources:</strong>
 <ul>
-<li>Columns: <code>order_id</code>, <code>region</code>,
-<code>product</code>, <code>quantity</code>, <code>revenue</code></li>
-<li>Partition key: <code>year</code></li>
+<li>"Is your data already mapped to Glue tables?" → <strong>Not yet</strong></li>
+<li><strong>Add a data source → S3</strong></li>
+<li>S3 path: <strong>Browse S3</strong> → drill into
+<code>archadv-&lt;you&gt;-datalake/sales/</code>. (Trailing slash
+matters — point at the <em>prefix</em>, not the bucket.)</li>
+<li>Subsequent crawler runs: <strong>Crawl all sub-folders</strong>
+(default).</li>
+<li><strong>Add an S3 data source</strong>. <strong>Next</strong>.</li>
 </ul></li>
+<li><strong>Step 3 — Configure security settings:</strong> existing IAM
+role <code>archadv-&lt;you&gt;-glue-role</code>. <strong>Next</strong>.</li>
+<li><strong>Step 4 — Set output and scheduling:</strong>
+<ul>
+<li>Target database: <code>archadv_&lt;you_underscore&gt;_db</code></li>
+<li>Crawler schedule: <strong>On demand</strong></li>
+<li><strong>Next</strong>.</li>
+</ul></li>
+<li><strong>Step 5 — Review and create</strong>.</li>
+<li>Back on the crawler list, tick your crawler → <strong>Run</strong>.
+Wait ~60–90 sec until status reads <code>Ready</code> and the
+<strong>Last run</strong> column shows <strong>Succeeded</strong>.</li>
+</ul>
+<p><strong>Failure modes:</strong></p>
+<ul>
+<li>Status <code>Failed</code>, log says <code>AccessDenied</code> →
+the inline S3 policy didn't save or has the wrong bucket name. Re-check
+Step 3.</li>
+<li>Status <code>Ready</code> but <strong>Tables created: 0</strong> →
+S3 path was the bucket root, not the <code>sales/</code> prefix. Edit
+the crawler and re-run.</li>
+</ul>
+<h3 id="5-verify-the-catalog-1-min">5. Verify the catalog (1 min)</h3>
+<ul>
+<li>Navigate: <strong>AWS Glue → Data Catalog → Databases →
+archadv_&lt;you_underscore&gt;_db → Tables in archadv_…_db</strong>.</li>
+<li>You should see one table named <code>sales</code>.</li>
+<li>Open it. Confirm columns: <code>order_id</code>,
+<code>region</code>, <code>product</code>, <code>quantity</code>,
+<code>revenue</code>. There should be <strong>no partition keys</strong>
+(by design — we flattened on purpose).</li>
 </ul>
 <h3 id="6-query-with-athena-10-min">6. Query with Athena (10 min)</h3>
 <ul>
-<li><strong>Athena → Query editor</strong>.</li>
-<li>First time only: <strong>Settings → Manage</strong> → under
-<strong>Query result configuration</strong>, choose <strong>Customer
-managed</strong> and set the location to
-<code>s3://archadv-&lt;you&gt;-datalake/athena-results/</code>. (The
-newer "Athena managed" option puts results in an Athena-owned bucket you
-can't easily inspect — skip it for this lab.)</li>
-<li>Database selector: <code>archadv_&lt;your-name&gt;_db</code>.</li>
-<li>Query:</li>
+<li>Navigate: <strong>Athena → Query editor</strong>.</li>
+<li><strong>First time only — set the results location.</strong> If you
+see a yellow banner "Before you run your first query, you need to set
+up a query result location in Amazon S3":
+<ul>
+<li>Click <strong>Edit settings</strong> (or
+<strong>Settings → Manage</strong>).</li>
+<li><strong>Location of query result:</strong>
+<code>s3://archadv-&lt;you&gt;-datalake/athena-results/</code></li>
+<li>Encryption: leave off. <strong>Save</strong>.</li>
+<li>Return to <strong>Editor</strong>.</li>
+</ul></li>
+<li>Left panel: <strong>Data source</strong> =
+<code>AwsDataCatalog</code>; <strong>Database</strong> =
+<code>archadv_&lt;you_underscore&gt;_db</code>; the <code>sales</code>
+table should appear below.</li>
+<li>Paste into the query window and click <strong>Run</strong>:</li>
 </ul>
 <pre class="sql"><code>SELECT region, SUM(revenue) AS total_revenue
 FROM sales
-WHERE year = &#39;2024&#39;
 GROUP BY region
 ORDER BY total_revenue DESC;</code></pre>
-<p>You should get one row per region. Note <strong>Data scanned</strong>
-in the run details — that's what Athena charges on (per byte
-scanned).</p>
-<h3 id="7-drop-a-third-file-and-re-query-3-min">7. Drop a third file and
+<p><strong>Expected:</strong> four rows
+(<code>ap-south</code>, <code>us-east</code>, <code>us-west</code>,
+<code>eu-west</code>). Note the <strong>Data scanned</strong> figure
+under the run — single-digit KB. That's the Athena pricing dimension.</p>
+<p><strong>Failure modes:</strong></p>
+<ul>
+<li><code>Table not found: sales</code> → wrong database in the selector
+or the crawler didn't create the table. Go back to Step 5.</li>
+<li>Query fails with <code>The S3 location provided to save your query
+results is invalid</code> → re-do the first-time settings.</li>
+</ul>
+<h3 id="7-drop-a-third-csv-and-re-query-3-min">7. Drop a third CSV and
 re-query (3 min)</h3>
-<pre class="bash"><code>cat &gt; /tmp/q3.csv &lt;&lt;&#39;EOF&#39;
+<p>In CloudShell:</p>
+<pre class="bash"><code>cat &gt; /tmp/sales3.csv &lt;&lt;&#39;EOF&#39;
 order_id,region,product,quantity,revenue
 3001,us-east,widget-d,10,499.90
 3002,ap-south,widget-d,20,999.80
 EOF
 
-aws s3 cp /tmp/q3.csv s3://$LAKE/sales/year=2024/q3.csv</code></pre>
-<p>Re-run the crawler. Re-run the query. The totals change — without
-changing the table or schema. <strong>That's the data-lake
-property.</strong></p>
+aws s3 cp /tmp/sales3.csv s3://$LAKE/sales/sales3.csv</code></pre>
+<p>You do <strong>not</strong> need to re-run the crawler — the schema
+hasn't changed and Athena reads every object under
+<code>s3://$LAKE/sales/</code> on each query. Re-run the same Athena
+query: totals are higher, especially <code>ap-south</code> and
+<code>us-east</code>. <strong>That's the data-lake property</strong> —
+add files, schema unchanged, queries see them.</p>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
-<li><label><input type="checkbox" />Bucket exists with public-access
-fully blocked</label></li>
-<li><label><input type="checkbox" />Three CSVs are under
-<code>sales/year=2024/</code></label></li>
-<li><label><input type="checkbox" />Glue Crawler ran successfully
-(status <code>Ready</code>, no errors)</label></li>
-<li><label><input type="checkbox" />Catalog shows the <code>sales</code>
-table with correct columns and partition key</label></li>
-<li><label><input type="checkbox" />Athena query returns aggregated
-rows</label></li>
-<li><label><input type="checkbox" />After dropping a new CSV and
-re-running the crawler, the query reflects new data</label></li>
-<li><label><input type="checkbox" /><code>Data scanned</code> per query
-is single-digit KB on this dataset</label></li>
+<li><label><input type="checkbox" />Bucket
+<code>archadv-&lt;you&gt;-datalake</code> exists with all four
+public-access blocks set</label></li>
+<li><label><input type="checkbox" />Three CSV files live under
+<code>s3://archadv-&lt;you&gt;-datalake/sales/</code> (no partition
+prefix)</label></li>
+<li><label><input type="checkbox" />Crawler ran, Last run =
+<code>Succeeded</code>, Tables created = <code>1</code></label></li>
+<li><label><input type="checkbox" />Glue table <code>sales</code> shows
+the 5 columns and no partition keys</label></li>
+<li><label><input type="checkbox" />Athena query returns 4 rows
+(<code>us-east</code> total &gt; $600 once sales3 is included)</label></li>
+<li><label><input type="checkbox" />Data scanned per query is &lt; 10
+KB</label></li>
 </ul>
 <h2 id="why-this-matters">Why this matters</h2>
-<p>You did not provision a database. You did not load data through an
-ETL job. You dropped files into S3, pointed a catalog at them, and
-queried with SQL. That is the data-lake pattern — and it scales from
-these three CSV files to petabytes.</p>
+<p>You did not provision a database. You did not load through ETL. You
+dropped files into S3, pointed a catalog at them, and queried with SQL.
+That is the data-lake pattern — scales from these CSVs to petabytes.</p>
 <h2 id="cleanup">Cleanup</h2>
-<pre class="bash"><code>aws s3 rm s3://archadv-&lt;you&gt;-datalake/ --recursive
-aws s3 rb s3://archadv-&lt;you&gt;-datalake</code></pre>
-<p>Then in console:</p>
+<ol type="1">
+<li>In CloudShell:</li>
+</ol>
+<pre class="bash"><code>aws s3 rm s3://archadv-$YOU-datalake/ --recursive
+aws s3 rb s3://archadv-$YOU-datalake</code></pre>
+<ol start="2" type="1">
+<li><strong>Glue → Crawlers</strong> → tick your crawler →
+<strong>Delete</strong>.</li>
+<li><strong>Glue → Databases → archadv_…_db → Action → Delete database</strong>
+(this also drops the <code>sales</code> table).</li>
+<li><strong>IAM → Roles → archadv-&lt;you&gt;-glue-role → Delete</strong>.</li>
+</ol>
+<h2 id="stretch-goals">Stretch goals (only if you finish early)</h2>
 <ul>
-<li>Delete the Glue table, then the Glue database, then the
-crawler.</li>
-<li>Delete the IAM role.</li>
+<li>Convert the data to Parquet with a CTAS:</li>
 </ul>
-<h2 id="stretch-goals">Stretch goals</h2>
-<ul>
-<li>Add a <code>year=2023/</code> partition with a third CSV. Run the
-crawler. Confirm Athena treats it as a separate partition and that
-<code>WHERE year = '2024'</code> skips the 2023 file (partition
-pruning).</li>
-<li>Convert the data to Parquet using a CTAS query:
-<code>CREATE TABLE sales_parquet WITH (format = 'PARQUET', external_location = 's3://archadv-&lt;you&gt;-datalake/sales-parquet/') AS SELECT * FROM sales;</code>.
-Re-query and compare <code>Data scanned</code> — Parquet typically scans
-5–20× less.</li>
-<li>Wire QuickSight to the Athena workgroup and build a
-region-by-revenue chart.</li>
-</ul>
+<pre class="sql"><code>CREATE TABLE sales_parquet
+WITH (format = &#39;PARQUET&#39;,
+      external_location = &#39;s3://archadv-&lt;you&gt;-datalake/sales-parquet/&#39;)
+AS SELECT * FROM sales;</code></pre>
+<p>Re-run the GROUP BY against <code>sales_parquet</code>. Compare
+<strong>Data scanned</strong>. Parquet typically scans 5–20× less on
+this access pattern.</p>
   <div class="nav-footer">
     <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
   </div>
