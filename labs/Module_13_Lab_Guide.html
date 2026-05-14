@@ -119,157 +119,229 @@
 <h1
 id="lab-13--dms-console-build-replication-instance--endpoints--task">Lab
 13 — DMS console build (replication instance + endpoints + task)</h1>
+<blockquote>
+<p><strong>Cost warning — read first.</strong> The replication instance
+(<code>dms.t3.small</code>) costs ~<strong>$0.07/hr</strong> while it
+exists, even before any task runs. <strong>You must delete the
+replication instance at the end of class</strong> — see Cleanup.
+Forgotten DMS instances are the #1 lab cost overrun.</p>
+</blockquote>
 <h2 id="objective">Objective</h2>
 <p>Build the AWS Database Migration Service (DMS) infrastructure for a
-homogeneous MySQL → S3 migration. Provision the replication instance,
-define source and target endpoints, and create the migration task.
-<strong>Don't actually start the task</strong> — there's no real source
-database to migrate from. The point is to experience the DMS wizards and
-understand what each piece is for; the actual data movement is exercise
-theatre at this scale and time budget.</p>
-<h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
-<p>This replaces the prior paper exercise. The 7 Rs design-thinking
-still happens — the discussion at the end (10 min) uses the same
-portfolio cards and asks "which strategy fits this workload, and what
-AWS service implements it?".</p>
+homogeneous MySQL → S3 migration: replication instance, source +
+target endpoints, migration task. <strong>You will not start the task</strong>
+— there's no real source database. The point is to experience the DMS
+wizards and understand what each piece is for.</p>
+<h2 id="time-budget-30-minutes-build--10-min-discussion">Time budget: 30
+minutes build + 10 min discussion</h2>
+<p>Throughout, replace <code>&lt;you&gt;</code> with your slug. Region:
+<strong>us-east-1</strong>. We'll use the <strong>Lab 1 VPC</strong>
+(still up from Day 1).</p>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
-<li>You need an existing VPC — reuse Lab 1's, or use the default
-VPC.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Confirm role badge
+top-right reads <code>AWSAdministratorAccess @ Sandbox&lt;N&gt;</code>.</li>
+<li>Region: <strong>US East (N. Virginia) us-east-1</strong>.</li>
+<li>Open <strong>CloudShell</strong>.</li>
+<li><strong>Identify the Lab 1 VPC.</strong> Navigate <strong>VPC →
+Your VPCs</strong>; note the VPC ID with Name tag
+<code>archadv-&lt;you&gt;-vpc</code>. Note both
+<strong>public</strong> subnet IDs
+(<code>archadv-&lt;you&gt;-public-a</code> and
+<code>archadv-&lt;you&gt;-public-c</code>) — DMS needs ≥2 subnets in
+≥2 AZs.</li>
 </ol>
 <h2 id="steps">Steps</h2>
-<h3 id="1-replication-instance-5-min-to-start-10-min-to-provision">1.
-Replication instance (5 min to start; ~10 min to provision)</h3>
-<p>The replication instance is the EC2 that DMS uses to read from
-source, transform, and write to target. It's the only piece that costs
-real money in this lab — start it first so it provisions while you do
-the rest of the steps.</p>
+<h3 id="1-replication-subnet-group-3-min">1. Replication subnet group
+(3 min)</h3>
+<p>DMS requires a subnet group <em>before</em> the replication instance.
+The Create-replication-instance wizard offers an inline create, but it
+silently fails when the wizard form is incomplete — pre-create it.</p>
 <ul>
-<li><strong>AWS DMS → Replication instances → Create replication
-instance</strong></li>
-<li>Name: <code>archadv-&lt;you&gt;-lab13-ri</code></li>
-<li>Instance class: <strong>dms.t3.small</strong></li>
-<li>Engine version: latest</li>
-<li>Allocated storage: 20 GB (default)</li>
-<li>VPC: yours</li>
-<li>Multi-AZ: <strong>Single-AZ</strong> (lab — production would be
-Multi-AZ)</li>
-<li>Public accessibility: <strong>Yes</strong> (for the lab — production
-would be No with VPC peering / TGW to source)</li>
-<li>Advanced settings:
-<ul>
-<li>VPC security group: default (or create new)</li>
-<li>KMS key: AWS-managed default</li>
-</ul></li>
-<li>Maintenance: <strong>Don't upgrade automatically</strong></li>
-<li>Create.</li>
+<li>Navigate: <strong>AWS DMS → Subnet groups → Create subnet group</strong>.</li>
+<li>Name: <code>archadv-&lt;you&gt;-lab13-sng</code></li>
+<li>Description: <code>archadv lab 13 DMS subnet group</code></li>
+<li>VPC: Lab 1 VPC</li>
+<li>Add subnets: tick both
+<code>archadv-&lt;you&gt;-public-a</code> and
+<code>archadv-&lt;you&gt;-public-c</code>.</li>
+<li><strong>Create subnet group</strong>.</li>
 </ul>
-<p>The instance enters <code>creating</code> and takes ~10 min to reach
-<code>available</code>. Continue with steps 2-4 while you wait.</p>
-<h3 id="2-source-endpoint--rds-mysql-placeholder-values-5-min">2. Source
-endpoint — RDS MySQL (placeholder values; 5 min)</h3>
+<h3 id="2-replication-instance-3-min-to-start-10-min-to-provision">2.
+Replication instance (3 min to start; ~10 min to provision)</h3>
+<p>Start this <strong>first</strong> — it provisions in the background
+while you build the endpoints and task.</p>
 <ul>
-<li><strong>DMS → Endpoints → Create endpoint</strong></li>
-<li>Endpoint type: <strong>Source endpoint</strong></li>
-<li>Endpoint identifier:
-<code>archadv-&lt;you&gt;-lab13-source</code></li>
+<li>Navigate: <strong>AWS DMS → Replication instances → Create
+replication instance</strong>.</li>
+<li><strong>Name:</strong> <code>archadv-&lt;you&gt;-lab13-ri</code></li>
+<li>Description: <code>archadv lab 13 RI</code></li>
+<li><strong>Instance configuration:</strong>
+<ul>
+<li>Instance class: <strong>dms.t3.small</strong> (cheapest available;
+~$0.07/hr).</li>
+<li>Engine version: <strong>latest</strong> (the default pre-selected
+value).</li>
+<li>High Availability: <strong>Dev or test workload (Single-AZ)</strong></li>
+</ul></li>
+<li><strong>Storage:</strong> <strong>50 GB</strong> (default; do not
+change).</li>
+<li><strong>Connectivity and security:</strong>
+<ul>
+<li>VPC for IPv4 endpoints: Lab 1 VPC</li>
+<li>Replication subnet group: <code>archadv-&lt;you&gt;-lab13-sng</code>
+(the one you just made).</li>
+<li>Availability zone: <strong>No preference</strong>.</li>
+<li>VPC security group(s): leave the <code>default</code> SG of the
+Lab 1 VPC.</li>
+<li>Public accessibility: <strong>Yes</strong>. (For the lab — production
+should be No with private connectivity to the source DB.)</li>
+</ul></li>
+<li><strong>Advanced settings:</strong> KMS key
+<code>(default) aws/dms</code>.</li>
+<li><strong>Maintenance:</strong> Auto minor version upgrade:
+<strong>Off</strong>.</li>
+<li>Tags: <code>Course = archadv</code>, <code>Owner = &lt;you&gt;</code>.</li>
+<li><strong>Create</strong>.</li>
+</ul>
+<p>The instance shows status <code>creating</code> and takes ~10 min to
+reach <code>available</code>. <strong>Move on to Step 3 immediately</strong>
+— don't watch it.</p>
+<p><strong>Failure mode:</strong> if you see <em>"DMS replication
+instance creation is not supported in the requested availability zone"</em>,
+this means <code>dms.t3.small</code> is unavailable in one of the AZs.
+Delete the RI, return to Step 1, change the subnet group to use
+<strong>different</strong> public subnets (the Lab 1 VPC has subnets
+across a + c — if c is the issue, try a + b). Flag the instructor.</p>
+<h3 id="3-source-endpoint--mysql-placeholder-4-min">3. Source endpoint
+— MySQL placeholder (4 min)</h3>
+<ul>
+<li>Navigate: <strong>AWS DMS → Endpoints → Create endpoint</strong>.</li>
+<li>Endpoint type: <strong>Source endpoint</strong>.</li>
+<li><strong>Do not</strong> tick "Select RDS DB instance" — we're
+faking a non-existent on-prem source.</li>
+<li>Endpoint identifier: <code>archadv-&lt;you&gt;-lab13-source</code></li>
 <li>Source engine: <strong>MySQL</strong></li>
-<li>Access source: <strong>Provide access information
+<li>Access to endpoint database: <strong>Provide access information
 manually</strong></li>
-<li>Server name: <code>placeholder.example.com</code> (we're not testing
-the connection)</li>
+<li>Server name: <code>placeholder.example.com</code></li>
 <li>Port: <code>3306</code></li>
 <li>User name: <code>dmsuser</code></li>
 <li>Password: <code>placeholder</code></li>
-<li>Secure Socket Layer (SSL) mode: <code>none</code></li>
-<li><strong>Test endpoint connection: skip</strong> (would need a real
-MySQL on the other end)</li>
-<li>Create endpoint.</li>
+<li>Secure Socket Layer (SSL) mode: <strong>none</strong></li>
+<li><strong>Test endpoint connection (optional): skip.</strong>
+(Would fail — there's no real MySQL.)</li>
+<li><strong>Create endpoint</strong>.</li>
 </ul>
-<p>Inspect the endpoint after creation — note the <strong>Status:
-untested</strong> indicator. In production you would test from the
-replication instance once it's available.</p>
-<h3 id="3-target-endpoint--s3-5-min">3. Target endpoint — S3 (5
-min)</h3>
-<p>S3 is the realistic target for a "lift to data lake" migration
-pattern.</p>
+<p>After creation the endpoint shows Status <strong>Active</strong> with
+connection status <strong>Untested</strong>. That's the goal state.</p>
+<h3 id="4-s3-target-bucket--target-endpoint-7-min">4. S3 target bucket
+and target endpoint (7 min)</h3>
+<p>S3 is the realistic target for a "lift to data lake" migration.</p>
+<p><strong>4a — bucket:</strong></p>
 <ul>
-<li><strong>S3 → Create bucket</strong> first:
-<code>archadv-&lt;you&gt;-lab13-target</code>. Block all public
-access.</li>
-<li><strong>DMS → Endpoints → Create endpoint</strong></li>
-<li>Endpoint type: <strong>Target endpoint</strong></li>
-<li>Endpoint identifier:
-<code>archadv-&lt;you&gt;-lab13-target</code></li>
+<li>Navigate: <strong>S3 → Create bucket</strong>.</li>
+<li>Bucket name: <code>archadv-&lt;you&gt;-lab13-target</code></li>
+<li>Region: <strong>us-east-1</strong></li>
+<li>Block Public Access: leave default (all four blocked).</li>
+<li><strong>Create bucket</strong>.</li>
+</ul>
+<p><strong>4b — IAM role for DMS → S3:</strong></p>
+<ul>
+<li>Navigate: <strong>IAM → Roles → Create role</strong>.</li>
+<li>Trusted entity: <strong>Custom trust policy</strong>. Paste:</li>
+</ul>
+<pre class="json"><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [{
+    &quot;Effect&quot;: &quot;Allow&quot;,
+    &quot;Principal&quot;: {&quot;Service&quot;: &quot;dms.amazonaws.com&quot;},
+    &quot;Action&quot;: &quot;sts:AssumeRole&quot;
+  }]
+}</code></pre>
+<ul>
+<li><strong>Next</strong>. Permissions: tick <code>AmazonS3FullAccess</code>
+(lab scope; production should be a scoped inline policy on this one
+bucket). <strong>Next</strong>.</li>
+<li>Role name: <code>archadv-&lt;you&gt;-lab13-dms-s3-role</code>.
+<strong>Create role</strong>.</li>
+<li>Open the role and <strong>copy the Role ARN</strong> from the top
+of the role detail page — you'll paste it in 4c.</li>
+</ul>
+<p><strong>4c — target endpoint:</strong></p>
+<ul>
+<li>Navigate: <strong>AWS DMS → Endpoints → Create endpoint</strong>.</li>
+<li>Endpoint type: <strong>Target endpoint</strong>.</li>
+<li>Endpoint identifier: <code>archadv-&lt;you&gt;-lab13-target</code></li>
 <li>Target engine: <strong>Amazon S3</strong></li>
-<li>Access role: <strong>Create new IAM role</strong> (or pick existing
-role with <code>AmazonS3FullAccess</code> + DMS trust)</li>
-<li>Service access role ARN: the role you created</li>
+<li>Service access role ARN: <strong>paste the ARN from 4b</strong>.</li>
 <li>Bucket name: <code>archadv-&lt;you&gt;-lab13-target</code></li>
 <li>Bucket folder: <code>dms-migration/</code></li>
-<li>Other settings: leave defaults (CSV format, no compression)</li>
-<li>Create.</li>
+<li>Endpoint settings: leave defaults (CSV, no compression).</li>
+<li><strong>Create endpoint</strong>.</li>
 </ul>
-<h3 id="4-database-migration-task-5-min">4. Database migration task (5
+<h3 id="5-database-migration-task-5-min">5. Database migration task (5
 min)</h3>
+<p>By now the replication instance should be <code>available</code> (or
+close). If still <code>creating</code>, proceed — you can save the
+task either way.</p>
 <ul>
-<li><strong>DMS → Database migration tasks → Create task</strong></li>
+<li>Navigate: <strong>AWS DMS → Database migration tasks → Create task</strong>.</li>
 <li>Task identifier: <code>archadv-&lt;you&gt;-lab13-task</code></li>
-<li>Replication instance: <code>archadv-&lt;you&gt;-lab13-ri</code> (may
-still be <code>creating</code> — that's OK; you can save the task and
-start it later)</li>
-<li>Source database endpoint:
-<code>archadv-&lt;you&gt;-lab13-source</code></li>
-<li>Target database endpoint:
-<code>archadv-&lt;you&gt;-lab13-target</code></li>
-<li>Migration type: <strong>Migrate existing data</strong> (full load
-only — for the demo; in production you'd choose
-<code>Migrate existing data and replicate ongoing changes</code> for
-CDC)</li>
-<li><strong>Editing mode: JSON editor</strong> (so students see what's
-actually being saved)</li>
-<li>Table mappings: include schema <code>mydb</code>, table
-<code>%</code> (wildcard)</li>
-<li>Task settings: defaults (full LOB mode, target-table-prep mode
-<code>DROP_AND_CREATE</code>)</li>
-<li>Migration task startup configuration: <strong>Manually
-later</strong> (do NOT auto-start)</li>
-<li>Create.</li>
-</ul>
-<p>The task enters <code>Ready</code> state. It would start replication
-if the source were real — but ours isn't, so we leave it unstarted.</p>
-<h3 id="5-inspect-the-task-configuration-5-min">5. Inspect the task
-configuration (5 min)</h3>
+<li>Replication instance: <code>archadv-&lt;you&gt;-lab13-ri</code></li>
+<li>Source database endpoint: <code>archadv-&lt;you&gt;-lab13-source</code></li>
+<li>Target database endpoint: <code>archadv-&lt;you&gt;-lab13-target</code></li>
+<li>Migration type: <strong>Migrate existing data</strong> (full load).</li>
+<li><strong>Task settings:</strong>
 <ul>
-<li>Click into the task.</li>
-<li><strong>Table mappings</strong> tab — review the JSON. Note the
-<code>rule-type: selection</code> for picking schemas/tables.</li>
-<li><strong>Migration task assessment</strong> tab — click <strong>Run
-pre-migration assessment</strong>. (This actually does a structural
-check; for our placeholder source, it'll likely fail with "cannot
-connect" — that's the expected outcome and the assessment screen is what
-students should see.)</li>
-<li><strong>Logs</strong> tab — empty (task hasn't run).</li>
-<li><strong>Statistics</strong> tab — empty.</li>
+<li>Editing mode: <strong>Wizard</strong> (defaults are fine for the
+lab).</li>
+<li>Target table preparation mode: <strong>Do nothing</strong></li>
+<li>LOB column settings: <strong>Limited LOB mode</strong>, 32 KB.</li>
+</ul></li>
+<li><strong>Table mappings:</strong>
+<ul>
+<li>Editing mode: <strong>Wizard</strong>.</li>
+<li>Click <strong>Add new selection rule</strong>.</li>
+<li>Schema: <strong>Enter a schema</strong> →
+<code>mydb</code>.</li>
+<li>Source name: <code>%</code> (wildcard — all tables).</li>
+<li>Action: <strong>Include</strong>.</li>
+</ul></li>
+<li><strong>Migration task startup configuration:</strong>
+<strong>Manually later</strong>. (Do <em>not</em> auto-start —
+there's no source.)</li>
+<li><strong>Create task</strong>.</li>
 </ul>
-<p>In production, after running the assessment and addressing any
-blockers, you'd start the task and monitor the
-<strong>Statistics</strong> tab for row counts, errors, and CDC lag.</p>
+<p>The task transitions to <code>Ready</code>. That's the lab outcome.</p>
+<h3 id="6-inspect-the-task-3-min">6. Inspect the task (3 min)</h3>
+<ul>
+<li>Click into the task name from the migration-tasks list.</li>
+<li><strong>Table mappings</strong> tab — review the JSON; note the
+<code>rule-type: "selection"</code> block for schema/table inclusion.</li>
+<li><strong>Migration task assessment</strong> tab — click <strong>Run
+new assessment</strong> if the RI is <code>available</code>. With our
+placeholder source, the assessment will fail with a connection error.
+That's the expected outcome — you've seen the screen students should
+recognise in production.</li>
+<li><strong>Logs</strong> and <strong>Statistics</strong> tabs are
+empty (task hasn't run).</li>
+</ul>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
-<li><label><input type="checkbox" />Replication instance reaches
+<li><label><input type="checkbox" />Subnet group
+<code>archadv-&lt;you&gt;-lab13-sng</code> spans 2 public subnets in
+the Lab 1 VPC</label></li>
+<li><label><input type="checkbox" />Replication instance status reaches
 <code>available</code> within 15 min</label></li>
-<li><label><input type="checkbox" />Source endpoint exists with engine
-<code>MySQL</code></label></li>
-<li><label><input type="checkbox" />Target endpoint exists with engine
-<code>Amazon S3</code> and points at your bucket</label></li>
-<li><label><input type="checkbox" />IAM role for the S3 endpoint trusts
-<code>dms.amazonaws.com</code> and has S3 access</label></li>
+<li><label><input type="checkbox" />Source endpoint engine
+<code>MySQL</code>, status <code>Active</code></label></li>
+<li><label><input type="checkbox" />Target endpoint engine
+<code>Amazon S3</code>, bucket points to
+<code>archadv-&lt;you&gt;-lab13-target</code></label></li>
 <li><label><input type="checkbox" />Migration task is in
-<code>Ready</code> state with both endpoints attached and table mappings
-configured</label></li>
+<code>Ready</code> state, both endpoints attached, table mapping
+includes schema <code>mydb</code>, table <code>%</code></label></li>
 </ul>
 <h2 id="discussion--7-rs-portfolio-10-min--instructor-led">Discussion —
 7 Rs portfolio (10 min — instructor-led)</h2>
@@ -331,29 +403,40 @@ room votes on:</p>
 everything</strong> — expensive, slow, and the business gets nothing in
 the meantime. A typical successful migration is 60% Rehost +
 Replatform.</p>
-<h2 id="cleanup">Cleanup</h2>
-<p>In this order:</p>
+<h2 id="cleanup">Cleanup — DO BEFORE LEAVING THE ROOM</h2>
+<blockquote>
+<p>The replication instance bills <strong>~$0.07/hr</strong> until
+deleted. Leaving it overnight is ~$1.70/student. Delete it.</p>
+</blockquote>
+<p>In this exact order (each step blocks on the prior):</p>
 <ol type="1">
-<li><strong>Database migration task</strong> → Delete (must be
-<code>Ready</code>/<code>Stopped</code>, not <code>Running</code>).</li>
-<li><strong>Endpoints</strong> → Delete both.</li>
-<li><strong>Replication instance</strong> → Delete (this is the
-expensive one — confirm it's gone).</li>
-<li><strong>S3 bucket</strong> → Empty + delete.</li>
-<li><strong>IAM role for S3 endpoint</strong> → Delete.</li>
+<li><strong>AWS DMS → Database migration tasks</strong> → tick the task
+→ <strong>Actions → Delete</strong> (task must be <code>Ready</code> or
+<code>Stopped</code>, not <code>Running</code>; ours never ran so it's
+<code>Ready</code>). Confirm.</li>
+<li><strong>AWS DMS → Endpoints</strong> → tick
+<code>archadv-&lt;you&gt;-lab13-source</code> →
+<strong>Actions → Delete</strong>. Repeat for
+<code>archadv-&lt;you&gt;-lab13-target</code>.</li>
+<li><strong>AWS DMS → Replication instances</strong> → tick
+<code>archadv-&lt;you&gt;-lab13-ri</code> →
+<strong>Actions → Delete</strong>. Type <code>delete me</code> to
+confirm. <strong>Watch the row disappear.</strong> If it's stuck in
+<code>deleting</code> for &gt; 5 min, raise your hand.</li>
+<li><strong>AWS DMS → Subnet groups</strong> → tick
+<code>archadv-&lt;you&gt;-lab13-sng</code> → <strong>Delete</strong>.</li>
+<li><strong>S3</strong> → <code>archadv-&lt;you&gt;-lab13-target</code>
+→ <strong>Empty</strong>, then <strong>Delete</strong>.</li>
+<li><strong>IAM → Roles → archadv-&lt;you&gt;-lab13-dms-s3-role →
+Delete</strong>.</li>
 </ol>
-<h2 id="stretch-goals">Stretch goals</h2>
+<p><strong>Do NOT delete the Lab 1 VPC.</strong> The capstone lab
+reuses it.</p>
+<h2 id="stretch-goals">Stretch goals (only if you finish early)</h2>
 <ul>
-<li>Open <strong>DMS Schema Conversion</strong> (formerly the AWS Schema
+<li>Open <strong>DMS Schema Conversion</strong> (formerly AWS Schema
 Conversion Tool) and create a migration project that converts a sample
-MySQL schema to PostgreSQL. Generate the assessment report.</li>
-<li>Open <strong>Application Migration Service (MGN)</strong> in the
-console. Walk through the agent install instructions for Linux. Don't
-actually install — just see what students would see if they were
-rehosting an on-prem VM.</li>
-<li>Compare cost: a 100 GB / 24h DMS migration vs 100 GB / 24h DataSync
-transfer vs 100 GB / 24h MGN replication. (Hint: DataSync is cheapest,
-MGN is most expensive but covers OS-level recreation.)</li>
+MySQL schema to PostgreSQL. Don't run a real conversion.</li>
 </ul>
   <div class="nav-footer">
     <a href="../labs/">All labs</a> &middot; <a href="../README.md">Course README</a>
