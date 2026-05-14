@@ -117,169 +117,241 @@
     <div class="course-tag">Advanced Architecting on AWS</div>
   </div>
 <h1 id="module-14--capstone-design-and-build-a-3-tier-web-app">Module 14
-— Capstone: design and build a 3-tier web app</h1>
+— Capstone: design, then build one slice</h1>
 <h2 id="objective">Objective</h2>
-<p>Synthesize the course. Each pair receives a brief, sketches an
-architecture, then console-builds the highest-priority pieces in their
-Sandbox account. End with a short walkthrough explaining design
-decisions.</p>
-<p>The point is <strong>the design conversation</strong>, not getting a
-fully-deployed multi-tier app online. Acceptance bar is realistic — see
-below.</p>
+<p>Synthesize the course. Each pair sketches a 3-tier architecture for
+the scenario brief, <strong>then picks ONE of three build slices</strong>
+to console-build in their own Sandbox. End with a short walkthrough
+explaining design decisions.</p>
+<p>The point is <strong>the design conversation + one quality build
+slice</strong>, not getting a full multi-tier app online in 75
+minutes.</p>
 <h2 id="time-budget-75-minutes-total">Time budget: 75 minutes total</h2>
 <ul>
-<li><strong>25 min</strong> — framing, recap, scenario brief,
+<li><strong>20 min</strong> — framing, course recap, scenario brief,
 Q&amp;A</li>
-<li><strong>15 min</strong> — paired diagram</li>
-<li><strong>25 min</strong> — paired console build (whichever pieces you
-prioritized)</li>
-<li><strong>10 min</strong> — pair walkthroughs (5 min × 2 pairs picked
+<li><strong>15 min</strong> — paired diagram (sketch the full 3-tier
+design)</li>
+<li><strong>25 min</strong> — paired console build of <strong>one</strong>
+slice (Slice A, B, or C below)</li>
+<li><strong>15 min</strong> — pair walkthroughs (3 pairs × 5 min, picked
 by the instructor)</li>
 </ul>
 <h2 id="pre-flight">Pre-flight</h2>
 <ol type="1">
-<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Region
-<code>us-east-1</code>.</li>
+<li>Sign in to <code>Sandbox&lt;N&gt;</code>. Confirm role badge
+top-right reads <code>AWSAdministratorAccess @ Sandbox&lt;N&gt;</code>.</li>
+<li>Region: <strong>US East (N. Virginia) us-east-1</strong>.</li>
 <li>Pair up with the person next to you (or solo if odd).</li>
 <li>Have a diagram tool ready: whiteboard, draw.io, Excalidraw,
 Lucidchart — anything that lets you sketch boxes and lines.</li>
+<li>Confirm the <strong>Lab 1 VPC</strong> is still up — you'll reuse
+it. <strong>VPC → Your VPCs</strong>, find Name tag
+<code>archadv-&lt;you&gt;-vpc</code>.</li>
 </ol>
 <h2 id="scenario-brief">Scenario brief</h2>
 <blockquote>
 <p><strong>WidgetCo</strong> sells configurable industrial widgets
 through a public web store and a private partner portal. Both are
-read-heavy with bursty write spikes around new product launches. Target:
-99.95% availability. Data is partner-PII (think: contact info, contract
-terms — not financial or health).</p>
+read-heavy with bursty write spikes around new product launches.
+Target: 99.95% availability. Data is partner-PII (contact info,
+contract terms — not financial or health).</p>
 <p>Today they run two ASP.NET apps on a fleet of 12 EC2s, one shared
-MySQL on EC2, and an S3 bucket for product images. They're growing 30%
-YoY.</p>
+MySQL on EC2, and an S3 bucket for product images. They're growing
+30% YoY.</p>
 </blockquote>
-<h2 id="required-components-in-your-design">Required components in your
-design</h2>
-<p>Your architecture diagram must include:</p>
+<h2 id="diagram-requirements-15-min">Diagram requirements (15 min)</h2>
+<p>The full 3-tier diagram for WidgetCo must include all of these
+boxes <em>on paper</em>:</p>
 <ol type="1">
-<li><strong>Network</strong> — VPC layout (public / private subnets, AZ
-count, routing)</li>
-<li><strong>Edge / WAF</strong> — CloudFront + WAF + Shield
-Standard</li>
+<li><strong>Network</strong> — VPC layout (public / private subnets,
+AZ count, routing)</li>
+<li><strong>Edge</strong> — CloudFront in front of the public web
+store; WAF on the origin</li>
 <li><strong>Web tier</strong> — ALB + ASG (or Fargate)</li>
-<li><strong>App tier</strong> — separated from web tier (security and
-scaling)</li>
-<li><strong>Database tier</strong> — Aurora MySQL (in design: multi-AZ
-with reader endpoint for read-heavy. In the build slice below,
-single-writer is fine — multi-AZ creation alone takes ~15 min and won't
-fit in the 25-min budget.)</li>
+<li><strong>App tier</strong> — separated from the web tier (private
+subnets, separate SG)</li>
+<li><strong>Database tier</strong> — Aurora MySQL multi-AZ with reader
+endpoint</li>
 <li><strong>Object storage</strong> — S3 for product images, with
 CloudFront origin access control</li>
-<li><strong>Secrets</strong> — Secrets Manager + KMS CMK</li>
-<li><strong>Observability</strong> — CloudWatch dashboards, alarms, log
+<li><strong>Secrets</strong> — Secrets Manager backed by a customer-
+managed KMS CMK</li>
+<li><strong>Observability</strong> — CloudWatch alarms + log
 groups</li>
-<li><strong>CI/CD</strong> — sketched, not built (CodePipeline +
-CodeDeploy or GitHub Actions)</li>
-<li><strong>Cost guardrails</strong> — Budget alarm; tagging
+<li><strong>CI/CD</strong> — CodePipeline (or equivalent) — sketched,
+not built</li>
+<li><strong>Cost guardrails</strong> — the Budget from Lab 12 + tagging
 strategy</li>
 </ol>
-<h2 id="build-priorities-build-what-fits-in-25-min">Build priorities
-(build what fits in 25 min)</h2>
-<p>Pick <strong>2–3</strong> of these to actually build in console;
-sketch the rest:</p>
-<table>
-<thead>
-<tr>
-<th>Priority</th>
-<th>Component</th>
-<th>Console time</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>High</strong></td>
-<td>VPC (multi-AZ)</td>
-<td>5 min — VPC wizard</td>
-</tr>
-<tr>
-<td><strong>High</strong></td>
-<td>ALB + ASG with 2 instances</td>
-<td>10 min — Lab 8 pattern</td>
-</tr>
-<tr>
-<td><strong>Medium</strong></td>
-<td>Aurora MySQL cluster (single writer; kick off and move on — it will
-still be provisioning when 25 min ends, that's fine)</td>
-<td>10 min to <em>initiate</em>; full create ~15 min</td>
-</tr>
-<tr>
-<td><strong>Medium</strong></td>
-<td>S3 bucket + CloudFront distribution</td>
-<td>10 min</td>
-</tr>
-<tr>
-<td><strong>Low</strong></td>
-<td>WAF web ACL on the ALB</td>
-<td>5 min — Lab 8 pattern</td>
-</tr>
-<tr>
-<td><strong>Optional</strong></td>
-<td>Secrets Manager secret + KMS key</td>
-<td>5 min — Lab 9 pattern</td>
-</tr>
-</tbody>
-</table>
-<p>A sensible 25-minute slice: <strong>VPC + ALB+ASG + Aurora</strong>.
-Or: <strong>VPC + S3+CloudFront + WAF</strong>. Pick the slice that
-exercises the parts of the course you most want to lock in.</p>
+<h2 id="build-slices-pick-exactly-one-25-min">Build slices: pick
+<em>exactly one</em> (25 min)</h2>
+<p>Each slice is sized to fit in 25 min if the diagram work was
+focused. Pick the slice that locks in the part of the course you most
+want to revisit.</p>
+<h3 id="slice-a--edge--web-cloudfront--s3-static-origin">Slice A — Edge
++ web (CloudFront → S3 static origin)</h3>
+<p>Best for pairs who want to revisit CloudFront, S3, OAC, and WAF
+mental models.</p>
+<ol type="1">
+<li><strong>S3 → Create bucket</strong>:
+<code>archadv-&lt;you&gt;-cap-web</code>. Block all public access
+(default).</li>
+<li>Upload a one-file <code>index.html</code> (CloudShell):
+<code>echo "&lt;h1&gt;WidgetCo&lt;/h1&gt;" &gt; /tmp/index.html ; aws s3 cp /tmp/index.html s3://archadv-&lt;you&gt;-cap-web/</code></li>
+<li><strong>CloudFront → Create distribution</strong>:
+<ul>
+<li>Origin: <strong>Choose S3 bucket</strong> →
+<code>archadv-&lt;you&gt;-cap-web</code>.</li>
+<li>Origin access: <strong>Origin access control settings
+(recommended)</strong> → <strong>Create new OAC</strong>,
+defaults, <strong>Create</strong>.</li>
+<li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong>.</li>
+<li>Web Application Firewall (WAF): <strong>Enable AWS WAF security
+protections</strong> with <strong>Use monitoring protections only</strong>
+(creates a default web ACL with managed rules in Count mode).</li>
+<li>Default root object: <code>index.html</code>.</li>
+<li><strong>Create distribution</strong>.</li>
+</ul></li>
+<li>When prompted at the top of the distribution detail page,
+<strong>copy the recommended bucket policy</strong> and paste it into
+<strong>S3 → bucket → Permissions → Bucket policy → Edit</strong>.
+Save. This is what lets CloudFront read the otherwise-private bucket
+via OAC.</li>
+<li>Distribution propagation is asynchronous (5–15 min). You do
+<strong>not</strong> need it <code>Deployed</code> by the end of the
+slot — note its <strong>Distribution domain name</strong> for your
+walkthrough.</li>
+</ol>
+<h3 id="slice-b--web-alb-asg-using-the-lab-1-vpc">Slice B — Web (ALB
++ ASG, using the Lab 1 VPC)</h3>
+<p>Best for pairs who want to revisit launch templates, target groups,
+and scaling. This is essentially the Lab 11 setup with no scaling
+policy — drop the load-generation step.</p>
+<ol type="1">
+<li>Launch template <code>archadv-&lt;you&gt;-cap-lt</code>, AMI
+<strong>Amazon Linux 2023</strong>, instance type
+<code>t3.small</code>, SG with no inbound (added in step 3), IAM
+profile with <code>AmazonSSMManagedInstanceCore</code>, user data:</li>
+</ol>
+<pre class="bash"><code>#!/bin/bash
+dnf install -y httpd
+systemctl enable --now httpd
+echo &quot;&lt;h1&gt;WidgetCo capstone&lt;/h1&gt;&quot; &gt; /var/www/html/index.html</code></pre>
+<ol start="2" type="1">
+<li>ALB <code>archadv-&lt;you&gt;-cap-alb</code>, internet-facing,
+in both Lab 1 <strong>public</strong> subnets, ALB SG with HTTP from
+<code>0.0.0.0/0</code>. Target group
+<code>archadv-&lt;you&gt;-cap-tg</code> (instances, HTTP, port 80,
+health check <code>/</code>).</li>
+<li>ASG SG: HTTP from the ALB SG (not 0.0.0.0/0).</li>
+<li>ASG <code>archadv-&lt;you&gt;-cap-asg</code>, launch template
+above, the same two public subnets, attach to the target group,
+desired/min/max = <strong>2/2/2</strong>. ELB health checks on.</li>
+<li>Wait until 2 instances are <code>InService</code> +
+<code>Healthy</code>. Hit the ALB DNS name from CloudShell:
+<code>curl http://&lt;alb-dns&gt;/</code> → "WidgetCo capstone".</li>
+</ol>
+<h3 id="slice-c--data-protection-kms--secrets-manager">Slice C — Data
+protection (KMS + Secrets Manager + S3)</h3>
+<p>Best for pairs who want to revisit Lab 9 in capstone scope. This
+slice is essentially a fast replay of Lab 9 Part A + B, with the
+KMS key reused across both an encrypted S3 bucket and the secret.</p>
+<ol type="1">
+<li>KMS CMK <code>archadv-&lt;you&gt;-cap-key</code> (Symmetric,
+Encrypt and decrypt; admin + user = your IdC SSO role).</li>
+<li>S3 bucket <code>archadv-&lt;you&gt;-cap-data</code> with default
+encryption SSE-KMS pointing to that CMK (Bucket Key enabled).</li>
+<li>Upload a sample file from CloudShell; confirm
+<code>head-object</code> shows <code>SSE: aws:kms</code>.</li>
+<li>Secrets Manager secret <code>archadv-&lt;you&gt;-cap-db-pass</code>
+encrypted with the same CMK; key/value
+<code>{"username":"app","password":"INIT"}</code>; rotation
+<strong>disabled</strong>.</li>
+<li>Manually edit the password to <code>ROTATED</code>; confirm
+<code>aws secretsmanager get-secret-value</code> shows the new
+value and the Versions tab shows <code>AWSCURRENT</code> +
+<code>AWSPREVIOUS</code>.</li>
+</ol>
+<blockquote>
+<p><strong>Do not pick Aurora as a slice.</strong> Aurora multi-AZ
+cluster create alone is ~15 min and routinely overruns. If your pair
+wants to "see" Aurora, the instructor will demo from the management
+account during the walkthrough block.</p>
+</blockquote>
 <h2 id="decisions-you-must-justify-in-your-walkthrough">Decisions you
 must justify in your walkthrough</h2>
+<p>Regardless of which slice you built, your walkthrough must answer:</p>
 <ol type="1">
-<li><strong>Why AZ count = 2 vs 3?</strong> (cost vs availability)</li>
-<li><strong>Why Aurora vs RDS MySQL?</strong> (read replicas, recovery,
+<li><strong>Why AZ count = 2 vs 3?</strong> (cost vs availability
+trade-off)</li>
+<li><strong>Why Aurora vs RDS MySQL?</strong> (read replicas, failover,
 cost)</li>
-<li><strong>Why CloudFront in front of the ALB?</strong> (latency, DDoS,
-cost)</li>
+<li><strong>Why CloudFront in front of the ALB?</strong> (latency,
+DDoS absorption, edge caching)</li>
 <li><strong>Where does Secrets Manager hold what?</strong></li>
-<li><strong>What's the one thing you'd cut first under cost
-pressure?</strong></li>
+<li><strong>What would you cut <em>first</em> under cost pressure?</strong></li>
 </ol>
-<h2 id="optional-terraform-reference">Optional: Terraform reference</h2>
-<p>A reference Terraform starter exists at
-<code>Module_14/terraform/</code> for students who took the dedicated
-Terraform course and want to see the equivalent IaC. <strong>It is
-optional.</strong> The capstone is not graded on whether you used
-it.</p>
-<h2 id="walkthrough-format">Walkthrough format</h2>
-<p>Two pairs are picked at random. Each gets 5 min:</p>
+<h2 id="walkthrough-format">Walkthrough format (15 min)</h2>
+<p>Three pairs are picked at random. Each gets 5 min:</p>
 <ul>
-<li>1 min — your scenario interpretation</li>
+<li>1 min — scenario interpretation</li>
 <li>2 min — diagram tour</li>
-<li>1 min — what you actually built</li>
+<li>1 min — which slice you built and what you saw working</li>
 <li>1 min — the decision you debated longest</li>
 </ul>
 <p>The room offers one constructive question per walkthrough.</p>
-<h2 id="acceptance-bar-any-one-counts-as-success">Acceptance bar (any
-<strong>one</strong> counts as success)</h2>
-<ul>
-<li>Working diagram covering the required components above</li>
-<li>Console-built proof-of-concept covering at least 2 tiers</li>
-<li>Walkthrough explains <em>why</em> each component was chosen, with
-one trade-off identified</li>
+<h2 id="acceptance-bar-any-one-counts-as-success">Acceptance bar (all
+three must be true)</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Diagram covers all 10 components
+listed above (sketch quality, not pixel quality, is what's
+judged)</label></li>
+<li><label><input type="checkbox" />One slice (A, B, or C) is built and
+demonstrably works (CloudFront DNS resolves, or ALB returns 200, or
+Secret retrievable via CLI)</label></li>
+<li><label><input type="checkbox" />Walkthrough names at least one
+trade-off the pair consciously made</label></li>
 </ul>
-<p>You do not need a fully-running multi-tier app. The capstone is a
-<strong>design exercise</strong> with hands-on reinforcement.</p>
-<h2 id="cleanup">Cleanup</h2>
-<p>Tear down whatever you built — leaving an Aurora cluster running
-overnight is a quick way to spend $50 of someone else's money:</p>
+<h2 id="optional-terraform-reference">Optional: Terraform reference</h2>
+<p>A reference Terraform starter exists at
+<code>Module_14/terraform/</code> for students who took the dedicated
+Terraform course. <strong>It is optional and not graded.</strong></p>
+<h2 id="cleanup">Cleanup — DO BEFORE LEAVING THE ROOM</h2>
+<p>Whichever slice you built:</p>
+<p><strong>Slice A (CloudFront + S3):</strong></p>
 <ol type="1">
-<li>Delete Aurora cluster (writer first, then cluster).</li>
-<li>Delete CloudFront distribution (disable first; takes ~15 min to
-fully delete — that's fine).</li>
-<li>ALB → ASG → Launch template.</li>
-<li>WAF web ACL.</li>
-<li>S3 bucket (empty first).</li>
-<li>KMS key (schedule deletion, 7-day waiting period).</li>
-<li>VPC.</li>
+<li><strong>CloudFront → distribution → Disable</strong>. (Disabling
+takes ~5 min; <em>deletion</em> takes another 5–15 min after that —
+that's normal. You don't need to wait; it'll continue in the
+background.)</li>
+<li>Once disabled, click <strong>Delete</strong> on the distribution.</li>
+<li><strong>S3 → archadv-&lt;you&gt;-cap-web → Empty</strong>, then
+<strong>Delete</strong>.</li>
+<li>If a default WAF web ACL was created (<strong>WAF &amp; Shield →
+Web ACLs</strong>, region <strong>Global (CloudFront)</strong>), delete
+the ACL after the distribution is gone.</li>
 </ol>
-<p>Leave the Budget alarm from Lab 12.</p>
+<p><strong>Slice B (ALB + ASG):</strong></p>
+<ol type="1">
+<li>ASG → set desired/min/max all to 0 → <strong>Delete</strong>.</li>
+<li>ALB → <strong>Delete</strong>; Target group →
+<strong>Delete</strong>.</li>
+<li>Launch template → <strong>Delete</strong>.</li>
+<li>SGs: delete ASG SG first, then ALB SG.</li>
+</ol>
+<p><strong>Slice C (KMS + Secrets Manager):</strong></p>
+<ol type="1">
+<li>Secrets Manager → secret → <strong>Delete</strong>, waiting period
+<strong>7 days</strong> (minimum).</li>
+<li>S3 → cap-data bucket → <strong>Empty</strong>, then
+<strong>Delete</strong>.</li>
+<li>KMS → CMK → <strong>Schedule key deletion</strong>, waiting period
+<strong>7 days</strong>.</li>
+</ol>
+<p><strong>Do NOT delete the Lab 1 VPC.</strong> The instructor cleans
+up VPCs centrally after class.</p>
+<p>Keep the Lab 12 Budget alarm.</p>
 <h2 id="course-close">Course close</h2>
 <p>One sentence per student to the room: <em>the one architecture
 decision you're changing on Monday.</em></p>
