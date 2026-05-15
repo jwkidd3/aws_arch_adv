@@ -143,6 +143,19 @@ VPCs</strong>. Note the VPC ID with Name tag
 <em>and</em> the ASG instances will live in this lab. (Public subnets
 sidestep the NAT egress path for SSM/yum, which keeps the lab focused
 on scaling, not networking.)</li>
+<li><strong>Confirm SSM instance profile exists.</strong> Navigate
+<strong>IAM → Roles</strong> and search for
+<code>archadv-&lt;you&gt;-ssm-role</code> (or any role with
+<code>AmazonSSMManagedInstanceCore</code> attached). If one exists from
+an earlier day, you'll select it later in Step 1. If NOT, create it now
+so Step 1 doesn't stall:
+<ul>
+<li><strong>IAM → Roles → Create role</strong></li>
+<li>Trusted entity: <strong>AWS service</strong>; Use case: <strong>EC2</strong>; <strong>Next</strong></li>
+<li>Permissions: search and check <code>AmazonSSMManagedInstanceCore</code>; <strong>Next</strong></li>
+<li>Role name: <code>archadv-&lt;you&gt;-ssm-role</code>; <strong>Create role</strong></li>
+</ul>
+This takes ~90 sec and keeps the 25-min build budget intact.</li>
 </ol>
 <h2 id="steps">Steps</h2>
 <h3 id="1-launch-template-3-min">1. Launch template (3 min)</h3>
@@ -172,11 +185,9 @@ ALB-SG rule in Step 2 after the ALB SG exists).</li>
 </ul></li>
 <li>Advanced details:
 <ul>
-<li>IAM instance profile: pick any role that has
-<code>AmazonSSMManagedInstanceCore</code> attached. If none, navigate
-<strong>IAM → Roles → Create role → AWS service → EC2</strong>, attach
-<code>AmazonSSMManagedInstanceCore</code>, name it
-<code>archadv-&lt;you&gt;-ssm-role</code>, return to this dropdown.</li>
+<li>IAM instance profile: select <code>archadv-&lt;you&gt;-ssm-role</code>
+(created in Pre-flight). If you don't see it, you skipped Pre-flight
+step 5 — go back and create it now.</li>
 <li>User data — paste exactly:</li>
 </ul></li>
 </ul>

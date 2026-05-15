@@ -50,10 +50,12 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] Cleanup script keyed on `Owner=<student>` + `Course=archadv` tags is tested
 - [ ] **VPC continuity: locked in — Lab 1's VPC stays up for the full course.** Confirmed 2026-05-12. Students do NOT delete the VPC at any point during class. Cost: NAT Gateway ~$0.045/hr × 24h × 3 nights = ~$3/student (~$81 for 27 students). After class ends, you (the instructor) clean up VPCs centrally across all Sandboxes — Lab 1 / Lab 3 / etc. cleanup sections in the lab guides only direct students to remove the per-lab compute (EC2s, NAT-attached EIPs are kept) so the VPC stays available for the next lab.
 - [ ] AWS access portal URL + per-student credentials packet is ready to distribute
-- [ ] **Day 3 pre-flight (added 2026-05-14):**
+- [ ] **Day 3 pre-flight (added 2026-05-14, expanded 2026-05-15):**
   - [ ] Confirm `dms.t3.small` instance class is available in **us-east-1a** AND **us-east-1c** (Lab 13's subnet group uses both). Service Quotas → DMS, or just try a one-off Create in the console. If c is dry, Lab 13's guide flags the workaround.
-  - [ ] Decide whether member-account **Cost Explorer** access is enabled or denied in your Org. Either is fine — Lab 12 handles both, but you should know which path students are on before the slot starts.
-  - [ ] **Lab 1 VPC is still up** for every student (Labs 11, 13, 14 reuse it). If you cleaned up VPCs after Day 2 by mistake, restore Lab 1's VPC before Day 3 starts.
+  - [ ] Lab 12 is now demo-only — confirm you have an open Cost Explorer + Budgets tab in the **management account** ready to share-screen at 1:00pm.
+  - [ ] **Lab 1 VPC is still up** for every student (Labs 11, 13, 14-slice-B reuse it). **Walk the room at 9:00 AM** before Lab 9 starts and confirm `archadv-<you>-vpc` exists in each Sandbox. If a student deleted it during Day 2 cleanup, 3 of 6 Day 3 labs break.
+  - [ ] **Lab 1 VPC default SG exists** in every Sandbox (every VPC auto-gets one, but if anyone deleted it mid-Lab-5, Lab 13's "use default SG" step breaks).
+  - [ ] **SSM instance profile** (`archadv-<you>-ssm-role` or any role with `AmazonSSMManagedInstanceCore`) exists in every Sandbox — used by Lab 11 and Lab 14 Slice B. The lab guides now do a Pre-flight check; if students used the same role on Day 1/2 it carries forward.
 
 ### Org structure at a glance
 
@@ -327,35 +329,45 @@ Rotation: the Secrets Manager secret has an attached rotation Lambda; manual rot
 
 ### Lab 10 — Data lake (S3 + Glue + Athena)
 
+**Updated 2026-05-14:** partitions flattened — no `year=` prefix in the S3 path.
+
 Expected sequence (all in console + CloudShell inside the Sandbox account):
 
-1. Student creates S3 bucket and uploads two seed CSVs under `sales/year=2024/`
-2. Student creates Glue catalog database `archadv_<student>_db`
-3. Student creates IAM role for Glue (`AWSGlueServiceRole` + S3 read on the lake bucket)
+1. Student creates S3 bucket and uploads two seed CSVs directly under `sales/` (no partition prefix)
+2. Student creates Glue catalog database `archadv_<student>_db` (underscored; lab guide handles the hyphen→underscore conversion inline)
+3. Student creates IAM role for Glue (`AWSGlueServiceRole` + inline S3 read policy on the lake bucket — guide spells out `<you>` substitution)
 4. Student creates and runs Glue Crawler — ~60 sec to `Ready`
-5. Confirm the `sales` table appears with columns `order_id, region, product, quantity, revenue` and partition key `year`
-6. Student creates Athena workgroup pointed at a results bucket
+5. Confirm the `sales` table appears with columns `order_id, region, product, quantity, revenue`. **No partition key** — partitions were dropped in the rewrite
+6. Student creates Athena workgroup with results location `s3://archadv-<student>-datalake/athena-results/`
 7. Run the GROUP BY revenue query in Athena — returns 4 rows (us-east, us-west, eu-west, ap-south)
-8. Drop a third CSV; re-run crawler; re-run query — totals change
+8. Drop a third CSV under `sales/`; re-run crawler; re-run query — totals change
 
 Common stalls:
 - Athena says `Table not found`: the crawler hasn't been run yet. Push the student to the Glue console.
-- Crawler reports `Access Denied`: the Glue role's S3 read policy is missing. Add the inline policy.
+- Crawler reports `Tables created: 0`: S3 path in the crawler points at the bucket root instead of `sales/`. Edit the crawler's S3 target and re-run.
+- Crawler reports `Access Denied`: the inline policy on the Glue role still has literal `<you>` in the ARNs. Edit the policy and substitute.
 - `aws s3 rb` refuses: contents remain. `aws s3 rm s3://archadv-<student>-datalake/ --recursive`, then retry.
 
-### Lab 12 — Cost Explorer
+### Lab 12 — Cost Explorer + Budgets (INSTRUCTOR DEMO)
 
-Pure console exercise. Students build a saved report grouped by tag `Course=archadv` with daily granularity and a $5 Budget with email alert. Catch: Cost Explorer needs ~24 hours of data — if the Sandbox accounts are fresh, demo the saved report from the management account and have students focus on the Budget alarm + email subscription confirmation.
+**Updated 2026-05-14 (later):** No student build. Instructor demos for ~15 min from the management-account screen:
+1. Cost Explorer: open the saved "Service" report, change grouping to Tag → `Course=archadv`, point out per-Sandbox attribution
+2. Budgets: walk through the $5 monthly Budget form with Actual-80% + Forecasted-100% email alert. Show the form; do not commit
+3. Anomaly Detection card — show, don't configure
 
 ### Capstone — verification
 
-Acceptance bar (any of the following counts as success):
+**Updated 2026-05-14:** rewrite is pick-one-of-three slices, not 2-tier multi-component.
 
-- Working diagram covering VPC, ALB, ASG, Aurora (or RDS), S3, CloudFront, WAF
-- Console-built proof-of-concept covering at least 2 tiers (e.g., ALB + ASG, or RDS + S3) inside the student's Sandbox account
-- Walkthrough explains *why* each component was chosen, with one trade-off identified
+Acceptance bar (ALL of the following for success):
 
-Optional: a student who already took the Terraform course may opt to build instead via the Module 14 Terraform reference. This is a stretch path, not a requirement.
+- **Diagram covering all 10 components** of the WidgetCo target architecture (VPC, ALB, ASG, Aurora/RDS, S3, CloudFront, WAF, KMS, Secrets, Route 53) — sketched on paper or whiteboard, not necessarily built
+- **One slice built** in the student's Sandbox: A (CloudFront+S3+WAF), B (ALB+ASG reusing Lab 1 VPC), or C (KMS+Secrets+S3)
+- **Walkthrough names one trade-off** about the chosen slice (cost / availability / security / operational complexity)
+
+CloudFront `Deployed` state is NOT required — students may leave the slot with the distribution still propagating. That is success.
+
+Optional: a student who already took the Terraform course may opt to build via the Module 14 Terraform reference. Stretch path, not a requirement.
 
 ---
 
