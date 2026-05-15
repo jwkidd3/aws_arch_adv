@@ -53,7 +53,7 @@ The 14 lab guides were doc-validated against current AWS console and service beh
 - [ ] **Day 3 pre-flight (added 2026-05-14, expanded 2026-05-15):**
   - [ ] Confirm `dms.t3.small` instance class is available in **us-east-1a** AND **us-east-1c** (Lab 13's subnet group uses both). Service Quotas → DMS, or just try a one-off Create in the console. If c is dry, Lab 13's guide flags the workaround.
   - [ ] Lab 12 is now demo-only — confirm you have an open Cost Explorer + Budgets tab in the **management account** ready to share-screen at 1:00pm.
-  - [ ] **Lab 1 VPC is still up** for every student (Labs 11, 13, 14-slice-B reuse it). **Walk the room at 9:00 AM** before Lab 9 starts and confirm `archadv-<you>-vpc` exists in each Sandbox. If a student deleted it during Day 2 cleanup, 3 of 6 Day 3 labs break.
+  - [ ] **Lab 1 VPC is still up** for every student (Labs 11, 13, 14-slice-B reuse it). **Ask in chat (or sample a screen-share) at 9:00 AM** before Lab 9 starts and confirm `archadv-<you>-vpc` exists in each Sandbox. If a student deleted it during Day 2 cleanup, 3 of 6 Day 3 labs break.
   - [ ] **Lab 1 VPC default SG exists** in every Sandbox (every VPC auto-gets one, but if anyone deleted it mid-Lab-5, Lab 13's "use default SG" step breaks).
   - [ ] **SSM instance profile** (`archadv-<you>-ssm-role` or any role with `AmazonSSMManagedInstanceCore`) exists in every Sandbox — used by Lab 11 and Lab 14 Slice B. The lab guides now do a Pre-flight check; if students used the same role on Day 1/2 it carries forward.
 
@@ -151,7 +151,7 @@ If you want to restore the original simulator-based flow (instructor running lib
 ### Module 1 — Reviewing Architecting Concepts (15 min teach + 60 min lab)
 
 - WAFR is review for this audience. **25 minutes is enough.** Survey by show-of-hands which pillars learners use today, anchor on the two least-used pillars and the design-principles slide. Skip the per-pillar service-list slides if the room is sharp.
-- **Lab 1** is a console-only Well-Architected VPC build. With 50 min, students can complete the full multi-AZ public/private build, NAT, route tables, and validate via SSH from a public-subnet EC2. Walk the room — common mistakes are missing IGW route in the public route table and NAT in the public subnet (not the private subnet).
+- **Lab 1** is a console-only Well-Architected VPC build. With 50 min, students can complete the full multi-AZ public/private build, NAT, route tables, and validate via SSH from a public-subnet EC2. Ask in chat (or sample a screen-share) — common mistakes are missing IGW route in the public route table and NAT in the public subnet (not the private subnet).
 
 ### Module 2 — Single to Multiple Accounts (20 min teach + 55 min lab)
 
@@ -176,7 +176,7 @@ If you want to restore the original simulator-based flow (instructor running lib
 - Transit Gateway is the centerpiece. Spend most teaching time on **TGW route tables and propagation** — that's where designs go wrong in the wild. Cut the VPC peering deep-dive to a single comparison slide.
 - VPC sharing via RAM gets a fast pass — most orgs don't use it.
 - **Lab 5** is two-part: Part A (~35 min) is the TGW with prod/non-prod isolation across three VPCs (all built in the student's Sandbox account). Part B (~15 min) attaches an S3 gateway VPC endpoint to the prod VPC with a restrictive endpoint policy. The "make non-prod *not* reach prod" ping check and the "any other bucket = AccessDenied" CloudShell test are the two validations.
-- Walk the room during Part A — pairs that get connectivity but don't validate isolation think they're done.
+- Ask in chat (or sample a screen-share) during Part A — pairs that get connectivity but don't validate isolation think they're done.
 - Common Part B miss: students forget to **associate the gateway endpoint with the private route tables**. Without that, S3 traffic leaves via the public path and the endpoint policy never sees it.
 
 ### Module 6 — Containers (25 min teach + 50 min lab)
@@ -227,7 +227,7 @@ If you want to restore the original simulator-based flow (instructor running lib
 
 - 15 min teach: drill the **7 Rs** (Retire, Retain, Rehost, Relocate, Repurchase, Replatform, Refactor) and DMS homogeneous vs heterogeneous. Cut the MGN video to 60 seconds. **Fold the 7 Rs portfolio-card discussion into the lecture** — pose the three scenarios during teach and elicit answers verbally; do NOT carve out a separate 10-min discussion segment at the end (cut 2026-05-14 to fit the day).
 - **Lab 13** (30 min hands-on, updated 2026-05-14): students build the DMS pipeline — **pre-create the subnet group** (new top step in the lab guide; the wizard's inline create silently fails), then replication instance + source MySQL endpoint + S3 target endpoint + migration task. **Do not start the task**. Reuses Lab 1 VPC public subnets.
-- **Cost watch — call this out loudly:** dms.t3.small RI is ~$0.07/hr the moment it exists. The lab guide opens with the warning and puts cleanup at the top of mind. Walk the room during the cleanup minute and make sure every student has the RI in `deleting` state before they leave. Forgotten DMS instances are the biggest cost overrun risk in this course.
+- **Cost watch — call this out loudly:** dms.t3.small RI is ~$0.07/hr the moment it exists. The lab guide opens with the warning and puts cleanup at the top of mind. Ask in chat (or sample a screen-share) during the cleanup minute and make sure every student has the RI in `deleting` state before they leave. Forgotten DMS instances are the biggest cost overrun risk in this course.
 
 ### Module 14 — Capstone (20 min framing + 55 min build/walkthrough)
 
