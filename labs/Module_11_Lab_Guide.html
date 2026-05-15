@@ -124,8 +124,7 @@ with target-tracking scaling on request count</h1>
 watch the ASG add an instance. The durable lesson:
 <strong>scale on the metric that leads saturation, not the one that
 lags it</strong>.</p>
-<h2 id="time-budget-25-minutes-build--5-min-discussion">Time budget: 25
-minutes build + 5 min discussion</h2>
+<h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
 <p>Throughout, replace <code>&lt;you&gt;</code> with your slug. Region:
 <strong>us-east-1</strong>. We will use the <strong>Lab 1 VPC</strong>
 (2 public + 2 private subnets, NAT in 1 public subnet, IGW attached)
@@ -387,25 +386,6 @@ desired capacity from 2 to 3"</label></li>
 <li><label><input type="checkbox" />Third instance reaches
 <code>InService</code></label></li>
 </ul>
-<h2 id="discussion-5-min--instructor-led">Discussion (5 min —
-instructor-led)</h2>
-<p>For each scenario, ask the room "would
-<code>ALBRequestCountPerTarget</code> work?":</p>
-<ol type="1">
-<li><strong>Spiky news site (90% reads, 50× spikes)</strong> —
-<em>Yes. Request count IS saturation here.</em></li>
-<li><strong>Internal HR app (idle off-hours)</strong> — <em>Use
-scheduled scaling instead; you know the curve in advance.</em></li>
-<li><strong>Real-time game backend (10K concurrent connections)</strong>
-— <em>No. Scale on active connections, not requests.</em></li>
-<li><strong>Batch image processing (SQS-driven)</strong> — <em>No ALB
-at all. Scale on
-<code>ApproximateNumberOfMessagesVisible</code>.</em></li>
-<li><strong>IoT telemetry to Kinesis</strong> — <em>Kinesis
-<code>IncomingRecords</code>; for Lambda consumers, iterator age.</em></li>
-</ol>
-<p>The durable lesson: scale on the metric that <strong>leads</strong>
-saturation. CPU lags for memory- or queue-bound workloads.</p>
 <h2 id="cleanup">Cleanup</h2>
 <p>In this order, otherwise deletes block on dependencies:</p>
 <ol type="1">

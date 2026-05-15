@@ -332,21 +332,6 @@ aws secretsmanager get-secret-value --secret-id archadv-$YOU-db-pass \
 <p><strong>Expected:</strong> <code>password</code> is back to
 <code>CHANGE-ME-AT-STEP-3</code>. Staging label
 <code>AWSCURRENT</code> moved; no new secret version was created.</p>
-<h2 id="part-c--key-policy-vs-iam-policy-discussion-5-min-instructor-led">Part
-C — Key policy vs IAM policy (5 min, instructor-led discussion)</h2>
-<p>The instructor walks the room through one mental model:</p>
-<ul>
-<li><strong>IAM policy</strong> on a principal says "this role can call
-<code>kms:Decrypt</code> on key X."</li>
-<li><strong>Key policy</strong> on the CMK says "key X allows
-<code>kms:Decrypt</code> from this principal."</li>
-<li><strong>Both must say yes.</strong> If only one says yes, the call
-fails. That's why the saying goes: <em>the key policy is the source of
-truth</em> — it's the one most teams forget to check.</li>
-<li>Cross-account: the key policy in the key's home account must name
-the foreign-account principal explicitly. IAM policy on the foreign side
-is not enough.</li>
-</ul>
 <h2 id="validation-checklist">Validation checklist</h2>
 <ul class="task-list">
 <li><label><input type="checkbox" />CMK <code>alias/archadv-&lt;you&gt;-key</code>

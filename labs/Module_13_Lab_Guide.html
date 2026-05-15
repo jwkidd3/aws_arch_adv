@@ -132,8 +132,7 @@ homogeneous MySQL → S3 migration: replication instance, source +
 target endpoints, migration task. <strong>You will not start the task</strong>
 — there's no real source database. The point is to experience the DMS
 wizards and understand what each piece is for.</p>
-<h2 id="time-budget-30-minutes-build--10-min-discussion">Time budget: 30
-minutes build + 10 min discussion</h2>
+<h2 id="time-budget-30-minutes">Time budget: 30 minutes</h2>
 <p>Throughout, replace <code>&lt;you&gt;</code> with your slug. Region:
 <strong>us-east-1</strong>. We'll use the <strong>Lab 1 VPC</strong>
 (still up from Day 1).</p>
@@ -343,67 +342,7 @@ the Lab 1 VPC</label></li>
 <code>Ready</code> state, both endpoints attached, table mapping
 includes schema <code>mydb</code>, table <code>%</code></label></li>
 </ul>
-<h2 id="discussion--7-rs-portfolio-10-min--instructor-led">Discussion —
-7 Rs portfolio (10 min — instructor-led)</h2>
-<p>Hand out the portfolio cards (Insurance, Healthcare SaaS, or
-Manufacturing — your choice). For each workload in the portfolio, the
-room votes on:</p>
-<ol type="1">
-<li>Which of the 7 Rs is the right strategy?</li>
-<li>Which AWS service implements that strategy?</li>
-</ol>
-<p>Quick reference (the cheat sheet from the original exercise):</p>
-<table>
-<thead>
-<tr>
-<th>R</th>
-<th>Service</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Retire</td>
-<td>n/a</td>
-<td>Stop running it</td>
-</tr>
-<tr>
-<td>Retain</td>
-<td>n/a</td>
-<td>Leave on-prem</td>
-</tr>
-<tr>
-<td>Rehost</td>
-<td><strong>AWS MGN</strong></td>
-<td>Lift-and-shift VMs</td>
-</tr>
-<tr>
-<td>Relocate</td>
-<td>VMware Cloud on AWS</td>
-<td>Same hypervisor, different host</td>
-</tr>
-<tr>
-<td>Repurchase</td>
-<td>SaaS catalog</td>
-<td>Drop + replace</td>
-</tr>
-<tr>
-<td>Replatform</td>
-<td><strong>DMS / RDS / ElastiCache / MSK</strong></td>
-<td>Rehost + one optimization (this lab's tool)</td>
-</tr>
-<tr>
-<td>Refactor</td>
-<td>Lambda / EKS / Aurora Serverless</td>
-<td>Rewrite cloud-native</td>
-</tr>
-</tbody>
-</table>
-<p>The most common mistake in real migrations is <strong>Refactoring
-everything</strong> — expensive, slow, and the business gets nothing in
-the meantime. A typical successful migration is 60% Rehost +
-Replatform.</p>
-<h2 id="cleanup">Cleanup — DO BEFORE LEAVING THE ROOM</h2>
+<h2 id="cleanup">Cleanup — DO THIS BEFORE THE NEXT BREAK</h2>
 <blockquote>
 <p>The replication instance bills <strong>~$0.07/hr</strong> until
 deleted. Leaving it overnight is ~$1.70/student. Delete it.</p>
@@ -422,7 +361,7 @@ deleted. Leaving it overnight is ~$1.70/student. Delete it.</p>
 <code>archadv-&lt;you&gt;-lab13-ri</code> →
 <strong>Actions → Delete</strong>. Type <code>delete me</code> to
 confirm. <strong>Watch the row disappear.</strong> If it's stuck in
-<code>deleting</code> for &gt; 5 min, raise your hand.</li>
+<code>deleting</code> for &gt; 5 min, post in chat.</li>
 <li><strong>AWS DMS → Subnet groups</strong> → tick
 <code>archadv-&lt;you&gt;-lab13-sng</code> → <strong>Delete</strong>.</li>
 <li><strong>S3</strong> → <code>archadv-&lt;you&gt;-lab13-target</code>
