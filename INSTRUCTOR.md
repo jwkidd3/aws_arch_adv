@@ -203,16 +203,17 @@ If you want to restore the original simulator-based flow (instructor running lib
 - **Lab 9** creates a customer-managed KMS key, encrypts an S3 object, stores a DB password in Secrets Manager, rotates it. With 50 min, after rotation observe the new `AWSCURRENT` version and add a custom key policy condition that limits decrypt to a specific IAM role.
 - Optional Org-trail demo: instructor shows the Org-level CloudTrail in the Audit account (concept only — students don't have access).
 
-### Module 10 — Large-Scale Data Stores (15 min teach + 30 min lab)
+### Module 10 — Large-Scale Data Stores (10 min teach + 35 min lab)
 
-- 15 min teach: anchor on the access-pattern decision lens (OLTP / OLAP / event / cache / lake) and the Aurora Global vs DynamoDB Global comparison. Drop the per-engine deep-dive.
-- **Lab 10** is S3 + Glue Crawler + Athena, all in the Sandbox account console. With 30 min, push the Parquet-CTAS stretch goal — re-running the same `GROUP BY` query against the converted table to compare `Data scanned`. That's the data-lake economic argument in numbers.
+- **10 min teach** (trimmed 2026-05-15 to recover Day 3 margin): anchor only on the data-lake pattern — S3 as raw storage, Glue as catalog, Athena as query. Aurora vs DynamoDB gets a 1-min "you saw these on Day 1 Module 9 frame" callback; do NOT lecture on per-engine details — that's prior-course material.
+- **Lab 10** (35 min hands-on) is S3 + Glue Crawler + Athena. Realistic time is 35 min for the wizard-heavy steps; budget reflects that now.
+- Skip the Parquet-CTAS stretch goal — only push it if a student is visibly ahead.
 
-### Module 11 — Large-Scale Applications (10 min teach + 25 min hands-on lab + 5 min discussion)
+### Module 11 — Large-Scale Applications (5 min teach + 30 min hands-on lab)
 
-- 10 min teach: only the **scaling triggers** slide (CPU / memory / custom CW metric / request count per target) and Route 53 latency-vs-geo. **Fold the scenario-card design-thinking discussion into the lecture framing** — do NOT carve out a separate 5-min discussion segment (cut 2026-05-14 to fit the day).
-- **Lab 11** (25 min hands-on): students build ALB + ASG **in the Lab 1 VPC's two public subnets** with target tracking on `ALBRequestCountPerTarget`, generate load via a CloudShell `curl` loop (not `ab` — CloudShell can't install httpd-tools), watch the ASG scale from 2 to 3 instances. Validates the *behavior* of "scale on the right metric."
-- Public subnets are the simplification: drops the SSM-via-NAT dependency for instance bootstrap. Tell students this when they ask why we're not using private subnets in this lab — production answer is different.
+- **5 min teach** (trimmed 2026-05-15): only the **scaling-triggers slide** (CPU / memory / custom CW metric / request count per target). Skip Route 53 latency-vs-geo (mention in passing only). Fold the scenario-card design-thinking into the lab framing — do NOT carve out a separate discussion segment (cut 2026-05-14).
+- **Lab 11** (30 min hands-on): students build ALB + ASG **in the Lab 1 VPC's two public subnets** with target tracking on `ALBRequestCountPerTarget`, generate load via a CloudShell `curl` loop (not `ab` — CloudShell can't install httpd-tools), watch the ASG scale from 2 to 3 instances. Validates the *behavior* of "scale on the right metric." Slot expanded to 30 min on 2026-05-15 to reflect realistic time including SSM-role check.
+- Public subnets are the simplification: drops the SSM-via-NAT dependency for instance bootstrap. Mention this if asked why not private — production answer is different.
 
 ### Module 12 — Optimizing Cost (15 min teach + 15 min instructor demo)
 

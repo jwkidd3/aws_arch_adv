@@ -83,8 +83,8 @@ Net working time: **5.5 hrs/day = 16.5 hrs total**.
 | 9:00 – 9:15 | Day 2 recap, Q&A |
 | 9:15 – 10:30 | **Module 9** *Securing Data* — KMS, Secrets Manager, CloudHSM (25) + **Lab 9** KMS + Secrets Manager (50) |
 | 10:30 – 10:45 | Break |
-| 10:45 – 11:30 | **Module 10** *Large-Scale Data Stores* — Aurora, DynamoDB, data lake patterns (15) + **Lab 10** S3 + Glue + Athena data lake (30) |
-| 11:30 – 12:05 | **Module 11** *Large-Scale Applications* — multi-tier, autoscaling, geo-routing (10) + **Lab 11** ASG with custom CloudWatch metric scaling (25) |
+| 10:45 – 11:30 | **Module 10** *Large-Scale Data Stores* — data lake patterns (10) + **Lab 10** S3 + Glue + Athena data lake (35) |
+| 11:30 – 12:05 | **Module 11** *Large-Scale Applications* — scaling triggers (5) + **Lab 11** ASG with custom CloudWatch metric scaling (30) |
 | 12:05 – 1:00 | **Lunch** |
 | 1:00 – 1:30 | **Module 12** *Optimizing Cost* — Cost Explorer, Budgets, Savings Plans (15) + **Lab 12 — instructor demo only** (15) |
 | 1:30 – 2:30 | **Module 13** *Migrating Workloads* — 7 Rs, MGN, DMS, DataSync (15) + **Lab 13** DMS console build (no task start) (30) |
